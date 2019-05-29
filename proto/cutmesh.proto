@@ -1,0 +1,79 @@
+syntax = "proto3";
+
+message CutMeshProto {
+    message Vec3d {
+        double x = 1;
+        double y = 2;
+        double z = 3;
+    }
+
+    message Vec2i {
+        int64 x = 1;
+        int64 y = 2;
+    }
+    message Vec3i {
+        int64 x = 1;
+        int64 y = 2;
+        int64 z = 3;
+    }
+    message AxialPlane {
+        int64 axis = 1;
+        int64 value = 2;
+    }
+
+    message SimplePolygon {
+        repeated int64 indices = 1;
+    }
+
+    message FaceBoundary {
+        int64 index = 1;
+        bool sign = 2;
+    }
+
+    message CutFace {
+        repeated SimplePolygon curves = 1;
+        Vec3d normal = 2;
+        oneof id {
+            int64 face_id = 3;
+            AxialPlane plane_id = 4;
+        }
+        repeated Vec3i triangulation = 5;
+        FaceBoundary face_boundary = 6;
+    }
+    message Cell {
+        int64 id = 1;
+        int64 region = 2;
+        map<int64,bool> entries = 3;
+
+    }
+    message BarycentricTriangleFace {
+        int64 parent_id = 1;
+        repeated Vec3d barycentric_coordinates = 2;
+    }
+
+    message Cube {
+        Vec3i corner = 1;
+        int64 radius = 2;
+    }
+
+
+    Vec3d origin = 1;
+    Vec3d dx = 2;
+    Vec3i shape = 3;
+
+    repeated Vec3d vertices = 4;
+
+
+    repeated Vec2i edges = 5;
+    repeated CutFace faces = 6;
+    repeated Cell cells = 7;
+
+    repeated Vec3d origV= 8;
+    repeated Vec3i origF= 9;
+    repeated int64 foldedFaces = 10;
+
+    map<int64,BarycentricTriangleFace> mesh_faces= 11;
+
+    map<int64,Cube> cubes = 12;
+    map<int64,int64> cube_regions = 13;
+}
