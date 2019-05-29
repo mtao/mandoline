@@ -31,14 +31,14 @@ namespace mandoline::construction {
 
         CutCellMesh<3> ccm = CCEG::generate();
         ccm.cut_edges = mtao::eigen::hstack(ccm.cut_edges,mtao::eigen::stl2eigen(adaptive_edges));
-        ccm.folded_faces = folded_faces;
+        ccm.m_folded_faces = folded_faces;
         //extra_metadata(ccm);
-        ccm.faces.clear();
-        ccm.faces.resize(faces().size());
+        ccm.m_faces.clear();
+        ccm.m_faces.resize(faces().size());
         if(adaptive) {
-            ccm.adaptive_grid = *adaptive_grid;
+            ccm.m_adaptive_grid = *adaptive_grid;
             if(adaptive_grid_regions) {
-                ccm.adaptive_grid_regions = *adaptive_grid_regions;
+                ccm.m_adaptive_grid_regions = *adaptive_grid_regions;
             }
         }
 
@@ -50,7 +50,7 @@ namespace mandoline::construction {
             reindexer[idx] = i;
         }
         for(auto&& [i,f]: m_faces) {
-            ccm.faces[reindexer.at(i)] = f;
+            ccm.m_faces[reindexer.at(i)] = f;
         }
         auto redx = [&](const std::set<int>& i) {
             std::set<int> ret;
@@ -69,12 +69,12 @@ namespace mandoline::construction {
                 }
 
             }
-            ccm.mesh_faces[idx] = BarycentricTriangleFace{std::move(B),cutface.parent_fid};
+            ccm.m_mesh_faces[idx] = BarycentricTriangleFace{std::move(B),cutface.parent_fid};
 
 
         }
         //ccm.mesh_faces = redx(mesh_face_indices);
-        for(auto&& [a,b]: mtao::iterator::zip(ccm.axial_faces,axis_face_indices)) {
+        for(auto&& [a,b]: mtao::iterator::zip(ccm.m_axial_faces,axis_face_indices)) {
             a = redx(b);
         }
         /*
@@ -89,21 +89,21 @@ namespace mandoline::construction {
            }
            */
 
-        ccm.cells.clear();
-        ccm.cells.resize(cell_boundaries.size());
+        ccm.m_cells.clear();
+        ccm.m_cells.resize(cell_boundaries.size());
 
-        for(auto&& [a,b]: mtao::iterator::zip(cell_boundaries, ccm.cells)) {
+        for(auto&& [a,b]: mtao::iterator::zip(cell_boundaries, ccm.m_cells)) {
             b.index = a.index;
             b.region = a.region;
             for(auto&& [i,j]: a) {
                 b[reindexer.at(i)] = j;
             }
         }
-        ccm.origV.resize(3,origV().size());
+        ccm.m_origV.resize(3,origV().size());
         for(int i = 0; i < origV().size(); ++i) {
-            ccm.origV.col(i) = origV()[i];
+            ccm.m_origV.col(i) = origV()[i];
         }
-        ccm.origF = data().F();
+        ccm.m_origF = data().F();
 
 
         return ccm;

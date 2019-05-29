@@ -39,6 +39,7 @@ SET(CUTMESH3_SRCS
     src/proto_util.cpp
     src/barycentric_triangle_face.cpp
     src/cutface.cpp
+    src/adaptive_grid.cpp
     )
 
 
@@ -99,6 +100,25 @@ SET(CONSTRUCTION_HDRS
     include/mandoline/construction/subgrid_transformer.hpp
     )
 
+SET(MANDOLINE2_SRCS
+    ${CUTMESH2_SRCS}
+    ${CUTMESH2_HDRS}
+    ${CONSTRUCTION_SRCS}
+    ${CONSTRUCTION_HDRS}
+    )
+SET(MANDOLINE3_SRCS
+    ${CUTMESH3_SRCS}
+    ${CUTMESH3_HDRS}
+    ${CONSTRUCTION_SRCS}
+    ${CONSTRUCTION_HDRS}
+    )
+
+SET(MANDOLINE_CUTMESH_SRCS
+    ${CUTMESH3_SRCS}
+    ${CUTMESH3_HDRS}
+    ${CONSTRUCTION_SRCS}
+    ${CONSTRUCTION_HDRS}
+    )
 
 ADD_LIBRARY(mandoline
     ${CUTMESH2_SRCS}
@@ -116,5 +136,40 @@ TARGET_LINK_LIBRARIES(mandoline
     ${Protobuf_LIBRARIES}
     )
 
+ADD_LIBRARY(mandoline2 EXCLUDE_FROM_ALL
+    ${CUTMESH2_SRCS}
+    ${CUTMESH2_HRDS}
+    ${CONSTRUCTION_SRCS}
+    ${CONSTRUCTION_HDRS}
+    )
+TARGET_LINK_LIBRARIES(mandoline2
+    mtao_geometry OpenMP::OpenMP_CXX
+    gmp CGAL mpfr Boost::thread
+    ${Protobuf_LIBRARIES}
+    )
 
 
+ADD_LIBRARY(mandoline3 EXCLUDE_FROM_ALL
+    ${CUTMESH3_SRCS}
+    ${CUTMESH3_HRDS}
+    ${CONSTRUCTION_SRCS}
+    ${CONSTRUCTION_HDRS}
+    )
+TARGET_LINK_LIBRARIES(mandoline3 
+    mtao_geometry OpenMP::OpenMP_CXX
+    gmp CGAL mpfr Boost::thread
+    ${Protobuf_LIBRARIES}
+    )
+
+ADD_LIBRARY(mandoline_cutmesh3
+    ${CUTMESH3_SRCS}
+    ${CUTMESH3_HRDS}
+    )
+TARGET_LINK_LIBRARIES(mandoline_cutmesh3
+    mtao_geometry OpenMP::OpenMP_CXX
+    gmp CGAL mpfr Boost::thread
+    ${Protobuf_LIBRARIES}
+    )
+
+
+ADD_SUBDIRECTORY(examples)

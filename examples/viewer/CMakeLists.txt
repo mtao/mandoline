@@ -1,0 +1,3 @@
+
+ADD_EXECUTABLE(cutmesh_viewer cutmesh_viewer.cpp)
+TARGET_LINK_LIBRARIES(cutmesh_viewer mandoline_cutmesh3 mtao_opengl)

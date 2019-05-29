@@ -16,19 +16,19 @@
 namespace mandoline {
 
     size_t CutCellMesh<3>::cell_size() const {
-        return adaptive_grid.cells.size() + cells.size();
+        return m_adaptive_grid.cells.size() + m_cells.size();
     }
     size_t CutCellMesh<3>::cut_cell_size() const { 
-        return cells.size(); 
+        return m_cells.size(); 
     }
     bool   CutCellMesh<3>::is_cut_cell(int index) const {
-        return index >= 0 && index < cells.size(); 
+        return index >= 0 && index < m_cells.size(); 
     }
     bool   CutCellMesh<3>::is_adaptive_cell(int index) const { 
-        return index >= 0 && index >= cells.size(); 
+        return index >= 0 && index >= m_cells.size(); 
     }
     bool CutCellMesh<3>::is_mesh_face(int idx) const {
-        return mesh_faces.find(idx) != mesh_faces.end();
+        return m_mesh_faces.find(idx) != m_mesh_faces.end();
     }
     auto CutCellMesh<3>::cell_volumes() const -> VecX{
         /*
@@ -38,19 +38,19 @@ namespace mandoline {
         VecX V(cell_size());
         V.setZero();
         auto Vs = vertices();
-        mtao::VecXd face_brep_vols(faces.size());
-        for(auto&& [i,f]: mtao::iterator::enumerate(faces)) {
+        mtao::VecXd face_brep_vols(m_faces.size());
+        for(auto&& [i,f]: mtao::iterator::enumerate(m_faces)) {
             face_brep_vols(i) = f.brep_volume(Vs);
         }
 
-        for(auto&& [k,c]: mtao::iterator::enumerate(cells)) {
+        for(auto&& [k,c]: mtao::iterator::enumerate(m_cells)) {
             V(k) = c.volume(face_brep_vols);
             //V(k) = c.volume(Vs,faces);
             //V(k) = mtao::geometry::brep_volume(Vs,c.triangulated(faces));
             //std::cout << (V(k) / std::abs(c.volume(Vs,faces))) << std::endl;
         }
         double scale = dx().array().prod();
-        for(auto&& [i,c]:  adaptive_grid.cells) {
+        for(auto&& [i,c]:  m_adaptive_grid.cells) {
             V(i) =  scale * std::pow<double>(c.width(),3);
         }
 
@@ -62,16 +62,16 @@ namespace mandoline {
            VecX V(cell_size());
            V.topRows(StaggeredGrid::cell_size()).array() = dx().prod();
            */
-        mtao::ColVecs3d face_brep_cents(3,faces.size());
+        mtao::ColVecs3d face_brep_cents(3,m_faces.size());
         auto Vs = vertices();
-        for(auto&& [i,f]: mtao::iterator::enumerate(faces)) {
+        for(auto&& [i,f]: mtao::iterator::enumerate(m_faces)) {
             face_brep_cents.col(i) = f.brep_centroid(Vs);
             //face_brep_cents.col(i) = f.brep_volume(Vs) * f.brep_centroid(Vs);
         }
-        mtao::ColVecs3d V(3,cells.size());
+        mtao::ColVecs3d V(3,m_cells.size());
         V.setZero();
         auto vols = cell_volumes();
-        for(auto&& [k,c]: mtao::iterator::enumerate(cells)) {
+        for(auto&& [k,c]: mtao::iterator::enumerate(m_cells)) {
             V.col(k) = c.moment(face_brep_cents);
             //V.col(k) = c.moment(face_brep_cents) / vols(k);
         }
@@ -91,8 +91,8 @@ namespace mandoline {
         return -1;
     }
     std::vector<std::set<int>> CutCellMesh<3>::cell_faces() const {
-        std::vector<std::set<int>> ret(cells.size());
-        std::transform(cells.begin(),cells.end(), ret.begin(), [](auto&& V) {
+        std::vector<std::set<int>> ret(m_cells.size());
+        std::transform(m_cells.begin(),m_cells.end(), ret.begin(), [](auto&& V) {
                 std::set<int> ret;
                 std::transform(V.begin(),V.end(), std::inserter(ret,ret.end()), [](auto&& v) {
                         return std::get<0>(v);
@@ -104,7 +104,7 @@ namespace mandoline {
 
     }
     std::set<int> CutCellMesh<3>::cell_faces(int index) const {
-        auto& V = cells.at(index);
+        auto& V = m_cells.at(index);
         std::set<int> ret;
         std::transform(V.begin(),V.end(), std::inserter(ret,ret.end()), [](auto&& v) {
                 return std::get<0>(v);
@@ -178,13 +178,13 @@ namespace mandoline {
             }
         }
     }
-    void CutCellMesh<3>::write_obj(const std::string& prefix, const std::set<int>& indices, const std::optional<int>& region, bool show_indices, bool show_base, bool show_flaps, bool mesh_faces) const {
+    void CutCellMesh<3>::write_obj(const std::string& prefix, const std::set<int>& indices, const std::optional<int>& region, bool show_indices, bool show_base, bool show_flaps, bool m_mesh_faces) const {
         std::stringstream ss;
         auto CS = StaggeredGrid::cell_shape();
 
         {
             ss << prefix;
-            if(mesh_faces) {
+            if(m_mesh_faces) {
                 ss << "-mesh";
                 if(!(show_base && show_flaps)) {
                     if(show_base) {
@@ -211,13 +211,13 @@ namespace mandoline {
 
         std::vector<mtao::ColVecs3i> Fs(indices.size());
         for(auto&& [F,index]: mtao::iterator::zip(Fs,indices)) {
-            if(mesh_faces) {
+            if(m_mesh_faces) {
                 if(is_cut_cell(index)) {
                     std::cout << "cell: " << index << std::endl;
                     std::vector<mtao::ColVecs3i> FF;
-                    for(auto&& [fidx,s]: cells.at(index)) {
+                    for(auto&& [fidx,s]: m_cells.at(index)) {
                         std::cout << fidx << " ";
-                        auto&& f = faces[fidx];
+                        auto&& f = m_faces[fidx];
                         if(f.is_mesh_face()) {
                             FF.push_back(*f.triangulation);
                         }
@@ -230,7 +230,7 @@ namespace mandoline {
                     F = triangulated_cell(index,show_base,show_flaps);
                 } else {
                     if(show_base) {
-                        F = adaptive_grid.triangulated(index);
+                        F = m_adaptive_grid.triangulated(index);
                     }
                 }
             }
@@ -276,12 +276,12 @@ namespace mandoline {
         for(auto&& [F,index]: mtao::iterator::zip(Fs,indices)) {
             if(is_cut_cell(index)) {
                 ofs << "# cell" << index << ": ";
-                for(auto&& [c,b]: cells.at(index)) {
+                for(auto&& [c,b]: m_cells.at(index)) {
                     ofs << c << " ";
                 }
             } else {
                 ofs << "# adaptive cube" << index << ": ";
-                auto&& c = adaptive_grid.cells.at(index);
+                auto&& c = m_adaptive_grid.cells.at(index);
                 ofs <<  mtao::eigen::stl2eigen(c.corner()).transpose() << "  :: " << c.width();
             }
             ofs << std::endl;
@@ -294,8 +294,8 @@ namespace mandoline {
     }
 
     std::vector<bool> CutCellMesh<3>::boundary_faces() const {
-        std::vector<bool> ret(faces.size(),false);
-        for(auto&& [m,_]: mesh_faces) {
+        std::vector<bool> ret(m_faces.size(),false);
+        for(auto&& [m,_]: m_mesh_faces) {
             ret[m] = true;
         }
         return ret;
@@ -306,10 +306,10 @@ namespace mandoline {
 
         if(boundary_sign_regions) {
             std::cout << "Using boundary sign regions!" << std::endl;
-            for(auto&& [idx,c]: mtao::iterator::enumerate(cells)) {
+            for(auto&& [idx,c]: mtao::iterator::enumerate(m_cells)) {
                 Edge counts{{0,0}};// 1 -1 
                 for(auto&& [f,b]: c) {
-                    std::cout << f << "/" << mesh_faces.size() << std::endl;
+                    std::cout << f << "/" << m_mesh_faces.size() << std::endl;
                     if(is_mesh_face(f)) {
                         counts[b?0:1]++;
                     }
@@ -324,10 +324,10 @@ namespace mandoline {
             }
         } else {
             std::cout << "Baking regions!" << std::endl;
-            for(int i = 0; i < cells.size(); ++i) {
-                ret[i] = cells[i].region;
+            for(int i = 0; i < m_cells.size(); ++i) {
+                ret[i] = m_cells[i].region;
             }
-            for(auto&& [c,r]: adaptive_grid_regions) {
+            for(auto&& [c,r]: m_adaptive_grid_regions) {
                 ret[c] = r;
             }
         }
@@ -345,7 +345,7 @@ namespace mandoline {
             ss << ".obj";
         }
         std::vector<mtao::ColVecs3i> Fs;
-        for(auto&& f: faces) {
+        for(auto&& f: m_faces) {
             if(f.is_mesh_face()) {
                 if(f.triangulation) {
                     Fs.push_back(*f.triangulation);
@@ -380,26 +380,26 @@ namespace mandoline {
         for(int i = 0; i < cut_edges.cols(); ++i) {
             protobuf::serialize(cut_edges.col(i),*cmp.add_edges());
         }
-        for(int i = 0; i < origV.cols(); ++i) {
-            protobuf::serialize(origV.col(i),*cmp.add_origv());
+        for(int i = 0; i < m_origV.cols(); ++i) {
+            protobuf::serialize(m_origV.col(i),*cmp.add_origv());
         }
-        for(int i = 0; i < origF.cols(); ++i) {
-            protobuf::serialize(origF.col(i),*cmp.add_origf());
+        for(int i = 0; i < m_origF.cols(); ++i) {
+            protobuf::serialize(m_origF.col(i),*cmp.add_origf());
         }
         protobuf::serialize(origin(),*cmp.mutable_origin());
         protobuf::serialize(dx(),*cmp.mutable_dx());
         protobuf::serialize(shape(),*cmp.mutable_shape());
-        for(auto&& f: faces) {
+        for(auto&& f: m_faces) {
             f.serialize(*cmp.add_faces());
         }
-        for(auto&& c: cells) {
+        for(auto&& c: m_cells) {
             c.serialize(*cmp.add_cells());
         }
-        for(auto&& i: folded_faces) {
+        for(auto&& i: m_folded_faces) {
             cmp.add_foldedfaces(i);
         }
         auto&& mf = *cmp.mutable_mesh_faces();
-        for(auto&& [idx, bmf]: mesh_faces) {
+        for(auto&& [idx, bmf]: m_mesh_faces) {
             auto& b = mf[idx];
             b.set_parent_id(bmf.parent_fid);
             for(int j = 0; j < bmf.barys.cols(); ++j) {
@@ -410,11 +410,11 @@ namespace mandoline {
         }
         {
             auto& cmap = *cmp.mutable_cubes();
-            for(auto&& [c,cell]: adaptive_grid.cells) {
+            for(auto&& [c,cell]: m_adaptive_grid.cells) {
                 cell.serialize(cmap[c]);
             }
             auto& rmap = *cmp.mutable_cube_regions();
-            for(auto&& [a,b]: adaptive_grid_regions) {
+            for(auto&& [a,b]: m_adaptive_grid_regions) {
                 rmap[a] = b;
             }
         }
@@ -443,23 +443,23 @@ namespace mandoline {
         for(int i = 0; i < ret.cut_edges.cols(); ++i) {
             ret.cut_edges.col(i) = protobuf::deserialize(cmp.edges(i));
         }
-        ret.origV.resize(3,cmp.origv().size());
-        for(int i = 0; i < ret.origV.cols(); ++i) {
-            ret.origV.col(i) = protobuf::deserialize(cmp.origv(i));
+        ret.m_origV.resize(3,cmp.origv().size());
+        for(int i = 0; i < ret.m_origV.cols(); ++i) {
+            ret.m_origV.col(i) = protobuf::deserialize(cmp.origv(i));
         }
-        ret.origF.resize(3,cmp.origf().size());
-        for(int i = 0; i < ret.origF.cols(); ++i) {
-            ret.origF.col(i) = protobuf::deserialize(cmp.origf(i));
+        ret.m_origF.resize(3,cmp.origf().size());
+        for(int i = 0; i < ret.m_origF.cols(); ++i) {
+            ret.m_origF.col(i) = protobuf::deserialize(cmp.origf(i));
         }
-        ret.faces.resize(cmp.faces().size());
+        ret.m_faces.resize(cmp.faces().size());
         for(int i = 0; i < cmp.faces().size(); ++i) {
-            ret.faces[i] = CutFace<3>::from_proto(cmp.faces(i));
+            ret.m_faces[i] = CutFace<3>::from_proto(cmp.faces(i));
         }
-        ret.cells.resize(cmp.cells().size());
+        ret.m_cells.resize(cmp.cells().size());
         for(int i = 0; i < cmp.cells().size(); ++i) {
-            ret.cells[i] = CutCell::from_proto(cmp.cells(i));
+            ret.m_cells[i] = CutCell::from_proto(cmp.cells(i));
         }
-        std::copy(cmp.foldedfaces().begin(),cmp.foldedfaces().end(),std::inserter(ret.folded_faces,ret.folded_faces.end()));
+        std::copy(cmp.foldedfaces().begin(),cmp.foldedfaces().end(),std::inserter(ret.m_folded_faces,ret.m_folded_faces.end()));
 
 
         for(auto&& [idx,btf]: cmp.mesh_faces()) {
@@ -469,14 +469,14 @@ namespace mandoline {
             for(int i = 0; i < bssize; ++i) {
                 B.col(i) = protobuf::deserialize(btf.barycentric_coordinates(i));
             }
-            ret.mesh_faces[idx] = {B,pid};
+            ret.m_mesh_faces[idx] = {B,pid};
         }
 
         for(auto&& [a,b]: cmp.cubes()) {
-            ret.adaptive_grid.cells[a] = AdaptiveGrid::Cell::from_proto(b);
+            ret.m_adaptive_grid.cells[a] = AdaptiveGrid::Cell::from_proto(b);
         }
         for(auto&& [a,b]: cmp.cube_regions()) {
-            ret.adaptive_grid_regions[a] = b;
+            ret.m_adaptive_grid_regions[a] = b;
         }
 
         return ret;
@@ -499,7 +499,7 @@ namespace mandoline {
     mtao::ColVecs3i CutCellMesh<3>::triangulate_face(int face_index) const {
         mtao::logging::warn() << "Inefficient use of triangulation!  try caching your triangulations";
         std::array<mtao::ColVecs2d,3> subVs = compute_subVs();
-        return faces[face_index].triangulate(subVs);
+        return m_faces[face_index].triangulate(subVs);
     }
 
     void CutCellMesh<3>::triangulate_faces() {
@@ -507,16 +507,16 @@ namespace mandoline {
 
         int i = 0;
 #pragma omp parallel for
-        for(i = 0; i < faces.size(); ++i) {
-            auto&& face = faces[i];
+        for(i = 0; i < m_faces.size(); ++i) {
+            auto&& face = m_faces[i];
             face.cache_triangulation(subVs);
         }
     }
 
     auto CutCellMesh<3>::face_volumes(bool from_triangulation) const -> VecX{
-        VecX ret(faces.size());
+        VecX ret(faces().size());
         if(from_triangulation) {
-            for(auto&& [i,face]: mtao::iterator::enumerate(faces)) {
+            for(auto&& [i,face]: mtao::iterator::enumerate(faces())) {
                 auto V = vertices();
                 if(face.triangulation) {
                     auto&& T = *face.triangulation;
@@ -524,10 +524,10 @@ namespace mandoline {
                 }
             }
         } else {
-            auto trimesh_vols = mtao::geometry::volumes(origV,origF);
+            auto trimesh_vols = mtao::geometry::volumes(m_origV,m_origF);
             ret = face_barycentric_volume_matrix() * trimesh_vols;
             auto subVs = compute_subVs();
-            for(auto&& [i,f]: mtao::iterator::enumerate(faces)) {
+            for(auto&& [i,f]: mtao::iterator::enumerate(faces())) {
                 if(f.is_axial_face()) {
                     auto [dim,coord] = f.as_axial_id();
                     auto& vol = ret(i) = 0;
@@ -546,11 +546,11 @@ namespace mandoline {
         return ret;
     }
     Eigen::SparseMatrix<double> CutCellMesh<3>::barycentric_matrix() const {
-        Eigen::SparseMatrix<double> A(vertex_size(), origV.cols());
+        Eigen::SparseMatrix<double> A(vertex_size(), m_origV.cols());
         std::vector<Eigen::Triplet<double>> trips;
         std::map<std::array<int,2>,double> mp;
-        for(auto&& [fid, btf]: mesh_faces) {
-            auto t = btf.sparse_entries(faces[fid], origF);
+        for(auto&& [fid, btf]: m_mesh_faces) {
+            auto t = btf.sparse_entries(m_faces[fid], m_origF);
             std::copy(t.begin(),t.end(),std::inserter(mp,mp.end()));
         }
         trips.reserve(mp.size());
@@ -563,19 +563,19 @@ namespace mandoline {
     }
     Eigen::SparseMatrix<double> CutCellMesh<3>::face_barycentric_volume_matrix() const {
         int face_size = 0;
-        if(origF.size() == 0) {
-            for(auto&& f: faces) {
+        if(m_origF.size() == 0) {
+            for(auto&& f: faces()) {
                 if(f.is_mesh_face()) {
                     face_size = std::max<int>(face_size,f.as_face_id());
                 }
             }
             face_size++;
         } else {
-            face_size = origF.cols();
+            face_size = m_origF.cols();
         }
-        Eigen::SparseMatrix<double> A(faces.size(),face_size);
+        Eigen::SparseMatrix<double> A(m_faces.size(),face_size);
         std::vector<Eigen::Triplet<double>> trips;
-        for(auto&& [fid, btf]: mesh_faces) {
+        for(auto&& [fid, btf]: m_mesh_faces) {
             double vol = btf.volume() * 2;//proportion of 2 is required because barycentric coordinates live in a unit triangle
             trips.emplace_back(fid, btf.parent_fid, vol);
         }
@@ -583,7 +583,7 @@ namespace mandoline {
         return A;
     }
     Eigen::SparseMatrix<double> CutCellMesh<3>::boundary() const {
-        auto trips = adaptive_grid.boundary_triplets(faces.size());
+        auto trips = m_adaptive_grid.boundary_triplets(m_faces.size());
         return {};
         int num_faces = 0;
         int num_cells = 0;
@@ -616,7 +616,7 @@ namespace mandoline {
     auto CutCellMesh<3>::active_cell_mask() const -> GridDatab {
         auto mask = GridDatab::Constant(true,StaggeredGrid::cell_shape());
         auto C = cell_centroids();
-        for(auto&& [i,cell]: mtao::iterator::enumerate(cells)) {
+        for(auto&& [i,cell]: mtao::iterator::enumerate(m_cells)) {
             auto cent = C.col(i);
             auto [c,q] = coord(cent);
             mask(c) = false;
@@ -626,7 +626,7 @@ namespace mandoline {
     auto CutCellMesh<3>::active_cells() const -> std::set<coord_type> {
         auto C = cell_centroids();
         std::set<coord_type> ret;
-        for(auto&& [i,cell]: mtao::iterator::enumerate(cells)) {
+        for(auto&& [i,cell]: mtao::iterator::enumerate(m_cells)) {
             auto cent = C.col(i);
             auto [c,q] = coord(cent);
             ret.insert(c);
@@ -640,11 +640,11 @@ namespace mandoline {
     mtao::ColVecs3i CutCellMesh<3>::triangulated_cell(int idx, bool use_base, bool use_flap) const {
         if(is_cut_cell(idx)) {
             std::vector<mtao::ColVecs3i> mFs;
-            for(auto&& [fidx,b]: cells[idx]) {
-                bool is_flap = folded_faces.find(fidx) != folded_faces.end();
+            for(auto&& [fidx,b]: m_cells[idx]) {
+                bool is_flap = m_folded_faces.find(fidx) != m_folded_faces.end();
                 bool is_base = !is_flap;
                 if((use_flap && is_flap) || (use_base && !is_flap)) {
-                    auto& tri = faces[fidx].triangulation;
+                    auto& tri = m_faces[fidx].triangulation;
                     mtao::ColVecs3i F = tri?(*tri).eval():triangulate_face(fidx);
                     if(!b) {
                         auto tmp = F.row(0).eval();
@@ -659,7 +659,7 @@ namespace mandoline {
             }
         } else {
             if(use_base) {
-                return adaptive_grid.triangulated(idx);
+                return m_adaptive_grid.triangulated(idx);
             }
         }
         return {};
@@ -670,7 +670,7 @@ namespace mandoline {
         return mtao::geometry::mesh::compactify(vertices(),F);
     }
     std::tuple<mtao::ColVecs3d,mtao::ColVecs3i> CutCellMesh<3>::compact_triangulated_face(int face_index) const {
-        auto& f = faces[face_index];
+        auto& f = m_faces[face_index];
         if(!f.triangulation) {
             mtao::logging::warn() << "Triangulate mesh first!";
             return {};

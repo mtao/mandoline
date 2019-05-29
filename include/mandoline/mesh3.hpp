@@ -21,10 +21,14 @@ namespace mandoline {
                 CutCellMesh(CutCellMesh&&) = default;
                 CutCellMesh& operator=(const CutCellMesh&) = default;
                 CutCellMesh& operator=(CutCellMesh&&) = default;
-                CutCellMesh(const StaggeredGrid& g, const ColVecs& v = {}): Base(g,v), adaptive_grid(g) {}
+                CutCellMesh(const StaggeredGrid& g, const ColVecs& v = {}): Base(g,v), m_adaptive_grid(g) {}
 
                 static CutCellMesh<3> from_file(const std::string& filename);
 
+                const auto& faces() const { return m_faces; }
+                const auto& cells() const { return m_cells; }
+                const mtao::ColVecs3d& origV() const { return m_origV; }
+                const mtao::ColVecs3i& origF() const { return m_origF; }
 
 
                 //info on cells
@@ -99,23 +103,23 @@ namespace mandoline {
 
             private:
                 //Primary geometry data
-                std::vector<CutFace<3>> faces;
-                std::vector<CutCell> cells;
-                AdaptiveGrid adaptive_grid;
+                std::vector<CutFace<3>> m_faces;
+                std::vector<CutCell> m_cells;
+                AdaptiveGrid m_adaptive_grid;
 
                 //support for mapping
-                mtao::map<int,BarycentricTriangleFace> mesh_faces;
+                mtao::map<int,BarycentricTriangleFace> m_mesh_faces;
 
                 //Original mesh
-                mtao::ColVecs3d origV;
-                mtao::ColVecs3i origF;
+                mtao::ColVecs3d m_origV;
+                mtao::ColVecs3i m_origF;
 
                 //Face annotations
-                std::array<std::set<int>,3> axial_faces;
-                std::set<int> folded_faces;
+                std::array<std::set<int>,3> m_axial_faces;
+                std::set<int> m_folded_faces;
 
                 //Cell annotations
-                std::map<int,int> adaptive_grid_regions;
+                std::map<int,int> m_adaptive_grid_regions;
 
 
             private:
