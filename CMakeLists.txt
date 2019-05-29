@@ -173,3 +173,4 @@ TARGET_LINK_LIBRARIES(mandoline_cutmesh3
 
 
 ADD_SUBDIRECTORY(examples)
+ADD_SUBDIRECTORY(tools)

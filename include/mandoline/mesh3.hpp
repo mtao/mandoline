@@ -1,3 +1,4 @@
+#pragma once
 #include "mesh.hpp"
 namespace mandoline {
     namespace construction {
@@ -27,6 +28,7 @@ namespace mandoline {
 
                 const auto& faces() const { return m_faces; }
                 const auto& cells() const { return m_cells; }
+                const AdaptiveGrid& adaptive_grid() const { return m_adaptive_grid; }
                 const mtao::ColVecs3d& origV() const { return m_origV; }
                 const mtao::ColVecs3i& origF() const { return m_origF; }
 
