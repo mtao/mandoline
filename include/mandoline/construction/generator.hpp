@@ -330,8 +330,8 @@ namespace mandoline::construction {
 
                 void bake_faces() override;
                 void bake_cells();
-                bool adaptive = false;
-                std::optional<int> adaptive_level = {};
+                bool adaptive = true;
+                std::optional<int> adaptive_level = 0;
                 std::optional<AdaptiveGrid> adaptive_grid;
                 std::optional<std::map<int,int>> adaptive_grid_regions;
                 void bake() override;

@@ -83,6 +83,7 @@ SET(CONSTRUCTION_SRCS
     src/construction/generator2.cpp
     src/construction/subgrid_transformer.cpp
     src/construction/face_collapser.cpp
+    src/construction/construct.cpp
     )
 
 
@@ -98,6 +99,7 @@ SET(CONSTRUCTION_HDRS
     include/mandoline/construction/facet_intersections.hpp
     include/mandoline/construction/facet_intersections_impl.hpp
     include/mandoline/construction/subgrid_transformer.hpp
+    include/mandoline/construction/construct.hpp
     )
 
 SET(MANDOLINE2_SRCS
