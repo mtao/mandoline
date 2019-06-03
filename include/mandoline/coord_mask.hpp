@@ -69,7 +69,7 @@ namespace mandoline {
                         a = {};
                     }
                 }
-                *this;
+                return *this;
             }
 
             coord_mask operator&(const coord_mask& o) const {
@@ -84,7 +84,7 @@ namespace mandoline {
                         a = {};
                     }
                 }
-                *this;
+                return *this;
             }
 
             coord_mask operator|(const coord_mask& o) const {
@@ -98,7 +98,7 @@ namespace mandoline {
                         a = {};
                     }
                 }
-                *this;
+                return *this;
             }
             coord_mask operator-(const coord_mask& o) const {
                 coord_mask ret = *this;

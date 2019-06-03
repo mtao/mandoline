@@ -417,6 +417,7 @@ namespace mandoline::construction {
                     return i;
                 }
             }
+            return -1;
         }
 
     template <int D>

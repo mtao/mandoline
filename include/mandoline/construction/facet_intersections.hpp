@@ -379,6 +379,7 @@ namespace mandoline::construction {
                 }
                 auto p = get_bary(ei.from_coord(t));
 
+                return p;
             }
             /*
                mtao::Vec3d edge_bary(const EdgeIsect& ei, double t) const {

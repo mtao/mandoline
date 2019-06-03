@@ -438,7 +438,8 @@ namespace mandoline::construction {
             std::map<VPtrEdge, std::set<VPtrEdge>> ret;
             for(auto&& ei: m_edge_intersections) {
                 auto gv = ei.vptr_edges();
-                ret[ei.vptr_edge].insert(edges.end(),gv.begin(),gv.end());
+                auto& edges = ret[ei.vptr_edge];
+                edges.insert(edges.end(),gv.begin(),gv.end());
             }
             return ret;
         }

@@ -79,7 +79,7 @@ namespace mandoline {
                 T.emplace_back(t);
                 if(!b) {
                     auto&& b = T.back();
-                    auto tmp = b.row(0).transpose().eval();
+                    auto tmp = b.row(0).eval();
                     b.row(0) = b.row(1);
                     b.row(1) = tmp;
                 }

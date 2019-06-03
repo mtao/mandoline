@@ -550,12 +550,17 @@ namespace mandoline {
         if(sign) {
             p[axis]++;
         }
+        std::array<int,4> ret;
+        ret[0] = vertex_index(p);
         int u = (axis+1)%3;
         int v = (axis+2)%3;
         p[u]++;
+        ret[0] = vertex_index(p);
         p[v]++;
+        ret[0] = vertex_index(p);
         p[u]--;
-
+        ret[0] = vertex_index(p);
+        return ret;
     }
     std::array<int,4> AdaptiveGrid::face(int idx, int axis, bool sign) const {
         return face(cells.at(idx),axis,sign);
@@ -573,6 +578,7 @@ namespace mandoline {
         c[(d+1)%3] += width() * a;
         c[(d+2)%3] += width() * b;
 
+        return c;
     }
     mtao::ColVecs3i AdaptiveGrid::triangulated(int idx) const {
         return triangulated(cells.at(idx));

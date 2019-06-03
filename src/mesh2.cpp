@@ -150,7 +150,7 @@ namespace mandoline {
 
             };
             double mindist = std::numeric_limits<double>::max();
-            auto update_min = [&](double d,int ind) -> bool {
+            auto update_min = [&](double d,int ind) {
                 if(d < mindist) {
                     mindist = d;
                     retind = ind;

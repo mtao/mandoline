@@ -183,8 +183,8 @@ namespace mandoline::construction {
                 std::set<CoordType> active_cells() const;
                 std::array<mtao::map<CoordType,std::set<int>>,D> crossing_indices() const;
 
-                auto&& origE() const { return data.E(); }
-                auto origE(int idx) const { return data.E(idx); }
+                auto&& origE() const { return data().E(); }
+                auto origE(int idx) const { return data().E(idx); }
 
 
 
