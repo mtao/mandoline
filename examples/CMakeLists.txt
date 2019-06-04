@@ -1,2 +1,3 @@
 ADD_SUBDIRECTORY(viewer)
 ADD_SUBDIRECTORY(extract_original_mesh)
+ADD_SUBDIRECTORY(slicer)
