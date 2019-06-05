@@ -95,9 +95,14 @@ namespace mandoline::construction {
         for(auto&& [a,b]: mtao::iterator::zip(cell_boundaries, ccm.m_cells)) {
             b.index = a.index;
             b.region = a.region;
+            std::set<int> inds;
             for(auto&& [i,j]: a) {
-                b[reindexer.at(i)] = j;
+                int fidx = reindexer.at(i);
+                b[fidx] = j;
+                inds.insert(fidx);
+
             }
+            b.grid_cell = *possible_cells_cell(inds,ccm.faces()).begin();
         }
         ccm.m_origV.resize(3,origV().size());
         for(int i = 0; i < origV().size(); ++i) {

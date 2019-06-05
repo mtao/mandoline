@@ -772,6 +772,24 @@ namespace mandoline::construction {
                         return possibles;
                     }
                 template <int D>
+                    auto CutCellEdgeGenerator<D>::possible_cells_cell(const std::set<int>& faces, const std::vector<CutFace<D>>& CFs) const -> std::set<CoordType> {
+
+                        if(faces.empty()) { return {}; }
+                        std::set<CoordType> possibles = possible_cells(CFs[*faces.begin()].indices);
+
+                        for(auto&& face: faces) {
+                            auto s = possible_cells(CFs[face].indices);
+                            std::set<CoordType> i;
+                            std::set_intersection(possibles.begin(),possibles.end(),s.begin(),s.end(),std::inserter(i,i.end()));
+                            possibles = std::move(i);
+                            if(possibles.empty()) {
+                                return {};
+                            }
+                        }
+
+                        return possibles;
+                    }
+                template <int D>
                     auto CutCellEdgeGenerator<D>::face_mask(const std::set<std::vector<int>>& faces) const -> coord_mask<D> {
                         if(faces.empty()) {
                             return {};

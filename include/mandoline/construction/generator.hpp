@@ -246,6 +246,7 @@ namespace mandoline::construction {
 
                 std::set<CoordType> possible_cells(const std::vector<int>& face)const ;
                 std::set<CoordType> possible_cells(const std::set<std::vector<int>>& face)const ;
+                std::set<CoordType> possible_cells_cell(const std::set<int>& faces, const std::vector<CutFace<D>>&)const ;
                 coord_mask<D> face_mask(const std::vector<int>& face)const ;
                 coord_mask<D> face_mask(const std::set<std::vector<int>>& face)const ;
                 bool is_in_cell(const std::vector<int>& face)const ;

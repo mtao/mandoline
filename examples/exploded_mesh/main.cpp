@@ -36,6 +36,7 @@ class MeshViewer: public mtao::opengl::Window3 {
         float scale = 1.0;
 
         mandoline::tools::MeshExploder exploder;
+        std::set<int> nonzero_regions;
 
         mtao::Vec3f origin, direction = mtao::Vec3f::Unit(2);
 
@@ -46,8 +47,10 @@ class MeshViewer: public mtao::opengl::Window3 {
                 wireframe_drawables.remove(*d);
             }
 
-            auto [VV,FF] = exploder.mesh(scale);
-            if(FF.cols() > 0) {
+            auto [VV,FF] = exploder.mesh(scale, nonzero_regions);
+            std::cout << VV.cols() << std::endl;
+            std::cout << FF.minCoeff() << " : " << FF.maxCoeff() << std::endl;
+            if(VV.cols() > 0 && FF.cols() > 0) {
 
                 exploded_mesh.setTriangleBuffer(VV.cast<float>(), FF.cast<unsigned int>());
             }
@@ -62,6 +65,8 @@ class MeshViewer: public mtao::opengl::Window3 {
             myargs.addArgument("filename").parse(args.argc,args.argv);
             std::string filename = myargs.value("filename");
 
+            ccm = mandoline::CutCellMesh<3>::from_proto(filename);
+            ccm.triangulate_faces();
             input_mesh.setTriangleBuffer(ccm.origV().cast<float>(),ccm.origF().cast<unsigned int>());
             auto E = mtao::geometry::mesh::boundary_facets(F);
 
@@ -70,7 +75,12 @@ class MeshViewer: public mtao::opengl::Window3 {
 
             exploder = mandoline::tools::MeshExploder(ccm);
 
+            auto R = ccm.regions();
+            std::copy(R.begin(),R.end(), std::inserter(nonzero_regions,nonzero_regions.end()));
 
+            if(nonzero_regions.find(0) != nonzero_regions.end()) {
+                nonzero_regions.erase(0);
+            }
 
 
             input_phong = new mtao::opengl::Drawable<Magnum::Shaders::Phong>{input_mesh,phong_shader, drawables()};
@@ -78,25 +88,23 @@ class MeshViewer: public mtao::opengl::Window3 {
 
 
             update_exploded();
-            exploded_phong = new mtao::opengl::Drawable<Magnum::Shaders::Phong>{exploded_mesh,phong_shader, drawables()};
+            //exploded_wireframe = new mtao::opengl::Drawable<Magnum::Shaders::Phong>{exploded_mesh,phong_shader, drawables()};
             exploded_wireframe = new mtao::opengl::Drawable<Magnum::Shaders::MeshVisualizer>{exploded_mesh,wireframe_shader, wireframe_drawables};
+            //exploded_wireframe = new mtao::opengl::Drawable<Magnum::Shaders::MeshVisualizer>{exploded_mesh,wireframe_shader, wireframe_drawables};
             exploded_mesh.setParent(&root());
 
 
         }
         void gui() override {
             if(input_phong) {input_phong->gui("Input Phong");}
-            if(exploded_phong) {exploded_phong->gui("Cell Phong");}
-            if(exploded_wireframe) {exploded_wireframe->gui("Cell Wireframe");}
+            if(exploded_wireframe) {exploded_wireframe->gui("Exploded Wireframe");}
+            //if(exploded_wireframe) {exploded_wireframe->gui("Cell Wireframe");}
 
             auto&& io = ImGui::GetIO();
 
 
             {
-                bool dirty = ImGui::SliderFloat3("origin", origin.data(),-1,1)
-                    ||
-                    ImGui::SliderFloat3("direction", direction.data(),-1,1)
-                    ;
+                bool dirty = ImGui::SliderFloat("scale", &scale,1,10);
                 if(dirty) {
                     update_exploded();
                 }
@@ -108,11 +116,11 @@ class MeshViewer: public mtao::opengl::Window3 {
             Magnum::GL::Renderer::disable(Magnum::GL::Renderer::Feature::FaceCulling);
             Magnum::GL::Renderer::enable(Magnum::GL::Renderer::Feature::PolygonOffsetFill);
             Magnum::GL::Renderer::setPolygonOffset(2.f,1.f);
-            Window3::draw();
 
+            camera().draw(wireframe_drawables);
             
             Magnum::GL::Renderer::setPolygonOffset(0,0);
-            camera().draw(wireframe_drawables);
+            Window3::draw();
 
         }
     private:
@@ -123,7 +131,7 @@ class MeshViewer: public mtao::opengl::Window3 {
         mtao::opengl::objects::Mesh<3> exploded_mesh;
         std::vector<mtao::opengl::objects::Mesh<3>> exploded_meshes;
         mtao::opengl::Drawable<Magnum::Shaders::Phong>* input_phong = nullptr;
-        mtao::opengl::Drawable<Magnum::Shaders::Phong>* exploded_phong = nullptr;
+        mtao::opengl::Drawable<Magnum::Shaders::MeshVisualizer>* exploded_wireframe = nullptr;
         std::vector<mtao::opengl::Drawable<Magnum::Shaders::MeshVisualizer>*> exploded_wireframes;
 
 };

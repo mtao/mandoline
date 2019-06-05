@@ -13,6 +13,7 @@ namespace mandoline {
         using coord_type = std::array<int,3>;
         int index = -1;
         int region = -1;
+        coord_type grid_cell;
 
         void  serialize(CutMeshProto::Cell&) const;
         static CutCell from_proto(const CutMeshProto::Cell&);

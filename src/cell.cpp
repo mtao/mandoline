@@ -54,6 +54,7 @@ namespace mandoline {
     void  CutCell::serialize(CutMeshProto::Cell& cell) const {
         cell.set_id(index);
         cell.set_region(region);
+        protobuf::serialize(grid_cell,*cell.mutable_grid_cell());
         auto&& pmap = *cell.mutable_entries();
         for(auto&& [a,b]: *this) {
             pmap[a] = b;
@@ -68,6 +69,7 @@ namespace mandoline {
         }
         c.index = cell.id();
         c.region = cell.region();
+        protobuf::deserialize(cell.grid_cell(),c.grid_cell);
         return c;
     }
     mtao::ColVecs3i CutCell::triangulated(const std::vector<CutFace<3>>& Fs) const {

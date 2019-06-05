@@ -44,6 +44,7 @@ message CutMeshProto {
         int64 id = 1;
         int64 region = 2;
         map<int64,bool> entries = 3;
+        Vec3i grid_cell = 4;
 
     }
     message BarycentricTriangleFace {

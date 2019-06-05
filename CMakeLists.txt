@@ -128,6 +128,7 @@ SET(TOOLS_SRCS
     src/tools/exploded_mesh.cpp
     )
 SET(TOOLS_HDRS
+    include/mandoline/tools/planar_slicer.hpp
     include/mandoline/tools/exploded_mesh.hpp
     )
 
