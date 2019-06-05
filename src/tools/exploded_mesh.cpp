@@ -27,6 +27,9 @@ namespace mandoline::tools {
     std::tuple<mtao::ColVecs3d,mtao::ColVecs3i> MeshExploder::mesh(double scale) const {
        return {V(scale),F()};
     }
+    std::tuple<mtao::ColVecs3d,mtao::ColVecs3i> MeshExploder::mesh(size_t index, double scale) const {
+        return {V(index,scale), F(index)};
+    }
     mtao::ColVecs3d MeshExploder::V(double scale) const {
 
         std::vector<mtao::ColVecs3d> V2(Vs.size());
@@ -42,5 +45,11 @@ namespace mandoline::tools {
             F2.push_back(F.array() + o);
         }
         return mtao::eigen::hstack_iter(F2.begin(),F2.end());
+    }
+    mtao::ColVecs3d V(size_t index, double scale=1.1) const {
+        return Vs[index].colwise() + (scale-1) * Cs[index];
+    }
+    mtao::ColVecs3i F(size_t index) const {
+        return Fs[index];
     }
 }
