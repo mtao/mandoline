@@ -53,6 +53,8 @@ namespace mandoline::tools {
         for(auto&& [i,r]: mtao::iterator::enumerate(regions)) {
             if(valid_region(r,used_regions)) {
                 V2.emplace_back(V(i,scale));
+            } else {
+                V2.emplace_back();
             }
 
         }
@@ -67,6 +69,8 @@ namespace mandoline::tools {
         for(auto&& [F,r]: mtao::iterator::zip(Fs,regions)) {
             if(valid_region(r,used_regions)) {
                 F2.emplace_back(F.array() + offs[i++]);
+            } else {
+                F2.emplace_back({});
             }
         }
         return mtao::eigen::hstack_iter(F2.begin(),F2.end());
