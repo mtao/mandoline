@@ -19,6 +19,7 @@
 #include <Magnum/GL/DefaultFramebuffer.h>
 #include <Magnum/GL/Renderer.h>
 #include <mandoline/tools/exploded_mesh.hpp>
+#include <Magnum/EigenIntegration/Integration.h>
 
 #include "mandoline/mesh3.hpp"
 using namespace mtao::logging;
@@ -34,6 +35,7 @@ class MeshViewer: public mtao::opengl::Window3 {
         mtao::ColVecs3i F;
 
         float scale = 1.0;
+        mtao::ColVectors<double,4> colors;
 
         mandoline::tools::MeshExploder exploder;
         std::set<int> nonzero_regions;
@@ -41,18 +43,26 @@ class MeshViewer: public mtao::opengl::Window3 {
         mtao::Vec3f origin, direction = mtao::Vec3f::Unit(2);
 
 
+        int size() const { return colors.cols(); }
 
         void update_exploded() {
-            for(auto&& d: exploded_wireframes) {
-                wireframe_drawables.remove(*d);
-            }
 
-            auto [VV,FF] = exploder.mesh(scale, nonzero_regions);
-            std::cout << VV.cols() << std::endl;
-            std::cout << FF.minCoeff() << " : " << FF.maxCoeff() << std::endl;
-            if(VV.cols() > 0 && FF.cols() > 0) {
+            //auto [VV,FF] = exploder.mesh(scale, nonzero_regions);
+            //if(VV.cols() > 0 && FF.cols() > 0) {
+            //    exploded_mesh.setTriangleBuffer(VV.cast<float>(), FF.cast<unsigned int>());
+            //}
+            for(int i = 0; i < size(); ++i) {
+                auto [VV,FF] = exploder.mesh(i,scale);
+                if(VV.cols() > 0 && FF.cols() > 0) {
 
-                exploded_mesh.setTriangleBuffer(VV.cast<float>(), FF.cast<unsigned int>());
+                    exploded_meshes[i].setTriangleBuffer(VV.cast<float>(), FF.cast<unsigned int>());
+                    auto& C = exploded_wireframes.back()->data().color;
+                    auto& c = colors.col(i).cast<float>().eval();
+                    C = Magnum::Math::Vector4<float>(c.x(),c.y(),c.z(),c(3));
+
+                    //= Magnum::Math::Vector4<float>{colors.col(i).cast<float>().eval()};
+                }
+
             }
         }
 
@@ -76,6 +86,20 @@ class MeshViewer: public mtao::opengl::Window3 {
             exploder = mandoline::tools::MeshExploder(ccm);
 
             auto R = ccm.regions();
+            colors.resize(4,R.size());
+            colors.setZero();
+            colors.row(3).setConstant(1);
+
+            exploded_meshes = decltype(exploded_meshes)(size());
+            for(auto&& [i,r]: mtao::iterator::enumerate(R)) {
+                exploded_wireframes.push_back(new mtao::opengl::Drawable<Magnum::Shaders::MeshVisualizer>{exploded_meshes[i],wireframe_shader, wireframe_drawables});
+                std::cout << i << ":" << r << " ";
+                colors.col(i)(r) = 1;
+                exploded_meshes[i].setParent(&root());
+            }
+            std::cout << std::endl;
+
+
             std::copy(R.begin(),R.end(), std::inserter(nonzero_regions,nonzero_regions.end()));
 
             if(nonzero_regions.find(0) != nonzero_regions.end()) {
@@ -89,15 +113,15 @@ class MeshViewer: public mtao::opengl::Window3 {
 
             update_exploded();
             //exploded_wireframe = new mtao::opengl::Drawable<Magnum::Shaders::Phong>{exploded_mesh,phong_shader, drawables()};
-            exploded_wireframe = new mtao::opengl::Drawable<Magnum::Shaders::MeshVisualizer>{exploded_mesh,wireframe_shader, wireframe_drawables};
             //exploded_wireframe = new mtao::opengl::Drawable<Magnum::Shaders::MeshVisualizer>{exploded_mesh,wireframe_shader, wireframe_drawables};
-            exploded_mesh.setParent(&root());
+            //exploded_wireframe = new mtao::opengl::Drawable<Magnum::Shaders::MeshVisualizer>{exploded_mesh,wireframe_shader, wireframe_drawables};
+            //exploded_mesh.setParent(&root());
 
 
         }
         void gui() override {
             if(input_phong) {input_phong->gui("Input Phong");}
-            if(exploded_wireframe) {exploded_wireframe->gui("Exploded Wireframe");}
+            //if(exploded_wireframe) {exploded_wireframe->gui("Exploded Wireframe");}
             //if(exploded_wireframe) {exploded_wireframe->gui("Cell Wireframe");}
 
             auto&& io = ImGui::GetIO();

@@ -35,8 +35,8 @@ namespace mandoline::tools {
         for(auto&& [v,r]: mtao::iterator::zip(Vs,regions)) {
             if(valid_region(r,used_regions)) {
                 off += v.cols();
-                ret.push_back(off);
             }
+            ret.push_back(off);
         }
         return ret;
     }
@@ -64,13 +64,11 @@ namespace mandoline::tools {
     mtao::ColVecs3i MeshExploder::F(const std::set<int>& used_regions) const {
 
         std::vector<mtao::ColVecs3i> F2;
-        auto offs = offsets(used_regions);
-        int i = 0;
-        for(auto&& [F,r]: mtao::iterator::zip(Fs,regions)) {
+        for(auto&& [F,o,r]: mtao::iterator::zip(Fs,offsets(used_regions),regions)) {
             if(valid_region(r,used_regions)) {
-                F2.emplace_back(F.array() + offs[i++]);
+                F2.emplace_back(F.array() + o);
             } else {
-                F2.emplace_back({});
+                F2.emplace_back();
             }
         }
         return mtao::eigen::hstack_iter(F2.begin(),F2.end());
