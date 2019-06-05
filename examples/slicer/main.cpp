@@ -18,7 +18,7 @@
 #include <Corrade/Utility/Arguments.h>
 #include <Magnum/GL/DefaultFramebuffer.h>
 #include <Magnum/GL/Renderer.h>
-#include "slice_generator.h"
+#include <mandoline/tools/planar_slicer.hpp>
 
 #include "mandoline/mesh3.hpp"
 using namespace mtao::logging;
@@ -43,8 +43,7 @@ class MeshViewer: public mtao::opengl::Window3 {
 
 
         void update_slice() {
-            SliceGenerator sg(origin.cast<double>(),direction.cast<double>());
-            auto [VV,FF] = sg.slice(V,F);
+            auto [VV,FF] = mandoline::tools::slice(V,F,origin.cast<double>(),direction.cast<double>());
             if(FF.cols() > 0) {
 
                 slice_mesh.setTriangleBuffer(VV.cast<float>(), FF.cast<unsigned int>());

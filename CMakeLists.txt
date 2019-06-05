@@ -122,6 +122,15 @@ SET(MANDOLINE_CUTMESH_SRCS
     ${CONSTRUCTION_HDRS}
     )
 
+
+SET(TOOLS_SRCS
+    src/tools/planar_slicer.cpp
+    src/tools/exploded_mesh.cpp
+    )
+SET(TOOLS_HDRS
+    include/mandoline/tools/exploded_mesh.hpp
+    )
+
 ADD_LIBRARY(mandoline
     ${CUTMESH2_SRCS}
     ${CUTMESH3_HDRS}
@@ -131,6 +140,9 @@ ADD_LIBRARY(mandoline
 
     ${CONSTRUCTION_SRCS}
     ${CONSTRUCTION_HDRS}
+
+    ${TOOLS_SRCS}
+    ${TOOLS_HDRS}
     )
 TARGET_LINK_LIBRARIES(mandoline
     mtao_geometry OpenMP::OpenMP_CXX
@@ -156,6 +168,8 @@ ADD_LIBRARY(mandoline3 EXCLUDE_FROM_ALL
     ${CUTMESH3_HRDS}
     ${CONSTRUCTION_SRCS}
     ${CONSTRUCTION_HDRS}
+    ${TOOLS_SRCS}
+    ${TOOLS_HDRS}
     )
 TARGET_LINK_LIBRARIES(mandoline3 
     mtao_geometry OpenMP::OpenMP_CXX
