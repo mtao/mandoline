@@ -10,39 +10,61 @@ using namespace mandoline::construction;
 using namespace mandoline;
 namespace mandoline::tools {
 
-    SliceGenerator::SliceGenerator(const mtao::Vec3d& origin, const mtao::Vec3d& direction) {
-        transform.linear().setIdentity();
-        transform.linear() = mtao::geometry:: normal_basis(direction);
-        transform.translation() = -transform.linear().inverse() * origin;
-
+    SliceGenerator::SliceGenerator(const mtao::ColVecs3d& V, const mtao::ColVecs3i& F): Base(std::array<int,3>{{1,1,2}}),  V(V) {
+        std::vector<Vertex<3>> vertices(V.cols());
+        for(int i = 0; i < V.cols(); ++i) {
+            mtao::Vec3d v = V.col(i);
+            vertices[i] = Vertex<3>::from_vertex(vertex_grid().local_coord(v));
+        }
+        data.set_vertices(vertices);
+        data.set_topology(F);
     }
-    std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> SliceGenerator::slice(const mtao::ColVecs3d& V, const mtao::ColVecs3i& F) const {
+    void SliceGenerator::update_embedding(const mtao::ColVecs3d& V) {
 
-        mtao::ColVecs3d VV = transform * V;
-        auto bbox = mtao::geometry::bounding_box(VV);
+        auto bbox = mtao::geometry::bounding_box(V);
         double zmax = std::max(bbox.max()(2),-bbox.min()(2));
         bbox.min()(2) = -zmax;
         bbox.max()(2) = zmax;
 
+
         mtao::Vec3d shape = bbox.sizes() ;
         shape = (shape.array() > 1e-10).select(shape,1);
 
+        Base::operator=(mtao::geometry::grid::StaggeredGrid<double,3>::from_bbox(bbox,std::array<int,3>{{1,1,2}}));
+
+        data.Indexer::operator=(vertex_grid());
+
 
         std::vector<Vertex<3>> vertices(V.cols());
-        mtao::geometry::grid::StaggeredGrid<double,3> sg = mtao::geometry::grid::StaggeredGrid<double,3>::from_bbox(bbox,std::array<int,3>{{1,1,2}});
         for(int i = 0; i < V.cols(); ++i) {
-            mtao::Vec3d v = VV.col(i);
-            vertices[i] = Vertex<3>::from_vertex(sg.vertex_grid().local_coord(v));
+            mtao::Vec3d v = V.col(i);
+            vertices[i] = Vertex<3>::from_vertex(vertex_grid().local_coord(v));
         }
+        data.update_vertices(vertices);
+    }
 
-        CutData data(sg.vertex_grid(),vertices,F);
-        data.bake(sg.vertex_grid());
+    std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> SliceGenerator::slice(const mtao::Vec3d& origin, const mtao::Vec3d& direction) {
+        Eigen::Affine3d transform;
+        transform.linear().setIdentity();
+        transform.linear() = mtao::geometry:: normal_basis(direction);
+        transform.translation() = -transform.linear().inverse() * origin;
+        return slice(transform);
+    }
+    std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> SliceGenerator::slice(const Eigen::Affine3d& transform) {
+
+        mtao::ColVecs3d VV = transform * V;
+
+        update_embedding(VV);
+        data.clear();
+
+
+        data.bake(vertex_grid());
         auto& faces = data.cut_faces();
         auto CV = data.cut_vertices();
         for(int i = 0; i < CV.cols(); ++i) {
-            CV.col(i) = sg.vertex_grid().world_coord(CV.col(i));
+            CV.col(i) = vertex_grid().world_coord(CV.col(i));
         }
-        auto newV = mtao::eigen::hstack(sg.vertices(),CV);
+        auto newV = mtao::eigen::hstack(vertices(),CV);
 
 
         std::set<int> plane_verts;
@@ -54,8 +76,8 @@ namespace mandoline::tools {
         }
         auto edges = data.edges();
         auto is_boundary = [&](int idx) -> bool {
-            if(idx < sg.vertex_size()) {
-                return sg.unindex(idx)[2] == 1;
+            if(idx < vertex_size()) {
+                return unindex(idx)[2] == 1;
             } else {
                 return plane_verts.find(idx) != plane_verts.end();
             }
@@ -97,7 +119,6 @@ namespace mandoline::tools {
 
 
 
-        double mid = (bbox.min()+bbox.max()/2)(2);
         for(auto&& F: faces) {
             bool above = true;
             for(auto&& i: F.indices) {
@@ -113,9 +134,11 @@ namespace mandoline::tools {
         if(FF.size() == 0) {
             return {};
         }
+
         auto T = transform.inverse();
         for(int i = 0; i < newV.cols(); ++i) {
             newV.col(i) = T * newV.col(i);
+
         }
         auto newF = mtao::eigen::hstack_iter(FF.begin(),FF.end());
         return  mtao::geometry::mesh::compactify(newV,newF);

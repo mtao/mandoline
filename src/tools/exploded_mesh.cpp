@@ -26,6 +26,19 @@ namespace mandoline::tools {
         }
 
     }
+    mtao::ColVecs4d MeshExploder::colors(const mtao::ColVecs4d& cell_colors, const std::set<int>& used_regions) const {
+        auto offs = offsets(used_regions);
+        mtao::ColVecs4d C(4,offs.back());
+        for(int i = 0; i < size(); ++i) {
+            int off = offs[i];
+            int size = offs[i+1] - off;
+            if(size > 0) {
+                C.block(0,off,4,size).colwise() = cell_colors.col(i);
+            }
+        }
+
+        return C;
+    }
 
     std::vector<int> MeshExploder::offsets(const std::set<int>& used_regions) const {
         std::vector<int> ret;

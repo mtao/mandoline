@@ -44,7 +44,10 @@ namespace mandoline::construction {
             void set_topology(const Edges& E,const Faces& F = {},  const Faces& FEA = {}) ;
 
             void bake(const std::optional<SGType>& grid= {});
-            void reset_intersections(const Faces& FEA) ;
+            void clear();
+            void reset_intersections() ;
+
+
 
 
 
@@ -54,6 +57,8 @@ namespace mandoline::construction {
             const std::vector<CutMeshFace<D>>& cut_faces() const { return m_cut_faces; }
 
 
+            void update_vertices(const mtao::vector<VType>& V);
+            void set_vertices(const mtao::vector<VType>& V) { m_V = V; }
 
 
 
@@ -92,7 +97,7 @@ namespace mandoline::construction {
 
             //TODO: figure out what i wanted from these
             void clean_edges();
-            void clean_faces();
+            void clean_triangles();
             private:
             std::vector<const EdgeIntersection<D>*> flat_edge_intersections() const ;
             std::vector<const TriangleIntersection<D>*> flat_triangle_intersections() const ;

@@ -204,7 +204,7 @@ namespace mandoline::construction {
                 Base::set_container_mask(vptr_tri);
                 assert(mask().count() <= 1);
             }
-            void clear() { intersections.clear();; edge_intersections.clear(); }
+            void clear() { intersections.clear();; edge_intersections.clear(); edge_to_triangle_map.clear(); }
 
 
             size_t edge_size() const {

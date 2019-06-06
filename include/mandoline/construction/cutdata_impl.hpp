@@ -26,12 +26,18 @@ namespace mandoline::construction {
     template <int D, typename Indexer>
         void CutData<D,Indexer>::clean_edges() {
             std::vector<std::set<std::tuple<double,size_t>>> edges(nE());
-            for(auto&& [idx,eisect]: mtao::iterator::enumerate(m_edge_intersections)) {
-                edges[eisect.edge_index].emplace(eisect.edge_coord,idx);
+            //for(auto&& [idx,eisect]: mtao::iterator::enumerate(m_edge_intersections)) {
+                //edges[eisect.edge_index].emplace(eisect.edge_coord,idx);
+                //}
+            for(auto&& eisect: m_edge_intersections) {
+                eisect.clear();
             }
         }
     template <int D, typename Indexer>
-        void CutData<D,Indexer>::clean_faces() {
+        void CutData<D,Indexer>::clean_triangles() {
+            for(auto&& tisect: m_triangle_intersections) {
+                tisect.clear();
+            }
         }
 
 
@@ -205,28 +211,42 @@ namespace mandoline::construction {
         }
     template <int D, typename Indexer>
         void CutData<D,Indexer>::set_topology(const Edges& E,const Faces& F,  const Faces& FEA) {
-            mtao::logging::debug() << "CutData input V/E/F" << m_V.size() << "/" << E.cols() << "/" << F.cols();
             m_E = E;
             m_F = F;
-            reset_intersections(FEA);
+            m_FE = FEA;
+            reset_intersections();
         }
 
     template <int D, typename Indexer>
-        void CutData<D,Indexer>::reset_intersections(const Faces& FEA) {
+        void CutData<D,Indexer>::update_vertices(const mtao::vector<VType>& V) {
+            assert(V.size() == m_V.size());
+            std::copy(V.begin(),V.end(),m_V.begin());
+        }
+
+    template <int D, typename Indexer>
+        void CutData<D,Indexer>::clear() {
+            m_crossings.clear();
+            m_vertex_indexer.clear();
+            m_cut_faces.clear();
+            clean_edges();
+            clean_triangles();
+        }
+    template <int D, typename Indexer>
+        void CutData<D,Indexer>::reset_intersections() {
             m_edge_intersections.clear();
             m_triangle_intersections.clear();
             for(int i = 0; i < m_E.cols(); ++i) {
                 m_edge_intersections.emplace_back(m_V,m_E,i);
             }
 
-            if(FEA.cols() == 0) {
-                Faces FEA = mtao::geometry::mesh::boundary_elements(m_F,m_E);
+            if(m_FE.cols() == 0) {
+                m_FE = mtao::geometry::mesh::boundary_elements(m_F,m_E);
                 for(int i = 0; i < m_F.cols(); ++i) {
-                    m_triangle_intersections.emplace_back(m_V,m_F,m_E,FEA, m_edge_intersections,i);
+                    m_triangle_intersections.emplace_back(m_V,m_F,m_E,m_FE, m_edge_intersections,i);
                 }
             } else {
                 for(int i = 0; i < m_F.cols(); ++i) {
-                    m_triangle_intersections.emplace_back(m_V,m_F,m_E,FEA, m_edge_intersections,i);
+                    m_triangle_intersections.emplace_back(m_V,m_F,m_E,m_FE, m_edge_intersections,i);
                 }
             }
 
@@ -266,7 +286,6 @@ namespace mandoline::construction {
             auto V = vertex_crossings();
             auto E = edge_crossings();
             auto F = face_crossings();
-            mtao::logging::debug() << "Crossing sizes: " << V.size() << "," << E.size() << "," << F.size() ;
             std::vector<Crossing<D>> ret;
             ret.reserve(V.size() + E.size() + F.size());
 

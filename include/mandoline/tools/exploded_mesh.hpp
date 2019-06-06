@@ -11,6 +11,7 @@ namespace mandoline::tools {
             MeshExploder(const CutCellMesh<3>& ccm);
             mtao::ColVecs3d V(double scale=1.1, const std::set<int>& used_regions = {}) const;
             mtao::ColVecs3i F(const std::set<int>& used_regions = {}) const;
+            mtao::ColVecs4d colors(const mtao::ColVecs4d& cell_colors, const std::set<int>& used_regions = {}) const;
 
             std::tuple<mtao::ColVecs3d,mtao::ColVecs3i> mesh(double scale=1.1, const std::set<int>& used_regions = {}) const;
             std::tuple<mtao::ColVecs3d,mtao::ColVecs3i> mesh(size_t index, double scale=1.1) const;
