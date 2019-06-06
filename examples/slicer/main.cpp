@@ -15,10 +15,13 @@
 #include <Magnum/Shaders/MeshVisualizer.h>
 #include <mtao/opengl/drawables.h>
 #include <mtao/opengl/objects/mesh.h>
+#include <mtao/opengl/objects/bbox.h>
 #include <Corrade/Utility/Arguments.h>
 #include <Magnum/GL/DefaultFramebuffer.h>
 #include <Magnum/GL/Renderer.h>
 #include <mandoline/tools/planar_slicer.hpp>
+#include <Magnum/Primitives/Cube.h>
+
 
 #include "mandoline/mesh3.hpp"
 using namespace mtao::logging;
@@ -38,7 +41,7 @@ class MeshViewer: public mtao::opengl::Window3 {
 
 
 
-        mtao::Vec3f origin, direction = mtao::Vec3f::Unit(2);
+        mtao::Vec3f origin = mtao::Vec3f::Zero(), direction = mtao::Vec3f::Unit(2);
 
 
 
@@ -48,6 +51,16 @@ class MeshViewer: public mtao::opengl::Window3 {
 
                 slice_mesh.setTriangleBuffer(VV.cast<float>(), FF.cast<unsigned int>());
             }
+
+
+            Magnum::Math::Matrix4<float> trans;
+            //auto T = mandoline::tools::SliceGenerator::get_transform(origin.cast<double>(),direction.cast<double>());
+            for(int i = 0; i < 4; ++i) {
+            for(int j = 0; j < 4; ++j) {
+                //trans[i][j] = T(i,j);
+            }
+            }
+            //slice_object.setTransformation(trans);
         }
 
 
@@ -75,12 +88,14 @@ class MeshViewer: public mtao::opengl::Window3 {
             input_mesh.setParent(&root());
 
 
-            update_slice();
+            //bbox_drawable = new mtao::opengl::Drawable<Magnum::Shaders::Flat3D>{slice_object,flat_shader, drawables()};
             slice_phong = new mtao::opengl::Drawable<Magnum::Shaders::Phong>{slice_mesh,phong_shader, drawables()};
             slice_wireframe = new mtao::opengl::Drawable<Magnum::Shaders::MeshVisualizer>{slice_mesh,wireframe_shader, wireframe_drawables};
             slice_mesh.setParent(&root());
 
 
+            //slice_object.setParent(&root());
+            update_slice();
         }
         void gui() override {
             if(input_phong) {input_phong->gui("Input Phong");}
@@ -116,9 +131,14 @@ class MeshViewer: public mtao::opengl::Window3 {
     private:
         Magnum::SceneGraph::DrawableGroup3D wireframe_drawables;
         Magnum::Shaders::Phong phong_shader;
+        Magnum::Shaders::Flat3D flat_shader;
         Magnum::Shaders::MeshVisualizer wireframe_shader;
+
+        //mtao::opengl::objects::BoundingBox<3> slice_object;
         mtao::opengl::objects::Mesh<3> input_mesh;
         mtao::opengl::objects::Mesh<3> slice_mesh;
+        mtao::opengl::objects::Mesh<3> cube_mesh;
+        //mtao::opengl::Drawable<Magnum::Shaders::Flat3D>* bbox_drawable = nullptr;
         mtao::opengl::Drawable<Magnum::Shaders::Phong>* input_phong = nullptr;
         mtao::opengl::Drawable<Magnum::Shaders::Phong>* slice_phong = nullptr;
         mtao::opengl::Drawable<Magnum::Shaders::MeshVisualizer>* slice_wireframe = nullptr;

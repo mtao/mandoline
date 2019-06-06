@@ -9,6 +9,13 @@
 using namespace mandoline::construction;
 using namespace mandoline;
 namespace mandoline::tools {
+            Eigen::Affine3d SliceGenerator::get_transform(const mtao::Vec3d& origin, const mtao::Vec3d& direction) {
+                Eigen::Affine3d transform;
+                transform.linear().setIdentity();
+                transform.linear() = mtao::geometry:: normal_basis(direction);
+                transform.translation() = -transform.linear().inverse() * origin;
+                return transform;
+            }
 
     SliceGenerator::SliceGenerator(const mtao::ColVecs3d& V, const mtao::ColVecs3i& F): Base(std::array<int,3>{{1,1,2}}),  V(V) {
         std::vector<Vertex<3>> vertices(V.cols());
@@ -34,20 +41,37 @@ namespace mandoline::tools {
 
         data.Indexer::operator=(vertex_grid());
 
-
         std::vector<Vertex<3>> vertices(V.cols());
         for(int i = 0; i < V.cols(); ++i) {
             mtao::Vec3d v = V.col(i);
             vertices[i] = Vertex<3>::from_vertex(vertex_grid().local_coord(v));
         }
         data.update_vertices(vertices);
+        {
+            auto bbox = mtao::geometry::bounding_box(V);
+            double zmax = std::max(bbox.max()(2),-bbox.min()(2));
+            bbox.min()(2) = -zmax;
+            bbox.max()(2) = zmax;
+
+            mtao::Vec3d shape = bbox.sizes() ;
+            shape = (shape.array() > 1e-10).select(shape,1);
+
+
+            std::vector<Vertex<3>> vertices(V.cols());
+            mtao::geometry::grid::StaggeredGrid<double,3> sg = mtao::geometry::grid::StaggeredGrid<double,3>::from_bbox(bbox,std::array<int,3>{{1,1,2}});
+            for(int i = 0; i < V.cols(); ++i) {
+                mtao::Vec3d v = V.col(i);
+                vertices[i] = Vertex<3>::from_vertex(sg.vertex_grid().local_coord(v));
+            }
+            auto F = data.F();
+            data = construction::CutData<3>(sg.vertex_grid(),vertices,F);
+            data.set_topology(F);
+        }
+
     }
 
     std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> SliceGenerator::slice(const mtao::Vec3d& origin, const mtao::Vec3d& direction) {
-        Eigen::Affine3d transform;
-        transform.linear().setIdentity();
-        transform.linear() = mtao::geometry:: normal_basis(direction);
-        transform.translation() = -transform.linear().inverse() * origin;
+        auto transform = get_transform(origin,direction);
         return slice(transform);
     }
     std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> SliceGenerator::slice(const Eigen::Affine3d& transform) {
@@ -143,5 +167,31 @@ namespace mandoline::tools {
         auto newF = mtao::eigen::hstack_iter(FF.begin(),FF.end());
         return  mtao::geometry::mesh::compactify(newV,newF);
 
+    }
+    Eigen::SparseMatrix<double> SliceGenerator::bary_mesh() {
+        
+        Eigen::SparseMatrix<double> M;
+        std::vector<Eigen::Triplet<double>> trips;
+        for(auto&& [col,c]: mtao::iterator::enumerate(data.crossings())) {              
+            std::visit(
+                    [&](auto&& v) {
+                    using T = typename std::decay_t<decltype(v)>;
+                    if constexpr(std::is_same_v<T,VType const*>) {
+                    //try to find it on the vertices
+                    for(auto&& [i,ptr]: mtao::iterator::enumerate(FI.vptr_tri)) {
+                    if(ptr == v) {
+                    return mtao::Vec3d::Unit(i);
+                    }
+                    }
+                    } else if constexpr(std::is_same_v<T,EdgeIsect const*>) {
+                    auto&& EI = m_edge_intersections[v->edge_index];
+                    return FI.edge_bary(EI,v->edge_coord);
+                    } else if constexpr(std::is_same_v<T,TriIsect const*>) {
+                    return v->bary_coord;
+                    }
+                    return FI.get_bary(*v);
+                    }
+                    ,c.vv);
+        }
     }
 }

@@ -1,4 +1,5 @@
 ADD_EXECUTABLE(slice_viewer main.cpp)
 find_package(Magnum REQUIRED GL Shaders GlxContext GlfwApplication SceneGraph MeshTools)
 find_package(MagnumIntegration REQUIRED ImGui)
+ADD_DEFINITIONS(-g)
 TARGET_LINK_LIBRARIES(slice_viewer mandoline mtao_opengl)
