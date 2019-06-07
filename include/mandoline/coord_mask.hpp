@@ -45,6 +45,15 @@ namespace mandoline {
                 return -1;
             }
 
+            int bound_axis() const {
+                assert(count() == 1);
+                for(int i = 0; i < D; ++i) {
+                    if((*this)[i]) {
+                        return i;
+                    }
+                }
+                return -1;
+            }
             std::array<int,D> as_array() const {
                 std::array<int,D> m;
                 std::transform(this->begin(),this->end(),m.begin(),[](auto&& a) {

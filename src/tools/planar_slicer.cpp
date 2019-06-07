@@ -165,33 +165,11 @@ namespace mandoline::tools {
 
         }
         auto newF = mtao::eigen::hstack_iter(FF.begin(),FF.end());
+        return  {newV,newF};
         return  mtao::geometry::mesh::compactify(newV,newF);
 
     }
-    Eigen::SparseMatrix<double> SliceGenerator::bary_mesh() {
-        
-        Eigen::SparseMatrix<double> M;
-        std::vector<Eigen::Triplet<double>> trips;
-        for(auto&& [col,c]: mtao::iterator::enumerate(data.crossings())) {              
-            std::visit(
-                    [&](auto&& v) {
-                    using T = typename std::decay_t<decltype(v)>;
-                    if constexpr(std::is_same_v<T,VType const*>) {
-                    //try to find it on the vertices
-                    for(auto&& [i,ptr]: mtao::iterator::enumerate(FI.vptr_tri)) {
-                    if(ptr == v) {
-                    return mtao::Vec3d::Unit(i);
-                    }
-                    }
-                    } else if constexpr(std::is_same_v<T,EdgeIsect const*>) {
-                    auto&& EI = m_edge_intersections[v->edge_index];
-                    return FI.edge_bary(EI,v->edge_coord);
-                    } else if constexpr(std::is_same_v<T,TriIsect const*>) {
-                    return v->bary_coord;
-                    }
-                    return FI.get_bary(*v);
-                    }
-                    ,c.vv);
-        }
+    Eigen::SparseMatrix<double> SliceGenerator::barycentric_map() const {
+        return data.barycentric_map();
     }
 }

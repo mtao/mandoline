@@ -527,4 +527,38 @@ namespace mandoline::construction {
         auto CutData<D,Indexer>::edges() const -> mtao::ColVectors<int,2>{
             return edges(m_vertex_indexer);
         }
+
+    template <int D, typename Indexer>
+
+        Eigen::SparseMatrix<double> CutData<D,Indexer>::barycentric_map() const {
+
+            Eigen::SparseMatrix<double> M(cut_vertex_size(),nV());
+            std::vector<Eigen::Triplet<double>> trips;
+            auto CV = cut_vertices();
+            for(auto&& c: crossings()) {              
+                int row = c.index;
+                std::visit(
+                        [&](auto&& v) {
+                        using T = typename std::decay_t<decltype(v)>;
+                        if constexpr(std::is_same_v<T,VType const*>) {
+                        int col = std::distance(&m_V[0],v);
+                            trips.emplace_back(row,col,1);
+                        } else if constexpr(std::is_same_v<T,EdgeIsect const*>) {
+                            auto e = E(v->edge_index);
+                            double t = v->edge_coord;
+                            trips.emplace_back(row,e(0),1-t);
+                            trips.emplace_back(row,e(1),t);
+                        } else if constexpr(std::is_same_v<T,TriIsect const*>) {
+                            auto f = F(v->triangle_index);
+                            auto&& bc = v->bary_coord;
+                            for(int i = 0; i < 3; ++i) {
+                                trips.emplace_back(row,f(i),bc(i));
+                            }
+                        }
+                    }
+                    ,c.vv);
+            }
+            M.setFromTriplets(trips.begin(),trips.end());
+        return M;
+    }
 }

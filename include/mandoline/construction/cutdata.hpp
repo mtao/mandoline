@@ -94,6 +94,7 @@ namespace mandoline::construction {
             int grid_index(const VType* v) const { return grid_index(*v); }
 
 
+            Eigen::SparseMatrix<double> barycentric_map() const;
 
             //TODO: figure out what i wanted from these
             void clean_edges();

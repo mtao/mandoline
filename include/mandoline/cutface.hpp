@@ -38,7 +38,7 @@ namespace mandoline {
 
 
             CutFace(const coord_mask<D>& m, const std::vector<int>& indices, const IDType& id, const mtao::Vec3d& N): Base(m,{indices}), id(id), N(N) {}
-            CutFace(const coord_mask<D>& m, const std::set<std::vector<int>>& indices, const std::array<int,2>& id): Base(m,indices), id(id),N(mtao::Vec3d::Unit(m.unbound_axis())) {}
+            CutFace(const coord_mask<D>& m, const std::set<std::vector<int>>& indices, const std::array<int,2>& id): Base(m,indices), id(id),N(mtao::Vec3d::Unit(m.bound_axis())) {}
 
             CutFace(const CutMeshFace<D>& F, const mtao::Vec3d& N): CutFace(F.mask(),F.indices,F.parent_fid,N) {}
             CutFace() = default;
