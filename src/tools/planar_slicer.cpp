@@ -47,26 +47,8 @@ namespace mandoline::tools {
             vertices[i] = Vertex<3>::from_vertex(vertex_grid().local_coord(v));
         }
         data.update_vertices(vertices);
-        {
-            auto bbox = mtao::geometry::bounding_box(V);
-            double zmax = std::max(bbox.max()(2),-bbox.min()(2));
-            bbox.min()(2) = -zmax;
-            bbox.max()(2) = zmax;
-
-            mtao::Vec3d shape = bbox.sizes() ;
-            shape = (shape.array() > 1e-10).select(shape,1);
-
-
-            std::vector<Vertex<3>> vertices(V.cols());
-            mtao::geometry::grid::StaggeredGrid<double,3> sg = mtao::geometry::grid::StaggeredGrid<double,3>::from_bbox(bbox,std::array<int,3>{{1,1,2}});
-            for(int i = 0; i < V.cols(); ++i) {
-                mtao::Vec3d v = V.col(i);
-                vertices[i] = Vertex<3>::from_vertex(sg.vertex_grid().local_coord(v));
-            }
-            auto F = data.F();
-            data = construction::CutData<3>(sg.vertex_grid(),vertices,F);
-            data.set_topology(F);
-        }
+        //auto F = data.F();
+        //data.set_topology(F);
 
     }
 

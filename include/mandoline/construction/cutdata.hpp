@@ -52,6 +52,7 @@ namespace mandoline::construction {
 
 
             const std::vector<Crossing<D>>& crossings() const;
+            std::set<Edge> stl_edges() const ;
             mtao::ColVectors<int,2> edges() const ;
             std::vector<std::vector<int>> faces() const;
             const std::vector<CutMeshFace<D>>& cut_faces() const { return m_cut_faces; }
@@ -125,6 +126,7 @@ namespace mandoline::construction {
             std::set<Edge> face_edges(const std::map<const VType*,int>& gv_idx_map) const ;
 
             mtao::ColVectors<int,2> edges(const std::map<const VType*,int>& gv_idx_map) const ;
+            std::set<Edge> stl_edges(const std::map<const VType*,int>& gv_idx_map) const ;
 
             private:
 

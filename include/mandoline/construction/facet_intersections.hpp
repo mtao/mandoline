@@ -113,7 +113,10 @@ namespace mandoline::construction {
             size_t vertex_size() const {
                 return intersections.size()+2;
             }
-            void clear() { intersections.clear(); }
+            void clear() { 
+                intersections.clear();
+                Base::set_container_mask(vptr_edge);
+            }
             std::vector<Crossing<D>> gvertices() const {
                 std::vector<Crossing<D>> ret;
                 ret.reserve(vertex_size());
@@ -204,7 +207,12 @@ namespace mandoline::construction {
                 Base::set_container_mask(vptr_tri);
                 assert(mask().count() <= 1);
             }
-            void clear() { intersections.clear();; edge_intersections.clear(); edge_to_triangle_map.clear(); }
+            void clear() { 
+                intersections.clear();
+                edge_intersections.clear(); 
+                edge_to_triangle_map.clear(); 
+                Base::set_container_mask(vptr_tri);
+            }
 
 
             size_t edge_size() const {

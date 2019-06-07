@@ -5,6 +5,7 @@
 #include <set>
 #include <tuple>
 #include <iostream>
+#include <thread>
 
 namespace mandoline::construction {
 
@@ -32,12 +33,27 @@ namespace mandoline::construction {
             for(auto&& eisect: m_edge_intersections) {
                 eisect.clear();
             }
+            /*
+            m_edge_intersections.clear();
+            m_edge_intersections.reserve(m_E.size());
+            for(int i = 0; i < m_E.cols(); ++i) {
+                m_edge_intersections.emplace_back(m_V,m_E,i);
+            }
+            */
         }
     template <int D, typename Indexer>
         void CutData<D,Indexer>::clean_triangles() {
             for(auto&& tisect: m_triangle_intersections) {
                 tisect.clear();
             }
+
+            /*
+            m_triangle_intersections.clear();
+            m_triangle_intersections.reserve(m_F.size());
+            for(int i = 0; i < m_F.cols(); ++i) {
+                m_triangle_intersections.emplace_back(m_V,m_F,m_E,m_FE, m_edge_intersections,i);
+            }
+            */
         }
 
 
@@ -221,6 +237,7 @@ namespace mandoline::construction {
         void CutData<D,Indexer>::update_vertices(const mtao::vector<VType>& V) {
             assert(V.size() == m_V.size());
             std::copy(V.begin(),V.end(),m_V.begin());
+            clear();
         }
 
     template <int D, typename Indexer>
@@ -235,19 +252,17 @@ namespace mandoline::construction {
         void CutData<D,Indexer>::reset_intersections() {
             m_edge_intersections.clear();
             m_triangle_intersections.clear();
+            m_edge_intersections.reserve(m_E.size());
+            m_triangle_intersections.reserve(m_F.size());
             for(int i = 0; i < m_E.cols(); ++i) {
                 m_edge_intersections.emplace_back(m_V,m_E,i);
             }
 
             if(m_FE.cols() == 0) {
                 m_FE = mtao::geometry::mesh::boundary_elements(m_F,m_E);
-                for(int i = 0; i < m_F.cols(); ++i) {
-                    m_triangle_intersections.emplace_back(m_V,m_F,m_E,m_FE, m_edge_intersections,i);
-                }
-            } else {
-                for(int i = 0; i < m_F.cols(); ++i) {
-                    m_triangle_intersections.emplace_back(m_V,m_F,m_E,m_FE, m_edge_intersections,i);
-                }
+            }
+            for(int i = 0; i < m_F.cols(); ++i) {
+                m_triangle_intersections.emplace_back(m_V,m_F,m_E,m_FE, m_edge_intersections,i);
             }
 
         }
@@ -283,41 +298,52 @@ namespace mandoline::construction {
 
     template <int D, typename Indexer>
         auto CutData<D,Indexer>::compute_crossings() const -> std::vector<Crossing<D>>{
+
+                auto t2 = mtao::logging::timer("creating crossings");
             auto V = vertex_crossings();
             auto E = edge_crossings();
             auto F = face_crossings();
             std::vector<Crossing<D>> ret;
-            ret.reserve(V.size() + E.size() + F.size());
+            ret.resize(V.size() + E.size() + F.size());
 
             std::map<VType, int> index_map;
             std::vector<VType> gvs;
 
+            int eoff = V.size();
+            int foff = V.size() + E.size();
 
-            int count = grid_size();
 
-            auto index = [&](const Crossing<D>& p) -> int {
-                auto& gv = p.vertex();
-                if(gv.is_grid_vertex()) {
-                    return index_map[gv] = grid_index(gv);
-                } else if(auto it = index_map.find(gv); it != index_map.end()) {
-                    return it->second;
-                } else {
-                    return index_map[gv] = count++;
+
+
+                {
+                auto t = mtao::logging::timer("copying crossings");
+                std::copy(V.begin(),V.end(),ret.begin());
+                std::copy(E.begin(),E.end(),ret.begin()+eoff);
+                std::copy(F.begin(),F.end(),ret.begin()+foff);
                 }
-            };
 
-            auto t = mtao::logging::timer("processing crossings");
 
-            for(auto&& v: V) {
-                v.index = index(v);
-                ret.emplace_back(v);
-            }
-            for(auto&& v: E) {
-                ret.emplace_back(v.vv, index(v));
-            }
-            for(auto&& v: F) {
-                ret.emplace_back(v.vv, index(v));
-            }
+                int count = grid_size();
+                auto t = mtao::logging::timer("indexing crossings");
+
+                int i;
+                //for(auto&& [i,v]: mtao::iterator::enumerate(V.size()+E.size(),F)) {
+                for(i = 0; i < ret.size(); ++i) {
+                    auto& p = ret[i];
+                    auto& gv = p.vertex();
+                    if(gv.is_grid_vertex()) {
+                        p.index = index_map[gv] = grid_index(gv);
+                    } else {
+                        {
+                            if(auto it = index_map.find(gv); it != index_map.end()) {
+                                p.index = it->second;
+                            } else {
+                                p.index = index_map[gv] = count++;
+                            }
+                        }
+
+                    }
+                }
             return ret;
 
         }
@@ -517,15 +543,23 @@ namespace mandoline::construction {
 
 
     template <int D, typename Indexer>
-        auto CutData<D,Indexer>::edges(const std::map<const VType*,int>& gv_idx_map) const -> mtao::ColVectors<int,2> {
+        auto CutData<D,Indexer>::stl_edges(const std::map<const VType*,int>& gv_idx_map) const -> std::set<Edge> {
             auto t = mtao::logging::timer("data pulling edges");
             std::set<Edge> EE = edge_edges(gv_idx_map), EF = face_edges(gv_idx_map);
             EE.insert(EF.begin(),EF.end());
-            return mtao::eigen::stl2eigen(EE);
+            return EE;
+        }
+    template <int D, typename Indexer>
+        auto CutData<D,Indexer>::edges(const std::map<const VType*,int>& gv_idx_map) const -> mtao::ColVectors<int,2> {
+            return mtao::eigen::stl2eigen(stl_edges(gv_idx_map));
         }
     template <int D, typename Indexer>
         auto CutData<D,Indexer>::edges() const -> mtao::ColVectors<int,2>{
             return edges(m_vertex_indexer);
+        }
+    template <int D, typename Indexer>
+        auto CutData<D,Indexer>::stl_edges() const -> std::set<Edge>{
+            return stl_edges(m_vertex_indexer);
         }
 
     template <int D, typename Indexer>
