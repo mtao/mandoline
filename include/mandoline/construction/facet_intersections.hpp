@@ -107,6 +107,8 @@ namespace mandoline::construction {
             EdgeIntersections(const VType& a, const VType& b, int index=-1): EdgeIntersections(VPtrEdge{{&a,&b}},index) {}
             void bake(const std::optional<SGType>& grid = {});
 
+            bool is_cut() const { return intersections.empty(); }
+
             size_t edge_size() const {
                 return intersections.size()+1;
             }
@@ -207,6 +209,9 @@ namespace mandoline::construction {
                 Base::set_container_mask(vptr_tri);
                 assert(mask().count() <= 1);
             }
+
+            bool is_cut() const { return edge_intersections.empty(); }
+
             void clear() { 
                 intersections.clear();
                 edge_intersections.clear(); 
@@ -317,7 +322,31 @@ namespace mandoline::construction {
                 }
             }
 
-            std::set<VPtrEdge> vptr_edges() const {
+            std::set<Edge> edges(const std::map<const VType*, int>& indexer) const {
+                auto vedges = vptr_edges();
+                std::set<Edge> ret;
+                for(auto&& [a,b]: vedges) {
+                    Edge e{{indexer.at(a),indexer.at(b)}};
+                    if(e[0] == e[1]) continue;
+                    std::sort(e.begin(),e.end());
+                    ret.emplace(e);
+                }
+
+                return ret;
+            }
+            std::set<Edge> nobdry_edges(const std::map<const VType*, int>& indexer) const {
+                auto vedges = vptr_edges(true);
+                std::set<Edge> ret;
+                for(auto&& [a,b]: vedges) {
+                    Edge e{{indexer.at(a),indexer.at(b)}};
+                    if(e[0] == e[1]) continue;
+                    std::sort(e.begin(),e.end());
+                    ret.emplace(e);
+                }
+
+                return ret;
+            }
+            std::set<VPtrEdge> vptr_edges(bool get_boundary = false) const {
                 std::set<VPtrEdge> ret;
                 for(auto&& [gv,e]: edge_intersections) {
                     auto isects = e.gvertices();
@@ -330,9 +359,11 @@ namespace mandoline::construction {
                     }
 
                 }
-                for(auto&& eisptr: edge_isects) {
-                    auto&& es = eisptr->vptr_edges();
-                    ret.insert(es.begin(),es.end());
+                if(get_boundary) {
+                    for(auto&& eisptr: edge_isects) {
+                        auto&& es = eisptr->vptr_edges();
+                        ret.insert(es.begin(),es.end());
+                    }
                 }
                 return ret;
             }

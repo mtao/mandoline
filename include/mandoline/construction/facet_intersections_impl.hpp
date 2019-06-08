@@ -416,8 +416,8 @@ namespace mandoline::construction {
                             for(auto&& c: V) {
                                 B.col(c.index) = mtao::eigen::stl2eigen(BC.at(c.vertex_ptr())).template topRows<2>();
                             }
-                            auto Evec = this->edges(VM);
-                            std::set<Edge> Es(Evec.begin(),Evec.end());
+                            auto Es = this->nobdry_edges(VM);
+                            //std::set<Edge> Es(Evec.begin(),Evec.end());
                             FaceCollapser fc(Es);
                             Edge be = boundary_edge(VM);
                             fc.set_edge_for_removal(be);

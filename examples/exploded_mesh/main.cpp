@@ -37,6 +37,7 @@ class MeshViewer: public mtao::opengl::Window3 {
         mtao::ColVecs3i F;
         mtao::ColVecs3d VV;
         mtao::ColVecs3i FF;
+        mtao::ColVecs4d C;
 
         float scale = 1.1;
         mtao::ColVectors<double,4> colors;
@@ -58,6 +59,7 @@ class MeshViewer: public mtao::opengl::Window3 {
             if(VV.cols() > 0 && FF.cols() > 0) {
                 auto [VVV,FFF] = slicer.slice(origin.cast<double>(),direction.cast<double>());
                 exploded_mesh.setTriangleBuffer(VVV.cast<float>(), FFF.cast<unsigned int>());
+                set_region_colors();
             }
             std::mutex mut;
             int i = 0;
@@ -99,7 +101,10 @@ class MeshViewer: public mtao::opengl::Window3 {
 
             }
             auto C = exploder.colors(colors, nonzero_regions).cast<float>().eval();
-            exploded_mesh.setColorBuffer(C);
+                Eigen::SparseMatrix<float> BM = slicer.barycentric_map().cast<float>();
+                mtao::ColVecs4f C2 = C * BM.transpose();
+                exploded_mesh.setColorBuffer(C2.cast<float>().eval());
+//            exploded_mesh.setColorBuffer(C);
 
             
         }
@@ -139,7 +144,7 @@ class MeshViewer: public mtao::opengl::Window3 {
             std::copy(R.begin(),R.end(), std::inserter(nonzero_regions,nonzero_regions.end()));
 
             if(nonzero_regions.find(0) != nonzero_regions.end()) {
-                //nonzero_regions.erase(0);
+                nonzero_regions.erase(0);
             }
 
             exploder = mandoline::tools::MeshExploder(ccm);

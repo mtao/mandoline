@@ -151,9 +151,13 @@ namespace mandoline::construction {
 
                         if(can_skip) {
                             std::vector<int> f(3);
-                            std::transform(FI.vptr_tri.begin(),FI.vptr_tri.end(),f.begin(),[&](auto&& v) {
-                                    return index(v);
-                                    });
+                            auto fi = F(FI.triangle_index);
+                            for(auto&& [i,v]: mtao::iterator::enumerate(f)) {
+                                v = m_crossings[fi(i)].index;
+                            }
+                            //std::transform(FI.vptr_tri.begin(),FI.vptr_tri.end(),f.begin(),[&](auto&& v) {
+                            //        return index(v);
+                            //        });
                             add_face(fi_mask,f,FI.triangle_index);
                         }
 
@@ -503,25 +507,25 @@ namespace mandoline::construction {
                int numthreads = omp_get_num_threads();
                std::vector<std::vector<VPtrEdge>> thread_edges(numthreads);
                */
-            std::vector<std::set<Edge>> per_edges(m_triangle_intersections.size());
             int i = 0;
 #pragma omp parallel for
             for(i=0; i < m_triangle_intersections.size(); ++i) {
-                auto gv = m_triangle_intersections[i].vptr_edges();
-                auto&& e = per_edges[i];
+                auto& FT = m_triangle_intersections[i];
+                //if(!FT.is_cut()) {
+                //    continue;
+                //}
+                auto gv = FT.vptr_edges();
                 for(auto&& ve: gv) {
                     Edge e{{index(ve[0]),index(ve[1])}};
                     if(e[0] != e[1]) {
                         std::sort(e.begin(),e.end());
-                        per_edges[i].insert(e);
+#pragma omp critical
+                        edges.insert(e);
 
                     }
                 }
             }
 
-            for(auto&& e:  per_edges) {
-                edges.insert(e.begin(),e.end());
-            }
 
 #else//_OPENMP
             for(auto&& eis: m_edge_intersections) {

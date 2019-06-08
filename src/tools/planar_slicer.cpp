@@ -80,7 +80,7 @@ namespace mandoline::tools {
                 plane_verts.insert(c.index);
             }
         }
-        auto edges = data.edges();
+        auto edges = data.stl_edges();
         auto is_boundary = [&](int idx) -> bool {
             if(idx < vertex_size()) {
                 return unindex(idx)[2] == 1;
@@ -91,14 +91,13 @@ namespace mandoline::tools {
         std::vector<mtao::ColVecs3i> FF;
         {
             std::set<std::array<int,2>> E;
-            for(int i = 0; i < edges.cols(); ++i) {
-                auto e = edges.col(i);
-                int a = e(0);
-                int b = e(1);
+            for(auto&& e: edges) {
+                auto&& [a,b] = e;
                 if(is_boundary(a) && is_boundary(b)) {
-                    E.insert(std::array<int,2>{{a,b}});
+                    E.insert(e);
                 }
             }
+            std::cout << "Edge size: " << E.size() << std::endl;
 
 
 
