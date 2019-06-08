@@ -303,7 +303,27 @@ namespace mandoline::construction {
             warn() << "Region count: " << regions.size();
             auto w = warn();
             for(auto&& r: regions) {
-                w << r << " ";
+                w << r << "(" << std::count_if(cells.begin(),cells.end(), [&](auto&& c) {
+                            return c.region == r;
+                            })<< ") ";
+            }
+            for(auto&& r: regions) {
+                std::cout << r << "==========================\n";
+                for(auto&& c: cells) {
+                    if(c.region == r) {
+                        std::cout << c.size() << ":";
+                    }
+                }
+                std::cout << std::endl;
+                for(auto&& c: cells) {
+                    if(c.region == r) {
+                        for(auto&& [a,b]: c) {
+                            std::cout << a << std::endl;
+                            std::cout << std::string(m_faces.at(a)) << std::endl;
+                        }
+                        std::cout << std::endl;
+                    }
+                }
             }
         }
         mtao::logging::debug() << "Cell count: " << cell_boundaries.size();

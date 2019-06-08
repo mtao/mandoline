@@ -107,6 +107,7 @@ namespace mandoline {
                         double mywn = mtao::geometry::winding_number(V,c,B);
                         wn += mywn;
                     }
+                    //std::cout << wn << " ";
                     if(std::abs(wn) > 1) {
                         interior.insert(i);
                     }
@@ -116,6 +117,7 @@ namespace mandoline {
                 for(auto&& [i,b]: mtao::iterator::enumerate(interior)) {
                     FF.col(i) = F.col(b);
                 }
+                //std::cout << std::endl;
                 return FF;
             } else {
                 std::cout << "points were added!" << std::endl;

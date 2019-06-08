@@ -35,6 +35,8 @@ namespace mandoline::tools {
         double zmax = std::max(bbox.max()(2),-bbox.min()(2));
         bbox.min()(2) = -zmax;
         bbox.max()(2) = zmax;
+        bbox.min() *= 1.1;
+        bbox.max() *= 1.1;
 
 
         mtao::Vec3d shape = bbox.sizes() ;
