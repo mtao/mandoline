@@ -26,6 +26,9 @@ namespace mandoline::tools {
         data.set_vertices(vertices);
         data.set_topology(F);
     }
+    void SliceGenerator::set_vertices(const mtao::ColVecs3d& V) {
+        this->V = V;
+    }
     void SliceGenerator::update_embedding(const mtao::ColVecs3d& V) {
 
         auto bbox = mtao::geometry::bounding_box(V);
@@ -97,7 +100,6 @@ namespace mandoline::tools {
                     E.insert(e);
                 }
             }
-            std::cout << "Edge size: " << E.size() << std::endl;
 
 
 

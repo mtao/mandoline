@@ -14,9 +14,10 @@ using Base = mtao::geometry::grid::StaggeredGrid<double,3>;
             std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> slice(const mtao::Vec3d& origin, const mtao::Vec3d& direction) ;
             static Eigen::Affine3d get_transform(const mtao::Vec3d& origin, const mtao::Vec3d& direction) ;
             std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> slice(const Eigen::Affine3d& t) ;
-            void update_embedding(const mtao::ColVecs3d& V);
+            void set_vertices(const mtao::ColVecs3d& V);
             Eigen::SparseMatrix<double> barycentric_map() const;
         private:
+            void update_embedding(const mtao::ColVecs3d& V);
             mtao::ColVecs3d V;
             construction::CutData<3> data;
     };

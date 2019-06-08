@@ -38,6 +38,9 @@ class MeshViewer: public mtao::opengl::Window3 {
         mtao::ColVecs3d VV;
         mtao::ColVecs3i FF;
 
+
+        bool show_wireframes = false;
+
         float scale = 1.1;
         mtao::ColVectors<double,4> colors;
 
@@ -55,20 +58,26 @@ class MeshViewer: public mtao::opengl::Window3 {
 
         void update_exploded() {
 
-            //std::tie(VV,FF) = exploder.mesh(scale, nonzero_regions);
-            //exploded_mesh.setTriangleBuffer(VV.cast<float>(), FF.cast<unsigned int>());
-            //slicer.update_embedding(VV);
-            //if(VV.cols() > 0 && FF.cols() > 0) {
-            //    auto [VVV,FFF] = slicer.slice(origin.cast<double>(),direction.cast<double>());
-            //    exploded_mesh.setTriangleBuffer(VVV.cast<float>(), FFF.cast<unsigned int>());
-            //    set_region_colors();
-            //}
-            for(auto&& [i,r]: mtao::iterator::enumerate(nonzero_regions)) {
-                auto [VV,FF] = exploder.mesh(scale, std::set<int>{r});
-                slicers[r].update_embedding(VV);
+            if(!show_wireframes) {
+                std::tie(VV,FF) = exploder.mesh(scale, nonzero_regions);
+                exploded_mesh.setTriangleBuffer(VV.cast<float>(), FF.cast<unsigned int>());
+                slicer.set_vertices(VV);
                 if(VV.cols() > 0 && FF.cols() > 0) {
-                    auto [VVV,FFF] = slicers[r].slice(origin.cast<double>(),direction.cast<double>());
-                    exploded_meshes[i].setTriangleBuffer(VVV.cast<float>(), FFF.cast<unsigned int>());
+                    auto [VVV,FFF] = slicer.slice(origin.cast<double>(),direction.cast<double>());
+                    exploded_mesh.setTriangleBuffer(VVV.cast<float>(), FFF.cast<unsigned int>());
+                    set_region_colors();
+                }
+            } else {
+                for(auto&& [i,r]: mtao::iterator::enumerate(nonzero_regions)) {
+                    auto [VV,FF] = exploder.mesh(scale, std::set<int>{r});
+                    auto& slicer = slicers[r];
+                    slicer.set_vertices(VV);
+
+                    if(VV.cols() > 0 && FF.cols() > 0) {
+                        std::tie(VV,FF) = slicer.slice(origin.cast<double>(),direction.cast<double>());
+                        //std::tie(VV,FF) = mandoline::tools::slice(VV,FF,origin.cast<double>(),direction.cast<double>());
+                        exploded_meshes[i].setTriangleBuffer(VV.cast<float>(), FF.cast<unsigned int>());
+                    }
                 }
             }
             /*
@@ -104,6 +113,7 @@ class MeshViewer: public mtao::opengl::Window3 {
 
 
         void set_region_colors() {
+            /*
             for(auto&& [DC,r]: mtao::iterator::zip(exploded_wireframes, regions)) {
                 if(auto it = region_colors.find(r); it != region_colors.end()) {
                     DC->data().color = it->second;
@@ -112,11 +122,11 @@ class MeshViewer: public mtao::opengl::Window3 {
                 }
 
             }
+            */
             auto C = exploder.colors(colors, nonzero_regions).cast<float>().eval();
             Eigen::SparseMatrix<float> BM = slicer.barycentric_map().cast<float>();
             mtao::ColVecs4f C2 = C * BM.transpose();
             exploded_mesh.setColorBuffer(C2.cast<float>().eval());
-            exploded_mesh.setColorBuffer(C.cast<float>().eval());
             //            exploded_mesh.setColorBuffer(C);
 
             
@@ -144,6 +154,7 @@ class MeshViewer: public mtao::opengl::Window3 {
             regions = R;
             colors.resize(4,R.size());
             colors.setZero();
+            colors.topRows<3>().setRandom();
             colors.row(3).setConstant(1);
 
 
@@ -178,13 +189,19 @@ class MeshViewer: public mtao::opengl::Window3 {
             update_exploded();
             //exploded_wireframe = new mtao::opengl::Drawable<Magnum::Shaders::Phong>{exploded_mesh,phong_shader, drawables()};
             //exploded_wireframe = new mtao::opengl::Drawable<Magnum::Shaders::MeshVisualizer>{exploded_mesh,wireframe_shader, wireframe_drawables};
-            //exploded_wireframe = new mtao::opengl::Drawable<Magnum::Shaders::VertexColor3D>{exploded_mesh,vcolor_shader, drawables()};
+            exploded_wireframe = new mtao::opengl::Drawable<Magnum::Shaders::VertexColor3D>{exploded_mesh,vcolor_shader, drawables()};
             exploded_mesh.setParent(&root());
 
             set_region_colors();
 
         }
         void gui() override {
+
+            if(ImGui::Checkbox("Show Wireframes", &show_wireframes)) {
+                update_exploded();
+            }
+
+
             if(input_phong) {input_phong->gui("Input Phong");}
             //if(exploded_wireframe) {exploded_wireframe->gui("Exploded Wireframe");}
             //if(exploded_wireframe) {exploded_wireframe->gui("Cell Wireframe");}
@@ -221,7 +238,9 @@ class MeshViewer: public mtao::opengl::Window3 {
             Magnum::GL::Renderer::enable(Magnum::GL::Renderer::Feature::PolygonOffsetFill);
             Magnum::GL::Renderer::setPolygonOffset(2.f,1.f);
 
+            if(show_wireframes) {
             camera().draw(wireframe_drawables);
+            }
             
             Magnum::GL::Renderer::setPolygonOffset(0,0);
             Window3::draw();
