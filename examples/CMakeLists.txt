@@ -1,4 +1,6 @@
-ADD_SUBDIRECTORY(viewer)
 ADD_SUBDIRECTORY(extract_original_mesh)
+IF(${USE_OPENGL})
+ADD_SUBDIRECTORY(viewer)
 ADD_SUBDIRECTORY(slicer)
 ADD_SUBDIRECTORY(exploded_mesh)
+ENDIF(${USE_OPENGL})
