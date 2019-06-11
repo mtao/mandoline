@@ -525,9 +525,13 @@ namespace mandoline {
             }
         } else {
             auto trimesh_vols = mtao::geometry::volumes(m_origV,m_origF);
+
             ret = face_barycentric_volume_matrix() * trimesh_vols;
             auto subVs = compute_subVs();
             for(auto&& [i,f]: mtao::iterator::enumerate(faces())) {
+                if(!std::isfinite(ret(i))) {
+                    ret(i) = 0;
+                }
                 if(f.is_axial_face()) {
                     auto [dim,coord] = f.as_axial_id();
                     auto& vol = ret(i) = 0;

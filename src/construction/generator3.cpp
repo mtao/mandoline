@@ -302,6 +302,7 @@ namespace mandoline::construction {
 
             warn() << "Region count: " << regions.size();
             auto w = warn();
+            /*
             for(auto&& r: regions) {
                 w << r << "(" << std::count_if(cells.begin(),cells.end(), [&](auto&& c) {
                             return c.region == r;
@@ -325,6 +326,7 @@ namespace mandoline::construction {
                     }
                 }
             }
+            */
         }
         mtao::logging::debug() << "Cell count: " << cell_boundaries.size();
 
