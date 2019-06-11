@@ -588,9 +588,8 @@ namespace mandoline {
     }
     Eigen::SparseMatrix<double> CutCellMesh<3>::boundary() const {
         auto trips = m_adaptive_grid.boundary_triplets(m_faces.size());
-        return {};
-        int num_faces = 0;
-        int num_cells = 0;
+        int num_faces = faces().size();
+        int num_cells = cells().size();
         for(auto&& t: trips) {
             num_faces = std::max<int>(t.row()+1,num_faces);
             num_cells = std::max<int>(t.col()+1,num_faces);
@@ -598,20 +597,18 @@ namespace mandoline {
         Eigen::SparseMatrix<double> B(num_faces,num_cells);
 
 
-        /*
-           for(auto&& c: cells) {
-           int region = c.region;
-           for(auto&& [fidx,s]: c) {
-           trips.emplace_back(fidx,c.index, s?1:-1);
-           }
-           }
-           for(auto&& [fidx,f]: mtao::iterator::enumerate(faces)) {
-           if(f.external_boundary) {
-           auto [c,s] = *f.external_boundary;
-           trips.emplace_back(fidx,c, s?1:-1);
-           }
-           }
-           */
+        for(auto&& c: cells()) {
+            int region = c.region;
+            for(auto&& [fidx,s]: c) {
+                trips.emplace_back(fidx,c.index, s?1:-1);
+            }
+        }
+        for(auto&& [fidx,f]: mtao::iterator::enumerate(faces())) {
+            if(f.external_boundary) {
+                auto [c,s] = *f.external_boundary;
+                trips.emplace_back(fidx,c, s?1:-1);
+            }
+        }
 
 
         B.setFromTriplets(trips.begin(),trips.end());

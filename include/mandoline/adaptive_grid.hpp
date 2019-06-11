@@ -47,6 +47,8 @@ namespace mandoline {
             GridData3i grid() const;
             std::set<Edge> boundary() const;
             std::vector<Eigen::Triplet<double>> boundary_triplets(int min_edge_index) const;
+            int num_faces() const;
+            int max_cell() const;
             std::set<Edge> boundary(const GridData3i& grid) const;
             static GridData3i grid_from_cells(const coord_type& shape, const std::map<int,Cell>& cells);
     };

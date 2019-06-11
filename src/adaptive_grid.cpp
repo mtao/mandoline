@@ -682,4 +682,11 @@ namespace mandoline {
 
         return boundaries;
     }
+
+            int AdaptiveGrid::num_faces() const {
+                return boundary().size();
+            }
+            int AdaptiveGrid::max_cell_id() const {
+                return 
+            }
 }
