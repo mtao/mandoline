@@ -5,6 +5,12 @@
 #include "cutmesh.pb.h"
 #include <mtao/eigen/stl2eigen.hpp>
 namespace mandoline {
+    template <int D>
+    class CutCellMesh;
+    namespace construction {
+    template <int D>
+    class CutCellGenerator;
+    }
 
     class AdaptiveGrid: public mtao::geometry::grid::StaggeredGrid<double,3> {
         public:
@@ -19,6 +25,10 @@ namespace mandoline {
                 const coord_type& corner() const { return std::get<0>(*this); }
                 coord_type vertex(int a, int b, int c) const;
                 int width() const { return std::get<1>(*this); }
+
+
+                mtao::Vec3d center() const { return mtao::eigen::stl2eigen(corner()).array().cast<double>() + width()/2.0; }
+
                 void  serialize(CutMeshProto::Cube&) const;
                 static Cell from_proto(const CutMeshProto::Cube&);
             };
@@ -33,24 +43,44 @@ namespace mandoline {
                 void  serialize(CutMeshProto::Cube&) const;
                 static Cell from_proto(const CutMeshProto::Cube&);
             };
+
+            friend class CutCellMesh<3>;
+            friend class construction::CutCellGenerator<3>;
+
+
+
             AdaptiveGrid() = default;
             AdaptiveGrid(const AdaptiveGrid&) = default;
             AdaptiveGrid(AdaptiveGrid&&) = default;
             AdaptiveGrid& operator=(const AdaptiveGrid&) = default;
             AdaptiveGrid& operator=(AdaptiveGrid&&) = default;
-            AdaptiveGrid(const Base& b, const std::map<int,Cell>& cells = {}): Base(b), cells(cells) {}
+            AdaptiveGrid(const Base& b, const std::map<int,Cell>& cells = {}): Base(b), m_cells(cells) {m_boundary = boundary(grid());}
             std::array<int,4> face(const Cell& c, int axis, bool sign) const;
             std::array<int,4> face(int idx, int axis, bool sign) const;
             mtao::ColVecs3i triangulated(int idx) const;
             mtao::ColVecs3i triangulated(const Cell& c) const;
-            std::map<int,Cell> cells;
             GridData3i grid() const;
-            std::set<Edge> boundary() const;
+            const std::vector<Edge>& boundary() const { return m_boundary; }
+            const std::map<int,Cell>& cells() const { return m_cells; }
+            const Cell& cell(int idx) const { return m_cells.at(idx); }
+            mtao::VecXd dual_edge_lengths() const;
+            mtao::VecXd face_volumes() const;
             std::vector<Eigen::Triplet<double>> boundary_triplets(int min_edge_index) const;
             int num_faces() const;
-            int max_cell_id() const;
-            std::set<Edge> boundary(const GridData3i& grid) const;
+            int num_cells() const;
+            std::vector<Edge> boundary(const GridData3i& grid) const;
+            void make_boundary();
             static GridData3i grid_from_cells(const coord_type& shape, const std::map<int,Cell>& cells);
+
+            inline bool is_valid_edge(const Edge& e) const {
+                auto [a,b] = e;
+                return m_cells.find(a) != m_cells.end() && m_cells.find(b) != m_cells.end();
+            }
+
+        private:
+
+            std::vector<Edge> m_boundary;//Beware of -1!
+            std::map<int,Cell> m_cells;
     };
 
     class AdaptiveGridFactory {

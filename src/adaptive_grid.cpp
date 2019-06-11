@@ -432,10 +432,6 @@ namespace mandoline {
                 }
             }
         }
-        for(auto&& [level,g,g2]: mtao::iterator::enumerate(levels, levels_mask)) {
-            print_grid(g);
-            print_gridb(g2);
-        }
 
 
     }
@@ -521,7 +517,7 @@ namespace mandoline {
         }
     }
     auto AdaptiveGrid::grid() const -> GridData3i {
-        return grid_from_cells(cell_shape(),cells);
+        return grid_from_cells(cell_shape(),m_cells);
     }
     auto AdaptiveGrid::grid_from_cells(const coord_type& shape, const std::map<int,Cell>& cells) -> GridData3i {
         GridData3i grid = GridData3i::Constant(-1,shape);
@@ -563,7 +559,7 @@ namespace mandoline {
         return ret;
     }
     std::array<int,4> AdaptiveGrid::face(int idx, int axis, bool sign) const {
-        return face(cells.at(idx),axis,sign);
+        return face(cell(idx),axis,sign);
     }
     auto AdaptiveGrid::Cell::vertex(int a, int b, int c) const -> coord_type {
         return coord_type{{
@@ -581,7 +577,7 @@ namespace mandoline {
         return c;
     }
     mtao::ColVecs3i AdaptiveGrid::triangulated(int idx) const {
-        return triangulated(cells.at(idx));
+        return triangulated(cell(idx));
     }
     mtao::ColVecs3i AdaptiveGrid::triangulated(const Cell& c) const {
         auto f = []() {
@@ -621,13 +617,9 @@ namespace mandoline {
         return AdaptiveGrid(original.shape(),cells);
 
     }
-    auto AdaptiveGrid::boundary() const -> std::set<Edge> {
-        return boundary(grid());
-    }
     auto AdaptiveGrid::boundary_triplets(int index) const -> std::vector<Eigen::Triplet<double>> {
         std::vector<Eigen::Triplet<double>> trips;
-        return trips;
-        auto b = boundary();
+        auto& b = boundary();
         for(auto&& [l,h]: b) {
             trips.emplace_back(index,l,-1);
             trips.emplace_back(index,h,1);
@@ -635,7 +627,7 @@ namespace mandoline {
         }
         return trips;
     }
-    auto AdaptiveGrid::boundary(const GridData3i& grid) const -> std::set<Edge> {
+    auto AdaptiveGrid::boundary(const GridData3i& grid) const -> std::vector<Edge> {
         std::set<Edge> boundaries;
         auto add_bdry = [&](int a, int b) {
             if(a == -1 && b == -1) {
@@ -680,13 +672,51 @@ namespace mandoline {
             }
         }
 
-        return boundaries;
+        std::vector<Edge> boundaries_vec(boundaries.size());
+        std::copy(boundaries.begin(),boundaries.end(),boundaries_vec.begin());
+
+        return boundaries_vec;
+    }
+    void AdaptiveGrid::make_boundary() {
+        m_boundary = boundary(grid());
     }
 
+    mtao::VecXd AdaptiveGrid::dual_edge_lengths() const {
+
+        auto&dx = Base::dx();
+        mtao::VecXd ret(m_boundary.size());
+        for(auto&& [i,e]: mtao::iterator::enumerate(m_boundary)) {
+            if(!is_valid_edge(e)) continue;
+            auto [a,b] = e;
+            ret(i) = (dx.asDiagonal() * (cell(a).center() - cell(b).center())).norm();
+        }
+        return ret;
+    }
+    mtao::VecXd AdaptiveGrid::face_volumes() const {
+        auto&dx = Base::dx();
+        mtao::VecXd ret(m_boundary.size());
+        for(auto&& [i,e]: mtao::iterator::enumerate(m_boundary)) {
+            if(!is_valid_edge(e)) continue;
+            auto [a,b] = e;
+            int k = 0;
+
+            auto& ca = cell(a);
+            auto& cb = cell(b);
+            mtao::Vec3d cd = (ca.center() - cb.center()).cwiseAbs();
+            int minwidth = std::min(ca.width(),cb.width());
+            cd.maxCoeff(&k);
+            double v = minwidth * minwidth;
+            for(int j = 0; j < 2; ++j) {
+                v *= dx((j+k)%3);
+            }
+            ret(i) = v;
+        }
+        return ret;
+    }
             int AdaptiveGrid::num_faces() const {
                 return boundary().size();
             }
-            int AdaptiveGrid::max_cell_id() const {
-                return 
+            int AdaptiveGrid::num_cells() const {
+                return cells().size();
             }
 }

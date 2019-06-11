@@ -16,7 +16,10 @@
 namespace mandoline {
 
     size_t CutCellMesh<3>::cell_size() const {
-        return m_adaptive_grid.cells.size() + m_cells.size();
+        return m_adaptive_grid.num_cells() + m_cells.size();
+    }
+    size_t CutCellMesh<3>::face_size() const {
+        return m_adaptive_grid.num_faces() + m_faces.size();
     }
     size_t CutCellMesh<3>::cut_cell_size() const { 
         return m_cells.size(); 
@@ -50,7 +53,7 @@ namespace mandoline {
             //std::cout << (V(k) / std::abs(c.volume(Vs,faces))) << std::endl;
         }
         double scale = dx().array().prod();
-        for(auto&& [i,c]:  m_adaptive_grid.cells) {
+        for(auto&& [i,c]:  m_adaptive_grid.cells()) {
             V(i) =  scale * std::pow<double>(c.width(),3);
         }
 
@@ -281,7 +284,7 @@ namespace mandoline {
                 }
             } else {
                 ofs << "# adaptive cube" << index << ": ";
-                auto&& c = m_adaptive_grid.cells.at(index);
+                auto&& c = m_adaptive_grid.cell(index);
                 ofs <<  mtao::eigen::stl2eigen(c.corner()).transpose() << "  :: " << c.width();
             }
             ofs << std::endl;
@@ -410,7 +413,7 @@ namespace mandoline {
         }
         {
             auto& cmap = *cmp.mutable_cubes();
-            for(auto&& [c,cell]: m_adaptive_grid.cells) {
+            for(auto&& [c,cell]: m_adaptive_grid.cells()) {
                 cell.serialize(cmap[c]);
             }
             auto& rmap = *cmp.mutable_cube_regions();
@@ -473,8 +476,9 @@ namespace mandoline {
         }
 
         for(auto&& [a,b]: cmp.cubes()) {
-            ret.m_adaptive_grid.cells[a] = AdaptiveGrid::Cell::from_proto(b);
+            ret.m_adaptive_grid.m_cells[a] = AdaptiveGrid::Cell::from_proto(b);
         }
+        ret.m_adaptive_grid.make_boundary();
         for(auto&& [a,b]: cmp.cube_regions()) {
             ret.m_adaptive_grid_regions[a] = b;
         }
@@ -577,7 +581,7 @@ namespace mandoline {
         } else {
             face_size = m_origF.cols();
         }
-        Eigen::SparseMatrix<double> A(m_faces.size(),face_size);
+        Eigen::SparseMatrix<double> A(this->face_size(),face_size);
         std::vector<Eigen::Triplet<double>> trips;
         for(auto&& [fid, btf]: m_mesh_faces) {
             double vol = btf.volume() * 2;//proportion of 2 is required because barycentric coordinates live in a unit triangle

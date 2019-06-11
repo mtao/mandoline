@@ -19,7 +19,7 @@ namespace mandoline::tools {
 
         auto&& AG = ccm.adaptive_grid();
 
-        for(auto&& [idx,cell]: AG.cells) {
+        for(auto&& [idx,cell]: AG.cells()) {
             auto F = AG.triangulated(idx);
             std::tie(Vs[idx],Fs[idx]) = mtao::geometry::mesh::compactify(V,F);
             Cs[idx] = Vs[idx].rowwise().mean();

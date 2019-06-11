@@ -180,14 +180,14 @@ namespace mandoline::construction {
                 //make cell names unique
                 int cbsize = cells.size();
                 auto& ag = *adaptive_grid;
-                auto gc = ag.cells;
-                ag.cells.clear();
+                auto gc = ag.m_cells;
+                ag.m_cells.clear();
                 for(auto&& [i,c]: mtao::iterator::enumerate(gc)) {
                     auto&& [j,b] = c;
                     int id = i + cbsize;
-                    ag.cells[id] = b;
+                    ag.m_cells[id] = b;
                 }
-                max_cell_id = cbsize + ag.cells.size();
+                max_cell_id = cbsize + ag.m_cells.size();
             }
             mtao::data_structures::DisjointSet<int> cell_ds;
             {
@@ -204,7 +204,7 @@ namespace mandoline::construction {
                     auto& ag = *adaptive_grid;
                     auto grid = ag.grid();
                     auto bdry = ag.boundary(grid);
-                    for(auto&& [c,b]: ag.cells) {
+                    for(auto&& [c,b]: ag.cells()) {
                         cell_ds.add_node(c);
                     }
                     for(auto&& [a,b]: bdry) {
@@ -294,7 +294,7 @@ namespace mandoline::construction {
 
                 auto& ag = *adaptive_grid;
                 auto& agr = *(adaptive_grid_regions = std::map<int,int>());
-                for(auto&& [cid,b]: ag.cells) {
+                for(auto&& [cid,b]: ag.cells()) {
                     agr[cid] = reindexer[cell_ds.get_root(cid).data];
                 }
             }

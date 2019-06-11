@@ -41,6 +41,7 @@ namespace mandoline {
                 std::vector<int> regions(bool boundary_sign_regions=false) const;
 
                 //info on faces
+                size_t face_size() const;
                 bool is_mesh_face(int idx) const;
                 std::vector<bool> boundary_faces() const;
 

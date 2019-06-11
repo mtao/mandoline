@@ -54,9 +54,7 @@ int main(int argc, char * argv[]) {
     if(write_separate  ) { 
         ccm.write_obj_separate(output_prefix,false);
     }
-    std::cout << "woop" << std::endl;
     if(cell_grid_ownership) {
-        std::cout << "Woop" << std::endl;
 
         std::ofstream ofs(output_prefix + "_cells.txt");
         auto C = ccm.cell_centroids();
@@ -67,7 +65,7 @@ int main(int argc, char * argv[]) {
             std::copy(c.begin(),c.end(),std::ostream_iterator<int>(ofs," "));
             ofs << std::endl;
         }
-        for(auto&& [i,c]: ccm.adaptive_grid().cells) {
+        for(auto&& [i,c]: ccm.adaptive_grid().cells()) {
             auto center  = c.corner();
             int w = c.width();
             for(auto&& c: center) {
