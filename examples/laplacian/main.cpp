@@ -210,6 +210,7 @@ class MeshViewer: public mtao::opengl::Window3 {
                 colors.row(1) = 1-C.transpose().array();
                 colors.row(2).array() = 0;
                 colors.row(3).array() = 1;
+                set_region_colors();
             }
             if(input_phong) {input_phong->gui("Input Phong");}
 
