@@ -617,27 +617,26 @@ namespace mandoline {
         return AdaptiveGrid(original.shape(),cells);
 
     }
-    auto AdaptiveGrid::boundary_triplets(int index) const -> std::vector<Eigen::Triplet<double>> {
+    auto AdaptiveGrid::boundary_triplets(int offset) const -> std::vector<Eigen::Triplet<double>> {
         std::vector<Eigen::Triplet<double>> trips;
         auto& b = boundary();
-        for(auto&& [l,h]: b) {
-            trips.emplace_back(index,l,-1);
-            trips.emplace_back(index,h,1);
-            index++;
+        for(auto&& [i,e]: mtao::iterator::enumerate(b)) {
+            if(is_valid_edge(e)) {
+                auto [l,h] = e;
+                trips.emplace_back(index+i,l,-1);
+                trips.emplace_back(index+i,h,1);
+            }
         }
         return trips;
     }
     auto AdaptiveGrid::boundary(const GridData3i& grid) const -> std::vector<Edge> {
         std::set<Edge> boundaries;
         auto add_bdry = [&](int a, int b) {
-            if(a == -1 && b == -1) {
-                return;
-            }
-            if(a == b) {
-                return;
+            Edge e{{a,b}};
+            if(is_valid_edge(e)) {
+                boundaries.emplace(e);
             }
 
-            boundaries.emplace(Edge{{a,b}});
         };
         for(int d = 0; d < 3; ++d) {
             auto shape = cell_shape();
@@ -713,10 +712,10 @@ namespace mandoline {
         }
         return ret;
     }
-            int AdaptiveGrid::num_faces() const {
-                return boundary().size();
-            }
-            int AdaptiveGrid::num_cells() const {
-                return cells().size();
-            }
+    int AdaptiveGrid::num_faces() const {
+        return boundary().size();
+    }
+    int AdaptiveGrid::num_cells() const {
+        return cells().size();
+    }
 }

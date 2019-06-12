@@ -74,7 +74,7 @@ namespace mandoline {
 
             inline bool is_valid_edge(const Edge& e) const {
                 auto [a,b] = e;
-                return m_cells.find(a) != m_cells.end() && m_cells.find(b) != m_cells.end();
+                return a != b && m_cells.find(a) != m_cells.end() && m_cells.find(b) != m_cells.end();
             }
 
         private:

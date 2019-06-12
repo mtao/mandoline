@@ -592,13 +592,7 @@ namespace mandoline {
     }
     Eigen::SparseMatrix<double> CutCellMesh<3>::boundary() const {
         auto trips = m_adaptive_grid.boundary_triplets(m_faces.size());
-        int num_faces = faces().size();
-        int num_cells = cells().size();
-        for(auto&& t: trips) {
-            num_faces = std::max<int>(t.row()+1,num_faces);
-            num_cells = std::max<int>(t.col()+1,num_faces);
-        }
-        Eigen::SparseMatrix<double> B(num_faces,num_cells);
+        Eigen::SparseMatrix<double> B(face_size(),cell_size());
 
 
         for(auto&& c: cells()) {

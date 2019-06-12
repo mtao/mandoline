@@ -200,14 +200,11 @@ class MeshViewer: public mtao::opengl::Window3 {
                 set_region_colors();
             }
             if(ImGui::Button("Boundary colors")) {
-                colors.topRows<3>().setRandom();
                 mtao::VecXd C = divergence(ccm);
-                std::cout << C.rows() << "," << colors.cols() << std::endl;
-                C = C.topRows(colors.cols());
-                C.array() -= C.minCoeff();
-                C /= C.maxCoeff();
+                //C.array() -= C.minCoeff();
+                C /= C.cwiseAbs().maxCoeff();
                 colors.row(0) = C.transpose();
-                colors.row(1) = 1-C.transpose().array();
+                colors.row(1) = -C.transpose().array();
                 colors.row(2).array() = 0;
                 colors.row(3).array() = 1;
                 set_region_colors();

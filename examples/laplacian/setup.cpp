@@ -28,23 +28,22 @@ mtao::VecXd flux(const mandoline::CutCellMesh<3>& ccm) {
     auto r = ccm.regions();
     int rcount = *std::max_element(r.begin(),r.end());
     std::vector<double> RV(rcount+1,0);
-    std::cout << "RCount: " << rcount << std::endl;
     std::copy(RV.begin(),RV.end(),std::ostream_iterator<int>(std::cout,", "));
     std::cout << std::endl;
     for(auto&& [i,f]: mtao::iterator::enumerate(ccm.faces())) {
         //std::cout << FR.at(i) << "+=" << FV(i) << std::endl;;
         //std::cout << RV[FR.at(i)] << " => ";
+        if(f.is_axial_face()) {
+            FV(i) = 0;
+        }
         RV[FR.at(i)] += FV(i);
         //std::cout << RV[FR.at(i)] << std::endl;;
-        //if(f.is_axial_face()) {
-        //    FV(i) = 0;
-        //}
     }
-    std::copy(RV.begin(),RV.end(),std::ostream_iterator<int>(std::cout,", "));
-    std::cout << std::endl;
     for(auto&& [i,f]: mtao::iterator::enumerate(ccm.faces())) {
         if(RV[FR.at(i)] > 0) {
-        FV(i) /= RV[FR.at(i)];
+            FV(i) /= RV[FR.at(i)];
+        } else {
+            FV(i) = 0;
         }
     }
     //std::cout << FV.transpose() << std::endl;
