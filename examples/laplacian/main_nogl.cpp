@@ -18,7 +18,7 @@ int main(int argc, char* argv[]) {
             if(i < ccm.faces().size()) {
                 auto& f = ccm.faces()[i];
                 std::cout << std::string(f) << std::endl;
-                int a = ccm.vertex_shape()[f.as_axial_axis()];
+                int a = ccm.cell_shape()[f.as_axial_axis()];
                 int v = f.as_axial_coord();
                 std::cout << "ASDF" << a << ": " << v << std::endl;
             }
