@@ -623,8 +623,8 @@ namespace mandoline {
         for(auto&& [i,e]: mtao::iterator::enumerate(b)) {
             if(is_valid_edge(e)) {
                 auto [l,h] = e;
-                trips.emplace_back(index+i,l,-1);
-                trips.emplace_back(index+i,h,1);
+                trips.emplace_back(offset+i,l,-1);
+                trips.emplace_back(offset+i,h,1);
             }
         }
         return trips;
