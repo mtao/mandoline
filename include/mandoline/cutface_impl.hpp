@@ -47,8 +47,16 @@ namespace mandoline {
                 std::copy(f.begin(),f.end(),std::ostream_iterator<int>(ss,","));
                 ss << "],";
             }
-            ss << "}";
 
+            if(external_boundary) {
+                auto [b,s] = *external_boundary;
+                if(s) {
+                    std::cout << "{+" << b << "}";
+                } else {
+                    std::cout << "{-" << b << "}";
+                }
+            }
+            ss << "}";
 
             return ss.str();
 

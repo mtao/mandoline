@@ -237,6 +237,9 @@ namespace mandoline::construction {
                             std::cout << "SET WASNT LEXICOGRAPHICAL ORDER SOMEHOW?" << std::endl;
                         }
                         if(pca[0][idx] < 0 || pca[1][idx] >= cell_shape()[idx]) {
+                            std::cout << "Skip happening!" << std::endl;
+                            std::cout << mtao::eigen::stl2eigen(pca[0]).transpose() << " = "
+                            << mtao::eigen::stl2eigen(pca[1]).transpose() << " = " << std::endl;
                             continue;
                         } else {
                             int pi = cell_index(pca[0]);

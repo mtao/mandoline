@@ -65,6 +65,7 @@ namespace mandoline {
             const Cell& cell(int idx) const { return m_cells.at(idx); }
             mtao::VecXd dual_edge_lengths() const;
             mtao::VecXd face_volumes() const;
+            mtao::VecXd cell_volumes() const;
             std::vector<Eigen::Triplet<double>> boundary_triplets(int min_edge_index) const;
             int num_faces() const;
             int num_cells() const;

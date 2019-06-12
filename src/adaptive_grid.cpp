@@ -691,6 +691,21 @@ namespace mandoline {
         }
         return ret;
     }
+    mtao::VecXd AdaptiveGrid::cell_volumes() const {
+        mtao::VecXd R(num_cells());
+        if(num_cells() == 0) {
+            return {};
+        } else {
+            int offset = m_cells.begin()->first;
+            double vol = dx().prod();
+            for(auto&& [i,c]: cells()) {
+                double w = c.width();
+                R(i-offset) = vol * (w*w*w);
+            }
+            return R;
+        }
+    }
+
     mtao::VecXd AdaptiveGrid::face_volumes() const {
         auto&dx = Base::dx();
         mtao::VecXd ret(m_boundary.size());

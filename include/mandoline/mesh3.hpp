@@ -57,6 +57,12 @@ namespace mandoline {
                 mtao::ColVecs3d cell_centroids() const;
                 ColVecs dual_vertices() const;//alias for centroids
                 VecX face_volumes(bool from_triangulation = false)const ;
+                mtao::VecXd dual_edge_lengths() const;
+                mtao::VecXd dual_hodge2() const;
+                mtao::VecXd primal_hodge2() const;
+
+                //Eigen::SparseMatrix<double> trilinear_matrix() const;
+
                 Eigen::SparseMatrix<double> barycentric_matrix() const;
                 Eigen::SparseMatrix<double> face_barycentric_volume_matrix() const;
 
