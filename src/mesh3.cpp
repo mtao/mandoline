@@ -514,16 +514,23 @@ namespace mandoline {
 
         auto& dx = Base::dx();
         auto g = adaptive_grid().grid();
-        for(auto&& [fidx,f]: mtao::iterator::enumerate(faces())) {
-            if(f.external_boundary) {
-                auto [cid,s] = *f.external_boundary;
-                auto&& c = adaptive_grid().cell(g.get(cid));
-                mtao::Vec3d C = c.center();
-                C.array() -= .5;
-                C -= mtao::eigen::stl2eigen(cell_unindex(cid)).cast<double>();
+        for(auto&& c: cells()) {
+            auto& gc = c.grid_cell;
+            for(auto&& [fidx,s]: c) {
+                auto& f = faces()[fidx];
+                if(f.external_boundary) {
+                    auto [cid,s] = *f.external_boundary;
+                    auto&& c = adaptive_grid().cell(g.get(cid));
+                    mtao::Vec3d C = c.center();
+                    C.array() -= .5;
+                    C -= mtao::eigen::stl2eigen(gc).cast<double>();
 
-                DL(fidx) = (dx.asDiagonal() * C).norm();
-            } else if(f.is_axial_face()) {
+                    DL(fidx) = (dx.asDiagonal() * C).norm();
+                }
+            }
+        }
+        for(auto&& [fidx,f]: mtao::iterator::enumerate(faces())) {
+            if(f.is_axial_face() && !f.external_boundary) {
                 int ba = f.as_axial_axis();
                 DL(fidx) = dx(ba);
             }
@@ -678,7 +685,7 @@ namespace mandoline {
         for(auto&& [fidx,f]: mtao::iterator::enumerate(faces())) {
             if(f.external_boundary) {
                 auto [c,s] = *f.external_boundary;
-                trips.emplace_back(fidx,g.get(c), s?1:-1);
+                trips.emplace_back(fidx,g.get(c), s?-1:1);
             }
         }
 

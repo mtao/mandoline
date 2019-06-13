@@ -37,11 +37,9 @@ void fix_axis_aligned_indefiniteness(Eigen::SparseMatrix<double>& M, Eigen::Vect
         int count = M.innerVector(row).nonZeros();
         if (count == 0) {
             M.insert(row, row) = 1;
-            std::cout << rhs[row] << " ";
             rhs[row] = 0;
         }
     }
-    std::cout << std::endl;
     M.makeCompressed();
 }
 Eigen::VectorXd solve_SPSD_system(const Eigen::SparseMatrix<double>& A, const Eigen::VectorXd& b) {
@@ -117,34 +115,41 @@ mtao::VecXd flux(const mandoline::CutCellMesh<3>& ccm) {
         }
     }
     //std::cout << FV.transpose() << std::endl;
-    std::cout << "Flux rows: " << FV.rows() << std::endl;
     return FV;
 }
 mtao::VecXd divergence(const mandoline::CutCellMesh<3>& ccm) {
     mtao::VecXd H3 = ccm.primal_hodge3();
-    H3.setZero();
-    int i;
-    for(i = ccm.cells().size(); i < H3.rows(); ++i) {
-        if(i < ccm.cells().size() && ccm.cells()[i].region == 0) {
-            H3(i) = 1;
-            break;
-        } else if(ccm.adaptive_grid_regions().at(i) == 0) {
-            H3(i) = 1;
-            break;
+    //H3.setZero();
+    //int i;
+    //for(i = ccm.cells().size(); i < H3.rows(); ++i) {
+    //    if(i < ccm.cells().size() && ccm.cells()[i].region == 0) {
+    //        H3(i) = 1;
+    //        break;
+    //    } else if(ccm.adaptive_grid_regions().at(i) == 0) {
+    //        H3(i) = 1;
+    //        break;
+    //    }
+    //}
+    //for(int j = i+1; j < H3.rows(); ++j) {
+    //    if(j < ccm.cells().size() &&ccm.cells()[j].region == 0) {
+    //        H3(j) = -1;
+    //        break;
+    //    } else if(ccm.adaptive_grid_regions().at(j) == 0) {
+    //        H3(j) = -1;
+    //        break;
+    //    }
+    //}
+    //std::cout << H3.transpose() << std::endl;
+    //return H3;
+    mtao::VecXd R = H3.asDiagonal() * boundary(ccm).transpose() * flux(ccm);
+    R = boundary(ccm).transpose() * flux(ccm);
+    for(auto&& [i,c]: mtao::iterator::enumerate(ccm.cells())) {
+        if(c.region > 0) {
+            R(i) = 0;
         }
     }
-    for(int j = i+1; j < H3.rows(); ++j) {
-        if(j < ccm.cells().size() &&ccm.cells()[j].region == 0) {
-            H3(j) = -1;
-            break;
-        } else if(ccm.adaptive_grid_regions().at(j) == 0) {
-            H3(j) = -1;
-            break;
-        }
-    }
-    std::cout << H3.transpose() << std::endl;
-    return H3;
-    return H3.asDiagonal() * boundary(ccm).transpose() * flux(ccm);
+    std::cout << "Flux sum: " << R.sum() << "/" << R.norm() << std::endl;
+    return R;
 }
 Eigen::SparseMatrix<double> boundary(const mandoline::CutCellMesh<3>& ccm) {
     auto B = ccm.boundary();
@@ -169,25 +174,24 @@ Eigen::SparseMatrix<double> laplacian(const mandoline::CutCellMesh<3>& ccm) {
 
     mtao::VecXd DH2 = ccm.dual_hodge2();
 
-    std::cout << "DH: ";
-    std::cout << DH2.transpose() << std::endl;
 
     return B.transpose() * DH2.asDiagonal() * B;
 }
 mtao::VecXd pressure(const mandoline::CutCellMesh<3>& ccm) {
     auto L = laplacian(ccm);
     mtao::VecXd D = divergence(ccm);
-    remove_noair_kernel(ccm,L,D);
+    if constexpr(false) {
+    //remove_noair_kernel(ccm,L,D);
     //std::cout << D.transpose() << std::endl;
     fix_axis_aligned_indefiniteness(L,D);
     //std::cout << D.transpose() << std::endl;
     D.setRandom();
     std::cout << L.rows() << "," << L.cols() << " * " << D.rows() << std::endl;
-    std::cout << L << std::endl;
-    Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>> solver(L);
+    //std::cout << L << std::endl;
+    //Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>> solver(L);
     //Eigen::ConjugateGradient<Eigen::SparseMatrix<double>> solver(L);
-    mtao::VecXd R = solver.solve(D);
-    //mtao::VecXd R = solve_SPSD_system(L,D);
+    //mtao::VecXd R = solver.solve(D);
+    mtao::VecXd R = solve_SPSD_system(L,D);
     //std::cout << "Answer norm: " << ((L * R) - D).norm() << std::endl;
     for(auto&& [i,c]: mtao::iterator::enumerate(ccm.cells())) {
         if(c.region > 0) {
@@ -196,20 +200,45 @@ mtao::VecXd pressure(const mandoline::CutCellMesh<3>& ccm) {
     }
     std::cout << R.transpose() << std::endl;
     return R;
+    } else if constexpr(false) {
 
-    //std::vector<mtao::VecXd> eigs;
-    //for(int i = 0; i < 200; ++i) {
-    //    for(int j = 0; j < 50; ++j) {
 
-    //        D = L * D;
-    //        for(auto&& e: eigs) {
-    //            D -= e * e.dot(D);
-    //        }
-    //        D /= D.norm();
-    //    }
-    //    eigs.push_back(D);
-    //}
+        D.setRandom();
+    std::vector<mtao::VecXd> eigs;
+    for(int i = 0; i < 5; ++i) {
+        for(int j = 0; j < 100; ++j) {
+
+            D = L * D;
+            for(auto&& e: eigs) {
+                D -= e * e.dot(D);
+            }
+            D /= D.norm();
+        }
+        eigs.push_back(D);
+    }
     return D;
+    } else {
+        mtao::VecXd x = L * D;
+        x.setZero();
+        mtao::VecXd r = D - L * x;
+        mtao::VecXd p = r;
+        std::cout << "Init: " << D.norm() << std::endl;
+        int i;
+        for(i = 0; i < x.rows(); ++i) {
+            double a = r.dot(r) / (p.dot(L * p));
+            x = x + a * p;
+            double rk = r.dot(r);
+            r = r - a * L * p;
+            if(r.norm() < 1e-5) {
+                break;
+            }
+            double b = r.dot(r) / rk;
+            p = r + b * p;
+        }
+        std::cout << i << ") Residual: " << r.norm() << std::endl;
+        return x;
+        
+    }
 
     //mtao::VecXd H2 = ccm.primal_hodge2();
     //return H2.asDiagonal() * 
