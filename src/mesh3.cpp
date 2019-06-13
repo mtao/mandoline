@@ -578,13 +578,44 @@ namespace mandoline {
     mtao::VecXd CutCellMesh<3>::primal_hodge2() const {
         auto PV = face_volumes();
         auto DV = dual_edge_lengths();
-        return (PV.array() < 1e-5).select(DV.cwiseQuotient(PV),0);
+        mtao::VecXd CV = (PV.array() < 1e-5).select(DV.cwiseQuotient(PV),0);
+        for(int i = 0; i < CV.size(); ++i) {
+            if(!std::isfinite(CV(i))) {
+                CV(i) = 0;
+            }
+        }
+        return CV;
     }
 
     mtao::VecXd CutCellMesh<3>::dual_hodge2() const {
         auto PV = face_volumes();
         auto DV = dual_edge_lengths();
-        return (DV.array() < 1e-5).select(PV.cwiseQuotient(DV),0);
+        mtao::VecXd  CV = (DV.array() < 1e-5).select(PV.cwiseQuotient(DV),0);
+        for(int i = 0; i < CV.size(); ++i) {
+            if(!std::isfinite(CV(i))) {
+                CV(i) = 0;
+            }
+        }
+        return CV;
+    }
+    mtao::VecXd CutCellMesh<3>::dual_hodge3() const {
+        auto CV = cell_volumes();
+        for(int i = 0; i < CV.size(); ++i) {
+            CV(i) = (std::abs(CV(i)) < 1e-5) ? 0 : (1. / CV(i));
+            if(!std::isfinite(CV(i))) {
+                CV(i) = 0;
+            }
+        }
+        return CV;
+    }
+    mtao::VecXd CutCellMesh<3>::primal_hodge3() const {
+        auto CV = cell_volumes();
+        for(int i = 0; i < CV.size(); ++i) {
+            if(!std::isfinite(CV(i))) {
+                CV(i) = 0;
+            }
+        }
+        return CV;
     }
 
     Eigen::SparseMatrix<double> CutCellMesh<3>::barycentric_matrix() const {

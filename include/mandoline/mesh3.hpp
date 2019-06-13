@@ -60,6 +60,8 @@ namespace mandoline {
                 mtao::VecXd dual_edge_lengths() const;
                 mtao::VecXd dual_hodge2() const;
                 mtao::VecXd primal_hodge2() const;
+                mtao::VecXd dual_hodge3() const;
+                mtao::VecXd primal_hodge3() const;
 
                 //Eigen::SparseMatrix<double> trilinear_matrix() const;
 
@@ -108,6 +110,7 @@ namespace mandoline {
 
 
 
+                const std::map<int,int>& adaptive_grid_regions() const { return m_adaptive_grid_regions; }
 
 
             private:

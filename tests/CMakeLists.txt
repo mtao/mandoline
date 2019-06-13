@@ -1,0 +1,3 @@
+
+ADD_EXECUTABLE(adaptive_grid_test adaptive_grid_test.cpp)
+TARGET_LINK_LIBRARIES(adaptive_grid_test mandoline_cutmesh3)

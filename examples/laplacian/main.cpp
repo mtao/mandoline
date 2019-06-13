@@ -209,6 +209,17 @@ class MeshViewer: public mtao::opengl::Window3 {
                 colors.row(3).array() = 1;
                 set_region_colors();
             }
+
+            if(ImGui::Button("Poisson colors")) {
+                mtao::VecXd C = pressure(ccm);
+                //C.array() -= (C.minCoeff() + C.maxCoeff()) / 2;
+                C /= C.cwiseAbs().maxCoeff();
+                colors.row(0) = C.transpose();
+                colors.row(1) = -C.transpose().array();
+                colors.row(2).array() = 0;
+                colors.row(3).array() = 1;
+                set_region_colors();
+            }
             if(input_phong) {input_phong->gui("Input Phong");}
 
             auto&& io = ImGui::GetIO();

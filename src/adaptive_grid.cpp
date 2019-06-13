@@ -339,12 +339,12 @@ namespace mandoline {
         set_edge_masks(mask.shape(),coord_type{{0,0,0}}, edge_masks,[&mask](const coord_type& abc) {
                 return mask(abc);
                 });
-        std::cout << level << "================" << std::endl;
-        print_grid(mask);
-        for(auto&& em: edge_masks) {
-            print_gridb(em);
-        }
-        std::cout << "================" << std::endl;
+        //std::cout << level << "================" << std::endl;
+        //print_grid(mask);
+        //for(auto&& em: edge_masks) {
+        //    print_gridb(em);
+        //}
+        //std::cout << "================" << std::endl;
         return edge_masks;
     }
 
@@ -471,7 +471,7 @@ namespace mandoline {
 
         }
         auto cell_grid = grid_from_cells(cells);
-        print_grid(cell_grid);
+        //print_grid(cell_grid);
     }
     auto AdaptiveGridFactory::grid_from_cells(const std::map<int,Cell>& cells) const -> GridData3i {
 
