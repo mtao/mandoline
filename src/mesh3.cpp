@@ -513,7 +513,6 @@ namespace mandoline {
         VecX DL = VecX::Zero(face_size());
 
         auto& dx = Base::dx();
-        std::cout << dx.transpose() << std::endl;
         auto g = adaptive_grid().grid();
         for(auto&& [fidx,f]: mtao::iterator::enumerate(faces())) {
             if(f.external_boundary) {
@@ -578,7 +577,7 @@ namespace mandoline {
     mtao::VecXd CutCellMesh<3>::primal_hodge2() const {
         auto PV = face_volumes();
         auto DV = dual_edge_lengths();
-        mtao::VecXd CV = (PV.array() < 1e-5).select(DV.cwiseQuotient(PV),0);
+        mtao::VecXd CV = (PV.array() > 1e-5).select(DV.cwiseQuotient(PV),0);
         for(int i = 0; i < CV.size(); ++i) {
             if(!std::isfinite(CV(i))) {
                 CV(i) = 0;
@@ -590,7 +589,7 @@ namespace mandoline {
     mtao::VecXd CutCellMesh<3>::dual_hodge2() const {
         auto PV = face_volumes();
         auto DV = dual_edge_lengths();
-        mtao::VecXd  CV = (DV.array() < 1e-5).select(PV.cwiseQuotient(DV),0);
+        mtao::VecXd  CV = (DV.array() > 1e-5).select(PV.cwiseQuotient(DV),0);
         for(int i = 0; i < CV.size(); ++i) {
             if(!std::isfinite(CV(i))) {
                 CV(i) = 0;

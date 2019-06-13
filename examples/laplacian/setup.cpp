@@ -122,33 +122,32 @@ mtao::VecXd flux(const mandoline::CutCellMesh<3>& ccm) {
 }
 mtao::VecXd divergence(const mandoline::CutCellMesh<3>& ccm) {
     mtao::VecXd H3 = ccm.primal_hodge3();
-    //H3.setZero();
-    //int i;
-    //for(i = ccm.cells().size(); i < H3.rows(); ++i) {
-    //    if(i < ccm.cells().size() && ccm.cells()[i].region == 0) {
-    //        H3(i) = 1;
-    //        break;
-    //    } else if(ccm.adaptive_grid_regions().at(i) == 0) {
-    //        H3(i) = 1;
-    //        break;
-    //    }
-    //}
-    //for(int j = i+1; j < H3.rows(); ++j) {
-    //    if(j < ccm.cells().size() &&ccm.cells()[j].region == 0) {
-    //        H3(j) = -1;
-    //        break;
-    //    } else if(ccm.adaptive_grid_regions().at(j) == 0) {
-    //        H3(j) = -1;
-    //        break;
-    //    }
-    //}
-    //std::cout << H3.transpose() << std::endl;
-    //return H3;
+    H3.setZero();
+    int i;
+    for(i = ccm.cells().size(); i < H3.rows(); ++i) {
+        if(i < ccm.cells().size() && ccm.cells()[i].region == 0) {
+            H3(i) = 1;
+            break;
+        } else if(ccm.adaptive_grid_regions().at(i) == 0) {
+            H3(i) = 1;
+            break;
+        }
+    }
+    for(int j = i+1; j < H3.rows(); ++j) {
+        if(j < ccm.cells().size() &&ccm.cells()[j].region == 0) {
+            H3(j) = -1;
+            break;
+        } else if(ccm.adaptive_grid_regions().at(j) == 0) {
+            H3(j) = -1;
+            break;
+        }
+    }
+    std::cout << H3.transpose() << std::endl;
+    return H3;
     return H3.asDiagonal() * boundary(ccm).transpose() * flux(ccm);
 }
 Eigen::SparseMatrix<double> boundary(const mandoline::CutCellMesh<3>& ccm) {
     auto B = ccm.boundary();
-    std::cout << "Boundary size: " << B.rows() << "," << B.cols() << std::endl;
     return B;
 }
 Eigen::SparseMatrix<double> laplacian(const mandoline::CutCellMesh<3>& ccm) {
@@ -168,8 +167,10 @@ Eigen::SparseMatrix<double> laplacian(const mandoline::CutCellMesh<3>& ccm) {
     }
     B = B * DM.asDiagonal();
 
-    mtao::VecXd DH2 = ccm.primal_hodge2();
+    mtao::VecXd DH2 = ccm.dual_hodge2();
 
+    std::cout << "DH: ";
+    std::cout << DH2.transpose() << std::endl;
 
     return B.transpose() * DH2.asDiagonal() * B;
 }
@@ -177,16 +178,17 @@ mtao::VecXd pressure(const mandoline::CutCellMesh<3>& ccm) {
     auto L = laplacian(ccm);
     mtao::VecXd D = divergence(ccm);
     remove_noair_kernel(ccm,L,D);
-    std::cout << D.transpose() << std::endl;
+    //std::cout << D.transpose() << std::endl;
     fix_axis_aligned_indefiniteness(L,D);
-    std::cout << D.transpose() << std::endl;
+    //std::cout << D.transpose() << std::endl;
     D.setRandom();
     std::cout << L.rows() << "," << L.cols() << " * " << D.rows() << std::endl;
-    //Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>> solver(L);
+    std::cout << L << std::endl;
+    Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>> solver(L);
     //Eigen::ConjugateGradient<Eigen::SparseMatrix<double>> solver(L);
-    //mtao::VecXd R = solver.solve(D);
-    mtao::VecXd R = solve_SPSD_system(L,D);
-    std::cout << "Answer norm: " << ((L * R) - D).norm() << std::endl;
+    mtao::VecXd R = solver.solve(D);
+    //mtao::VecXd R = solve_SPSD_system(L,D);
+    //std::cout << "Answer norm: " << ((L * R) - D).norm() << std::endl;
     for(auto&& [i,c]: mtao::iterator::enumerate(ccm.cells())) {
         if(c.region > 0) {
             R(i) = 0;

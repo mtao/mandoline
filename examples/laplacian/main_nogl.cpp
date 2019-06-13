@@ -32,6 +32,8 @@ int main(int argc, char* argv[]) {
             }
         }
     }
+    std::cout << std::endl;
+    pressure(ccm);
     //std::cout << std::endl;
     //std::cout << ccm.dual_edge_lengths().transpose() << std::endl << std::endl;
     //std::cout << ccm.face_volumes().transpose() << std::endl << std::endl;
