@@ -97,15 +97,20 @@ mtao::VecXd flux(const mandoline::CutCellMesh<3>& ccm) {
     std::vector<double> RV(rcount+1,0);
     std::copy(RV.begin(),RV.end(),std::ostream_iterator<int>(std::cout,", "));
     std::cout << std::endl;
+    mtao::VecXd R = mtao::VecXd::Zero(ccm.face_size());
     for(auto&& [i,f]: mtao::iterator::enumerate(ccm.faces())) {
         //std::cout << FR.at(i) << "+=" << FV(i) << std::endl;;
         //std::cout << RV[FR.at(i)] << " => ";
         if(f.is_axial_face()) {
             FV(i) = 0;
+        } else {
+            int region = FR.at(i);
+            //FV(i) *= f.N(region%3);
+            R(i) = FV(i) * f.N(region%3) * (region%2==0?1:-1);
+            //RV[region] += FV(i);
         }
-        RV[FR.at(i)] += FV(i);
-        //std::cout << RV[FR.at(i)] << std::endl;;
     }
+    /*
     for(int i = 0; i < ccm.face_size(); ++i) {
         if(FR.find(i) != FR.end() && FR.at(i) > 0 && RV[FR.at(i)] > 0) {
             FV(i) /= (FR.at(i) % 2 == 0 ? 1 : -1) * RV[FR.at(i)];
@@ -114,8 +119,9 @@ mtao::VecXd flux(const mandoline::CutCellMesh<3>& ccm) {
             FV(i) = 0;
         }
     }
+    */
     //std::cout << FV.transpose() << std::endl;
-    return FV;
+    return R;
 }
 mtao::VecXd divergence(const mandoline::CutCellMesh<3>& ccm) {
     mtao::VecXd H3 = ccm.primal_hodge3();

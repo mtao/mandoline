@@ -335,6 +335,7 @@ namespace mandoline::construction {
                 std::optional<int> adaptive_level = 0;
                 std::optional<AdaptiveGrid> adaptive_grid;
                 std::optional<std::map<int,int>> adaptive_grid_regions;
+                void set_region_map(const std::map<int,std::set<int>>& region_vertices);
                 void bake() override;
 
                 Edge smallest_ordered_edge(const std::vector<int>& v) const;

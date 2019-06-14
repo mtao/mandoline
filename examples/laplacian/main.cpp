@@ -135,7 +135,7 @@ class MeshViewer: public mtao::opengl::Window3 {
                 auto [VV,FF] = exploder.mesh(scale, std::set<int>{r});
                 slicers[r] = mandoline::tools::SliceGenerator(VV,FF);
             }
-            //input_phong = new mtao::opengl::Drawable<Magnum::Shaders::Phong>{input_mesh,phong_shader, drawables()};
+            input_phong = new mtao::opengl::Drawable<Magnum::Shaders::Phong>{input_mesh,phong_shader, drawables()};
 
             direction(2) = -1;
             origin(2) = -.1;
