@@ -5,6 +5,7 @@ ADD_LIBRARY(cutmesh_maker
     )
 
 TARGET_LINK_LIBRARIES(cutmesh_maker mandoline)
+ADD_DEFINITIONS(-g)
 
 ADD_EXECUTABLE(cutmesh_to_obj cutmesh_to_obj.cpp)
 TARGET_LINK_LIBRARIES(cutmesh_to_obj cutmesh_maker mandoline OpenMP::OpenMP_CXX mtao_core)

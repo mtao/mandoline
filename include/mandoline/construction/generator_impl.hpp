@@ -12,6 +12,17 @@
 
 namespace mandoline::construction {
     template <int D>
+        auto CutCellEdgeGenerator<D>::colvecs_to_vecvector(const ColVecs& V)  -> VecVector {
+            mtao::vector<mtao::Vec3d> stlp(V.cols());
+            for(auto&& [i,v]: mtao::iterator::enumerate(stlp)) {
+                v = V.col(i);
+            }
+            return stlp;
+        }
+
+    template <int D>
+        CutCellEdgeGenerator<D>::CutCellEdgeGenerator(const ColVecs& V, const StaggeredGrid& g, std::optional<double> threshold): CutCellEdgeGenerator(colvecs_to_vecvector(V),g,threshold) {}
+    template <int D>
         CutCellEdgeGenerator<D>::CutCellEdgeGenerator(const VecVector& V, const StaggeredGrid& g, std::optional<double> threshold): StaggeredGrid(g), m_data(g.vertex_grid()), m_origV(V) {
             //CutCellEdgeGenerator<D>::CutCellEdgeGenerator(const VecVector& V, const StaggeredGrid& g, std::optional<double> threshold): StaggeredGrid(g), m_origV(V) {
             m_data.m_V.reserve(V.size());
@@ -30,7 +41,7 @@ namespace mandoline::construction {
                     });
         }
         template <int D>
-            CutCellEdgeGenerator<D>::CutCellEdgeGenerator(const StaggeredGrid& g ): CutCellEdgeGenerator({},g.shape()) {
+            CutCellEdgeGenerator<D>::CutCellEdgeGenerator(const StaggeredGrid& g ): CutCellEdgeGenerator(VecVector{},g.shape()) {
             }
         /*
            template <int D> 

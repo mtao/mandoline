@@ -135,6 +135,7 @@ SET(TOOLS_HDRS
     include/mandoline/tools/exploded_mesh.hpp
     )
 
+ADD_DEFINITIONS(-g)
 ADD_LIBRARY(mandoline
     ${CUTMESH2_SRCS}
     ${CUTMESH3_HDRS}

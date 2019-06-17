@@ -82,6 +82,7 @@ namespace mandoline::construction {
 
                 //This threshold is to fuse vertices near grid vertices. for the results of float to double conversions 1e-6 seemed reasonable
                 CutCellEdgeGenerator(const VecVector& V, const StaggeredGrid& grid, std::optional<double> threshold  = 1e-6);
+                CutCellEdgeGenerator(const ColVecs& V, const StaggeredGrid& grid, std::optional<double> threshold  = 1e-6);
                 CutCellEdgeGenerator(const StaggeredGrid& grid);
                 CutCellEdgeGenerator() = default;
                 CutCellEdgeGenerator(CutCellEdgeGenerator&&) = default;
@@ -252,6 +253,7 @@ namespace mandoline::construction {
                 bool is_in_cell(const std::vector<int>& face)const ;
                 bool is_in_cell(const std::set<std::vector<int>>& face)const ;
 
+                static VecVector colvecs_to_vecvector(const ColVecs& V);
             private:
                 using crossing_store_type = mtao::map<CoordType,std::set<EdgeCrossing<D>>>;
                 std::array<crossing_store_type,D> get_per_axis_crossing_indices() const;

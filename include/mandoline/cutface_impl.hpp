@@ -101,7 +101,7 @@ namespace mandoline {
                 ret.id = face.face_id();
             } else {
                 auto&& pid = face.plane_id();
-                ret.id = std::array<int,2>{{pid.axis(),pid.value()}};
+                ret.id = std::array<int,2>{{int(pid.axis()),int(pid.value())}};
             }
             for(auto&& c: face.curves()) {
                 std::vector<int> curve(c.indices().size());

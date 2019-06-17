@@ -18,6 +18,7 @@
 #include <mtao/opengl/objects/grid.h>
 #include <mtao/geometry/grid/grid.h>
 #include <mtao/geometry/grid/staggered_grid.hpp>
+#include <mandoline/construction/generator.hpp>
 
 #include <glm/gtc/matrix_transform.hpp> 
 
@@ -44,6 +45,8 @@ class MeshViewer: public mtao::opengl::Window3 {
         bool use_cube = false;
         bool adaptive=true;
         int adaptive_level=0;
+        mtao::ColVecs3d V;
+        mtao::ColVecs3i F;
 
         std::array<int,3> N{{20,20,20}};
         int& NI=N[0];
@@ -55,9 +58,17 @@ class MeshViewer: public mtao::opengl::Window3 {
             Corrade::Utility::Arguments myargs;
             myargs.addArgument("filename").parse(args.argc,args.argv);
             std::string filename = myargs.value("filename");
-            auto [V,F] = mtao::geometry::mesh::read_objF(filename);
-            mesh.setTriangleBuffer(V,F.cast<unsigned int>());
-            orig_bbox = bbox = mtao::geometry::bounding_box(V);
+            std::tie(V,F) = mtao::geometry::mesh::read_objD(filename);
+                std::cout << "V/E/F " << V.cols() << "/" << mtao::geometry::mesh::boundary_facets(F).cols() << "/" << F.cols() << std::endl;
+            mesh.setTriangleBuffer(V.cast<float>(),F.cast<unsigned int>());
+            orig_bbox = bbox = mtao::geometry::bounding_box(V.cast<float>().eval());
+            mtao::Vec3f trans_e= -((bbox.min() + bbox.max()) / 2).cast<float>();
+            Magnum::Math::Vector3<float> trans(trans_e.x(),trans_e.y(),trans_e.z());
+            mesh.translate(trans);
+            grid.translate(trans);
+            float s = 1./bbox.sizes().maxCoeff();
+            mesh.scale(Magnum::Math::Vector3<float>(s));
+            grid.scale(Magnum::Math::Vector3<float>(s));
             mv_drawable = new mtao::opengl::Drawable<Magnum::Shaders::MeshVisualizer>{mesh,_wireframe_shader, drawables()};
 
 
@@ -114,6 +125,29 @@ class MeshViewer: public mtao::opengl::Window3 {
             if(ImGui::Button("Reset BBox")) {
                 bbox = orig_bbox;
                 update();
+            }
+            if(ImGui::Button("Make CCG")) {
+                Eigen::AlignedBox<double,3> bbox(this->bbox.min().cast<double>(),this->bbox.max().cast<double>());
+                auto sg = mtao::geometry::grid::StaggeredGrid3d::from_bbox
+                    (bbox, std::array<int,3>{{NI,NJ,NK}}, use_cube);
+                auto ccg = mandoline::construction::CutCellGenerator<3>(V,sg, {});
+                ccg.add_boundary_elements(F);
+                ccg.bake();
+                ccg.adaptive = adaptive;
+                if(adaptive) {
+                    ccg.adaptive_level = adaptive_level;
+                }
+                std::vector<mtao::ColVecs3i> Fs;
+                auto ccm = ccg.generate();
+                mtao::ColVecs3f V = ccm.vertices().cast<float>();
+                for(auto&& f: ccm.faces()) {
+                    if(f.is_mesh_face()) {
+                        Fs.push_back(f.triangulate_fan());
+                    }
+                }
+                auto F = mtao::eigen::hstack_iter(Fs.begin(),Fs.end()).cast<unsigned int>().eval();
+                mesh.setTriangleBuffer(V,F);
+
             }
         }
         void draw() override {
