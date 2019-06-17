@@ -12,3 +12,11 @@ ADD_EXECUTABLE(write_to_obj write_to_obj.cpp)
 TARGET_LINK_LIBRARIES(write_to_obj cutmesh_maker mandoline OpenMP::OpenMP_CXX mtao_core)
 ADD_EXECUTABLE(write_to_cutmesh write_to_cutmesh.cpp)
 TARGET_LINK_LIBRARIES(write_to_cutmesh cutmesh_maker mandoline OpenMP::OpenMP_CXX mtao_core)
+
+IF(${USE_OPENGL})
+find_package(Magnum REQUIRED GL Shaders GlxContext GlfwApplication SceneGraph MeshTools)
+find_package(MagnumIntegration REQUIRED ImGui)
+ADD_EXECUTABLE(make_cutmesh_gui make_cutmesh_gui.cpp)
+TARGET_LINK_LIBRARIES(make_cutmesh_gui mandoline OpenMP::OpenMP_CXX mtao_core mtao_opengl)
+
+ENDIF(${USE_OPENGL})
