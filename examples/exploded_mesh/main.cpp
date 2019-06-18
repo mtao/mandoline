@@ -39,7 +39,7 @@ class MeshViewer: public mtao::opengl::Window3 {
         bool show_wireframes = false;
 
         float scale = 1.1;
-        bool do_slice = true;
+        bool do_slice = false;
         mtao::ColVectors<double,4> colors;
 
         std::map<int,mandoline::tools::SliceGenerator> slicers;

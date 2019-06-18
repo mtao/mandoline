@@ -24,6 +24,8 @@ protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS proto/cutmesh.proto)
 protobuf_generate_python(PROTO_PY proto/cutmesh.proto)
 
 
+find_package(CGAL)
+
 
 
 
@@ -151,7 +153,7 @@ ADD_LIBRARY(mandoline
     )
 TARGET_LINK_LIBRARIES(mandoline
     mtao_geometry OpenMP::OpenMP_CXX
-    gmp CGAL mpfr Boost::thread
+    gmp CGAL::CGAL mpfr Boost::thread
     ${Protobuf_LIBRARIES}
     )
 
@@ -163,7 +165,7 @@ ADD_LIBRARY(mandoline2 EXCLUDE_FROM_ALL
     )
 TARGET_LINK_LIBRARIES(mandoline2
     mtao_geometry OpenMP::OpenMP_CXX
-    gmp CGAL mpfr Boost::thread
+    gmp CGAL::CGAL mpfr Boost::thread
     ${Protobuf_LIBRARIES}
     )
 
@@ -178,7 +180,7 @@ ADD_LIBRARY(mandoline3 EXCLUDE_FROM_ALL
     )
 TARGET_LINK_LIBRARIES(mandoline3 
     mtao_geometry OpenMP::OpenMP_CXX
-    gmp CGAL mpfr Boost::thread
+    gmp CGAL::CGAL mpfr Boost::thread
     ${Protobuf_LIBRARIES}
     )
 
@@ -188,7 +190,7 @@ ADD_LIBRARY(mandoline_cutmesh3
     )
 TARGET_LINK_LIBRARIES(mandoline_cutmesh3
     mtao_geometry OpenMP::OpenMP_CXX
-    gmp CGAL mpfr Boost::thread
+    gmp CGAL::CGAL mpfr Boost::thread
     ${Protobuf_LIBRARIES}
     )
 
