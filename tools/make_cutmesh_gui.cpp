@@ -19,6 +19,7 @@
 #include <mtao/geometry/grid/grid.h>
 #include <mtao/geometry/grid/staggered_grid.hpp>
 #include <mandoline/construction/generator.hpp>
+#include <mandoline/mesh3.hpp>
 
 #include <glm/gtc/matrix_transform.hpp> 
 
@@ -30,6 +31,8 @@ class MeshViewer: public mtao::opengl::Window3 {
         enum class Mode: int { Smoothing, LSReinitialization };
         Mode mode = Mode::LSReinitialization;
 
+        char output_filename[128] = "output.cutmesh";
+        std::string_view output_view;
         float permeability = 100.0;
         float timestep = 1000.0;
         bool animate = false;
@@ -52,9 +55,10 @@ class MeshViewer: public mtao::opengl::Window3 {
         int& NI=N[0];
         int& NJ=N[1];
         int& NK=N[2];
+        std::optional<mandoline::CutCellMesh<3>> ccm;
 
 
-        MeshViewer(const Arguments& args): Window3(args), _wireframe_shader{Magnum::Shaders::MeshVisualizer::Flag::Wireframe} {
+        MeshViewer(const Arguments& args): Window3(args), _wireframe_shader{Magnum::Shaders::MeshVisualizer::Flag::Wireframe}, output_view(output_filename,mtao::types::container_size(output_filename)) {
             Corrade::Utility::Arguments myargs;
             myargs.addArgument("filename").parse(args.argc,args.argv);
             std::string filename = myargs.value("filename");
@@ -138,9 +142,9 @@ class MeshViewer: public mtao::opengl::Window3 {
                     ccg.adaptive_level = adaptive_level;
                 }
                 std::vector<mtao::ColVecs3i> Fs;
-                auto ccm = ccg.generate();
-                mtao::ColVecs3f V = ccm.vertices().cast<float>();
-                for(auto&& f: ccm.faces()) {
+                ccm = ccg.generate();
+                mtao::ColVecs3f V = ccm->vertices().cast<float>();
+                for(auto&& f: ccm->faces()) {
                     if(f.is_mesh_face()) {
                         Fs.push_back(f.triangulate_fan());
                     }
@@ -148,6 +152,13 @@ class MeshViewer: public mtao::opengl::Window3 {
                 auto F = mtao::eigen::hstack_iter(Fs.begin(),Fs.end()).cast<unsigned int>().eval();
                 mesh.setTriangleBuffer(V,F);
 
+            }
+            ImGui::InputText("Filename",output_filename,128);
+            if(ImGui::Button("Save")) {
+                if(ccm) {
+                    ccm->write(std::string(output_view));
+
+                }
             }
         }
         void draw() override {
