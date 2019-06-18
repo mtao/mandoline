@@ -4,6 +4,44 @@
 #include "mandoline/proto_util.hpp"
 #include <iterator>
 namespace mandoline {
+    template <typename GridB>
+        void print_gridb(const GridB& g) {
+
+            if constexpr(GridB::D == 3) 
+            {
+                for(int i = 0; i < g.shape(0); ++i) {
+                    for(int j = 0; j < g.shape(1); ++j) {
+                        for(int k = 0; k < g.shape(2); ++k) {
+                            if(g(i,j,k)) {
+                                std::cout << "o";
+                            } else {
+                                std::cout << ".";
+                            }
+                        }
+                        std::cout << std::endl;
+                    }
+                    std::cout << std::endl;
+                }
+            }
+
+        }
+    template <typename GridB>
+        void print_grid(const GridB& g) {
+
+            if constexpr(GridB::D == 3) 
+            {
+                for(int i = 0; i < g.shape(0); ++i) {
+                    for(int j = 0; j < g.shape(1); ++j) {
+                        for(int k = 0; k < g.shape(2); ++k) {
+                            std::cout << g(i,j,k) << " ";
+                        }
+                        std::cout << std::endl;
+                    }
+                    std::cout << std::endl;
+                }
+            }
+
+        }
 
     void   AdaptiveGrid::Cell::serialize(CutMeshProto::Cube& c) const {
         protobuf::serialize(corner(),*c.mutable_corner());
@@ -47,44 +85,6 @@ namespace mandoline {
     const std::array<AdaptiveGridFactory::Indexer,3> AdaptiveGridFactory::mask_edge_indexers = make_edge_indexers();
     const std::array<AdaptiveGridFactory::coord_type,3> AdaptiveGridFactory::mask_edge_shapes = make_mask_edge_shapes();
 
-    template <typename GridB>
-        void print_gridb(const GridB& g) {
-
-            if constexpr(GridB::D == 3) 
-            {
-                for(int i = 0; i < g.shape(0); ++i) {
-                    for(int j = 0; j < g.shape(1); ++j) {
-                        for(int k = 0; k < g.shape(2); ++k) {
-                            if(g(i,j,k)) {
-                                std::cout << "o";
-                            } else {
-                                std::cout << ".";
-                            }
-                        }
-                        std::cout << std::endl;
-                    }
-                    std::cout << std::endl;
-                }
-            }
-
-        }
-    template <typename GridB>
-        void print_grid(const GridB& g) {
-
-            if constexpr(GridB::D == 3) 
-            {
-                for(int i = 0; i < g.shape(0); ++i) {
-                    for(int j = 0; j < g.shape(1); ++j) {
-                        for(int k = 0; k < g.shape(2); ++k) {
-                            std::cout << g(i,j,k) << " ";
-                        }
-                        std::cout << std::endl;
-                    }
-                    std::cout << std::endl;
-                }
-            }
-
-        }
     void AdaptiveGridFactory::make_edges(const std::optional<int>& max_level) {
         auto es = compute_edges(max_level);
         edges = mtao::eigen::stl2eigen(std::get<0>(es));
@@ -92,7 +92,6 @@ namespace mandoline {
     }
     auto AdaptiveGridFactory::compute_axial_edges(const std::optional<int>& max_level) const -> std::tuple<std::array<std::set<Edge>,3>,AxialBEdgeMap> {
 
-        std::cout << "Computing axial edges" << std::endl;
         std::array<coord_type,3> edge_shapes{{original.shape(),original.shape(),original.shape()}};
         edge_shapes[0][1]++;
         edge_shapes[0][2]++;
@@ -359,6 +358,7 @@ namespace mandoline {
 
 
     AdaptiveGridFactory::AdaptiveGridFactory(const GridData3& mask): original(!mask) {
+        print_gridb(mask);
         std::array<int,3> shape = mask.shape();
         int size = *std::max_element(shape.begin(),shape.end());
         int level_count = int(std::ceil(std::log2(size)));

@@ -150,6 +150,7 @@ namespace mandoline::construction {
             auto V = all_GV();
 
             if(adaptive) {
+            auto t = mtao::logging::profiler("Adaptive grid",false,"profiler");
                 auto adaptive_grid_factory = AdaptiveGridFactory(m_active_grid_cell_mask);
                 adaptive_grid_factory.make_cells(adaptive_level);
                 adaptive_grid  = adaptive_grid_factory.create();

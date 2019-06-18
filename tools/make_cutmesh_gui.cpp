@@ -51,7 +51,7 @@ class MeshViewer: public mtao::opengl::Window3 {
         mtao::ColVecs3d V;
         mtao::ColVecs3i F;
 
-        std::array<int,3> N{{20,20,20}};
+        std::array<int,3> N{{5,5,5}};
         int& NI=N[0];
         int& NJ=N[1];
         int& NK=N[2];
@@ -69,9 +69,11 @@ class MeshViewer: public mtao::opengl::Window3 {
             mtao::Vec3f trans_e= -((bbox.min() + bbox.max()) / 2).cast<float>();
             Magnum::Math::Vector3<float> trans(trans_e.x(),trans_e.y(),trans_e.z());
             mesh.translate(trans);
+            edge_mesh.translate(trans);
             grid.translate(trans);
             float s = 1./bbox.sizes().maxCoeff();
             mesh.scale(Magnum::Math::Vector3<float>(s));
+            edge_mesh.scale(Magnum::Math::Vector3<float>(s));
             grid.scale(Magnum::Math::Vector3<float>(s));
             mv_drawable = new mtao::opengl::Drawable<Magnum::Shaders::MeshVisualizer>{mesh,_wireframe_shader, drawables()};
 
@@ -79,6 +81,16 @@ class MeshViewer: public mtao::opengl::Window3 {
             edge_drawable = new mtao::opengl::Drawable<Magnum::Shaders::Flat3D>{grid,_flat_shader, drawables()};
             edge_drawable->activate_triangles({});
             edge_drawable->activate_edges();
+
+            edge_boundary_drawable = new mtao::opengl::Drawable<Magnum::Shaders::Flat3D>{edge_mesh,_flat_shader, drawables()};
+            edge_boundary_drawable->activate_triangles({});
+            edge_boundary_drawable->activate_edges();
+
+            edge_boundary_drawable->data().color = Magnum::Color4(1,0,0,1);
+
+
+            edge_mesh.setParent(&root());
+            edge_boundary_drawable->set_visibility(false);
             grid.setParent(&root());
 
             mesh.setParent(&root());
@@ -88,10 +100,15 @@ class MeshViewer: public mtao::opengl::Window3 {
             //mtao::geometry::grid::Grid3f g(std::array<int,3>{{NI,NJ,NK}});
             auto sg = mtao::geometry::grid::StaggeredGrid3f::from_bbox
                 (bbox, std::array<int,3>{{NI,NJ,NK}}, use_cube);
+            std::cout << "cell shape: " << mtao::eigen::stl2eigen(sg.cell_shape()).transpose() << std::endl;
+            std::cout << sg.cell_grid().size() << std::endl;
+            std::cout << "vertex shape: " << mtao::eigen::stl2eigen(sg.vertex_shape()).transpose() << std::endl;
+            std::cout << sg.vertex_grid().size() << std::endl;
             //auto g = mtao::geometry::grid::Grid3f::from_bbox
             //    (bbox, std::array<int,3>{{NI,NJ,NK}}, use_cube);
             auto g = sg.vertex_grid();
 
+            std::cout << "vertex shape: " << mtao::eigen::stl2eigen(g.shape()).transpose() << std::endl;
             grid.set(g);
 
 
@@ -130,17 +147,17 @@ class MeshViewer: public mtao::opengl::Window3 {
                 bbox = orig_bbox;
                 update();
             }
-            if(ImGui::Button("Make CCG")) {
+            if(ImGui::Button("Make CCM")) {
                 Eigen::AlignedBox<double,3> bbox(this->bbox.min().cast<double>(),this->bbox.max().cast<double>());
                 auto sg = mtao::geometry::grid::StaggeredGrid3d::from_bbox
                     (bbox, std::array<int,3>{{NI,NJ,NK}}, use_cube);
                 auto ccg = mandoline::construction::CutCellGenerator<3>(V,sg, {});
                 ccg.add_boundary_elements(F);
-                ccg.bake();
                 ccg.adaptive = adaptive;
                 if(adaptive) {
                     ccg.adaptive_level = adaptive_level;
                 }
+                ccg.bake();
                 std::vector<mtao::ColVecs3i> Fs;
                 ccm = ccg.generate();
                 mtao::ColVecs3f V = ccm->vertices().cast<float>();
@@ -151,6 +168,23 @@ class MeshViewer: public mtao::opengl::Window3 {
                 }
                 auto F = mtao::eigen::hstack_iter(Fs.begin(),Fs.end()).cast<unsigned int>().eval();
                 mesh.setTriangleBuffer(V,F);
+
+
+                using E = std::array<int,2>;
+                std::vector<E> edges;
+                for(int i = 0; i < ccm->cut_edge_size(); ++i) {
+                    auto e = ccm->cut_edge(i);
+                    if((ccg.grid_vertex(e(0)).mask() & ccg.grid_vertex(e(1)).mask()).active()) {
+                        edges.emplace_back(E{{e(0),e(1)}});
+                    }
+                }
+                if(edges.size() > 0) {
+                    auto EE = mtao::eigen::stl2eigen(edges);
+
+                    edge_mesh.setEdgeBuffer(V,EE.cast<unsigned int>().eval());
+
+                    edge_boundary_drawable->set_visibility(true);
+                }
 
             }
             ImGui::InputText("Filename",output_filename,128);
@@ -170,8 +204,10 @@ class MeshViewer: public mtao::opengl::Window3 {
         Magnum::Shaders::Flat3D _flat_shader;
         mtao::opengl::objects::Mesh<3> mesh;
         mtao::opengl::objects::Grid<3> grid;
+        mtao::opengl::objects::Mesh<3> edge_mesh;
         mtao::opengl::Drawable<Magnum::Shaders::MeshVisualizer>* mv_drawable = nullptr;
         mtao::opengl::Drawable<Magnum::Shaders::Flat3D>* edge_drawable = nullptr;
+        mtao::opengl::Drawable<Magnum::Shaders::Flat3D>* edge_boundary_drawable = nullptr;
 
 
 };
