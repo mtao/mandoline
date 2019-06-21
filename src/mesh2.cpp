@@ -164,7 +164,7 @@ namespace mandoline {
                 auto&& [a,b] = q;
 
                 auto active_predicate = [&](int i, int j) {
-                    return !active_grid_cell_mask.valid_index(i,j) || active_grid_cell_mask(i,j);
+                    return !active_grid_cell_mask().valid_index(i,j) || active_grid_cell_mask()(i,j);
                 };
                 if(active_predicate(i,j)) {
                     //b / y

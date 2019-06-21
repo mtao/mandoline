@@ -733,4 +733,56 @@ namespace mandoline {
     int AdaptiveGrid::num_cells() const {
         return cells().size();
     }
+
+
+    std::vector<Eigen::Triplet<double>> AdaptiveGrid::grid_face_projection(int offset) const {
+        std::vector<Eigen::Triplet<double>> trips;
+        mtao::VecXd ret(m_boundary.size());
+        for(auto&& [i,e]: mtao::iterator::enumerate(m_boundary)) {
+            if(!is_valid_edge(e)) continue;
+            auto [a,b] = e;
+            int k = 0;
+
+            auto& ca = cell(a);
+            auto& cb = cell(b);
+            mtao::Vec3d cd = (ca.center() - cb.center()).cwiseAbs();
+            int minwidth = std::min(ca.width(),cb.width());
+            cd.maxCoeff(&k);
+            coord_type corner = ca.width() < cb.width() ? ca.corner():cb.corner();
+            corner[k] += minwidth;
+            {
+                const int w = minwidth;
+                const coord_type c = corner;
+                const int u = (k+1)%3;
+                const int v = (k+2)%3;
+                double vol = 1. / w*w;
+                coord_type a = c;
+                for(int& i = a[u] = c[u]; i < w+c[u]; ++i) {
+                    for(int& j = a[v] = c[v]; j < w+c[v]; ++j) {
+                        trips.emplace_back(staggered_index<2>(a,k), offset+i, vol);
+                    }
+                }
+            }
+        }
+        return trips;
+    }
+    std::vector<Eigen::Triplet<double>> AdaptiveGrid::grid_cell_projection() const {
+        std::vector<Eigen::Triplet<double>> trips;
+        for(auto&& [col,cell]: m_cells) {
+            auto&& c= cell.corner();
+            auto&& w = cell.width();
+            double vol = 1. / (w*w*w);
+
+            coord_type a;
+            for(int& i = a[0]= c[0]; i < w+c[0]; ++i) {
+                for(int& j = a[1]= c[1]; j < w+c[1]; ++j) {
+                    for(int& k  = a[2]= c[2]; k < w+c[2]; ++k) {
+                        trips.emplace_back(cell_index(a), col, vol);
+                    }
+                }
+            }
+        }
+        return trips;
+    }
+
 }

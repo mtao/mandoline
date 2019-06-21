@@ -30,7 +30,7 @@ namespace mandoline::construction {
     CutCellMesh<3> CutCellGenerator<3>::generate() const {
 
         CutCellMesh<3> ccm = CCEG::generate();
-        ccm.cut_edges = mtao::eigen::hstack(ccm.cut_edges,mtao::eigen::stl2eigen(adaptive_edges));
+        ccm.m_cut_edges = mtao::eigen::hstack(ccm.m_cut_edges,mtao::eigen::stl2eigen(adaptive_edges));
         ccm.m_folded_faces = folded_faces;
         //extra_metadata(ccm);
         ccm.m_faces.clear();

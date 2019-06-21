@@ -16,15 +16,25 @@
 #include <mtao/geometry/grid/staggered_grid.hpp>
 #include <mtao/eigen/stack.h>
 #include "mandoline/barycentric_triangle_face.hpp"
+#include "mandoline/vertex.hpp"
 
 namespace mandoline {
+    namespace construction {
+    template <int D>
+        class CutCellEdgeGenerator;
+    template <int D>
+        class CutCellGenerator;
+    }
 
     template <int D, typename Derived_>
         struct CutCellMeshBase: public mtao::geometry::grid::StaggeredGrid<double,D> {
+            friend class construction::CutCellEdgeGenerator<D>;
+            friend class construction::CutCellGenerator<D>;
             using Derived = Derived_;
             Derived& derived() { return *static_cast<Derived*>(this); }
             const Derived& derived() const { return *static_cast<const Derived*>(this); }
             using StaggeredGrid = mtao::geometry::grid::StaggeredGrid<double,D>;
+            using StaggeredGrid::vertex_grid;
             using coord_type = typename StaggeredGrid::coord_type;
             using GridData = mtao::geometry::grid::GridDataD<double,D>;
             using GridDatab = mtao::geometry::grid::GridDataD<bool,D>;
@@ -43,21 +53,28 @@ namespace mandoline {
             using IVecMap = Eigen::Map<IVec>;
             using IVecCMap = Eigen::Map<const IVec>;
             using SpMat = Eigen::SparseMatrix<double>;
+            using Vertex = ::mandoline::Vertex<D>;
             CutCellMeshBase() = default;
             CutCellMeshBase(const CutCellMeshBase&) = default;
             CutCellMeshBase(CutCellMeshBase&&) = default;
             CutCellMeshBase& operator=(const CutCellMeshBase&) = default;
             CutCellMeshBase& operator=(CutCellMeshBase&&) = default;
-            CutCellMeshBase(const StaggeredGrid& g, const ColVecs& v = {}): StaggeredGrid(g), cut_vertices(v), active_grid_cell_mask(GridDatab::Constant(true,g.cell_shape())) {
+            CutCellMeshBase(const StaggeredGrid& g, const std::vector<Vertex>& v = {}): StaggeredGrid(g), m_cut_vertices(v), m_active_grid_cell_mask(GridDatab::Constant(true,g.cell_shape())) {
             }
             using StaggeredGrid::dx;
 
             ColVecs vertices() const;
             ColVecs dual_vertices() const;
+            ColVecs cut_vertices_colvecs() const;
 
             Vec vertex(int vertex) const;
+            Vertex grid_vertex(int vertex) const;//in grid space, with masking
+            const Vertex& cut_vertex(int vertex) const {
+                return m_cut_vertices[vertex];
+            }
             //Vec dual_vertex(int vertex) const;
             int vertex_size() const;
+            int cut_vertex_size() const;
             int edge_size() const;
 
 
@@ -74,8 +91,8 @@ namespace mandoline {
             Edge dual_edge(int idx) const;
             Edges edges() const;
 
-            auto cut_edge(int idx) const { return cut_edges.col(idx); }
-            auto cut_edge_size() const { return cut_edges.cols(); }
+            auto cut_edge(int idx) const { return m_cut_edges.col(idx); }
+            int cut_edge_size() const { return m_cut_edges.cols(); }
 
             auto grid_vertices() const { return StaggeredGrid::vertices(); }
             auto grid_vertex(int idx) const { return StaggeredGrid::vertex(idx); }
@@ -88,13 +105,20 @@ namespace mandoline {
 
             Eigen::SparseMatrix<double> boundary(bool dirichlet_boundary) const;
 
-            ColVecs cut_vertices;
-            GridDatab active_grid_cell_mask;
-            Edges cut_edges;
 
+            Vec get_world_vertex(const Vertex& p) const;
 
+            const std::vector<Vertex>& cut_vertices() const {return m_cut_vertices;}
+
+            const GridDatab& active_grid_cell_mask() const { return m_active_grid_cell_mask;}
+            const Edges& cut_edges() const {return m_cut_edges;}
 
             EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+            protected:
+            std::vector<Vertex> m_cut_vertices;
+
+            GridDatab m_active_grid_cell_mask;
+            Edges m_cut_edges;
         };
     template <int D>
         struct CutCellMesh;

@@ -2,25 +2,39 @@
 #include "mandoline/mesh.hpp"
 
 namespace mandoline {
+    template <int D, typename Derived>
+            auto CutCellMeshBase<D,Derived>::get_world_vertex(const Vertex& p) const -> Vec {
+                auto&& g = vertex_grid();
+                return g.origin() + (p.p().cwiseProduct(g.dx()));
+
+            }
 
     template <int D, typename Derived>
+        int CutCellMeshBase<D,Derived>::cut_vertex_size() const {
+            return m_cut_vertices.size();
+        }
+    template <int D, typename Derived>
         int CutCellMeshBase<D,Derived>::vertex_size() const {
-            return StaggeredGrid::vertex_size() + cut_vertices.cols();
+            return StaggeredGrid::vertex_size() + cut_vertex_size();
         }
     template <int D, typename Derived>
         int CutCellMeshBase<D,Derived>::edge_size() const {
             return StaggeredGrid::edge_size() + cut_edge_size();
 
         }
-
     template <int D, typename Derived>
         auto CutCellMeshBase<D,Derived>::vertex(int idx) const -> Vec {
+            return get_world_vertex(grid_vertex(idx));
+        }
+
+    template <int D, typename Derived>
+        auto CutCellMeshBase<D,Derived>::grid_vertex(int idx) const -> Vec {
             assert(idx >= 0);
             if(is_grid_vertex(idx) ) {
-                return StaggeredGrid::vertex(idx);
+                return StaggeredGrid::vertex_unindex(idx);
             } else {
-                assert(idx - StaggeredGrid::vertex_size() < cut_vertices.cols());
-                return cut_vertices.col(idx - StaggeredGrid::vertex_size());
+                assert(idx - StaggeredGrid::vertex_size() < cut_vertex_size());
+                return cut_vertex(idx - StaggeredGrid::vertex_size());
             }
         }
 
@@ -39,7 +53,7 @@ namespace mandoline {
                 return grid_edge(idx);
             } else {
                 Edge e;
-                IVecMap(e.data()) = cut_edges.col(idx - StaggeredGrid::edge_size());
+                IVecMap(e.data()) = cut_edge(idx - StaggeredGrid::edge_size());
                 return e;
             }
         }
@@ -65,7 +79,16 @@ namespace mandoline {
         }
     template <int D, typename Derived>
         auto CutCellMeshBase<D,Derived>::vertices() const -> ColVecs {
-            return mtao::eigen::hstack(StaggeredGrid::vertices(),cut_vertices);
+            return mtao::eigen::hstack(StaggeredGrid::vertices(),cut_vertices_colvecs());
+
+        }
+    template <int D, typename Derived>
+        auto CutCellMeshBase<D,Derived>::cut_vertices_colvecs() const -> ColVecs {
+            ColVecs V(3,cut_vertex_size());
+            for(auto&& [i,v]: mtao::iterator::enumerate(cut_vertices())) {
+                V.col(i) = get_world_vertex(v);
+            }
+            return V;
 
         }
     template <int D, typename Derived>

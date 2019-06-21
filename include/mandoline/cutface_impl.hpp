@@ -61,6 +61,16 @@ namespace mandoline {
             return ss.str();
 
         }
+    template <int D>
+            void CutFace<D>::update_mask(const std::vector<Vertex<D>>& V) {
+                coord_mask<D>& me = *this;
+                me = V[indices.begin()->front()].mask();
+                for(auto&& ind: indices) {
+                    for(auto&& i: ind) {
+                        me &= V[i].mask();
+                    }
+                }
+            }
 
     template <int D>
         void   CutFace<D>::serialize(CutMeshProto::CutFace& face) const {

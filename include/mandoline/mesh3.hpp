@@ -16,13 +16,14 @@ namespace mandoline {
                 using VecX = typename Base::VecX;
                 using Faces = mtao::ColVectors<int,3>;
                 using Face = mtao::Vector<int,3>;
+                using Vertex = typename Base::Vertex;
 
                 CutCellMesh() = default;
                 CutCellMesh(const CutCellMesh&) = default;
                 CutCellMesh(CutCellMesh&&) = default;
                 CutCellMesh& operator=(const CutCellMesh&) = default;
                 CutCellMesh& operator=(CutCellMesh&&) = default;
-                CutCellMesh(const StaggeredGrid& g, const ColVecs& v = {}): Base(g,v), m_adaptive_grid(g) {}
+                CutCellMesh(const StaggeredGrid& g, const std::vector<Vertex>& v = {}): Base(g,v), m_adaptive_grid(g) {}
 
                 static CutCellMesh<3> from_file(const std::string& filename);
 
@@ -67,6 +68,8 @@ namespace mandoline {
 
                 Eigen::SparseMatrix<double> barycentric_matrix() const;
                 Eigen::SparseMatrix<double> face_barycentric_volume_matrix() const;
+                Eigen::SparseMatrix<double> trilinear_matrix() const;
+                Eigen::SparseMatrix<double> face_grid_volume_matrix() const;
 
                 //an unsigned boundary map when its not necessary
                 std::vector<std::set<int>> cell_faces() const;

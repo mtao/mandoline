@@ -72,6 +72,9 @@ namespace mandoline {
             std::vector<Edge> boundary(const GridData3i& grid) const;
             void make_boundary();
             static GridData3i grid_from_cells(const coord_type& shape, const std::map<int,Cell>& cells);
+            std::vector<Eigen::Triplet<double>> grid_face_projection(int min_edge_index) const;
+            std::vector<Eigen::Triplet<double>> grid_cell_projection() const;
+
 
             inline bool is_valid_edge(const Edge& e) const {
                 auto [a,b] = e;

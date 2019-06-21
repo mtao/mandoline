@@ -10,10 +10,8 @@
 
 
 namespace mandoline {
-    namespace construction {
-        template <int D>
-            struct Vertex;
-    }
+    template <int D>
+       struct Vertex;
     template <int D, typename T=int>
         struct coord_mask: public std::array<std::optional<T>,D> {
             coord_mask() = default;
@@ -178,7 +176,7 @@ namespace mandoline {
                     }
                 }
             }
-            void clamp(construction::Vertex<D>& vec) const {
+            void clamp(Vertex<D>& vec) const {
                 for(auto&& [v,q,t]:
                         mtao::iterator::zip(vec.coord,mtao::eigen::iterable(vec.quot),*this)) {
                     if(t) {

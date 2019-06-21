@@ -7,6 +7,18 @@ message CutMeshProto {
         double z = 3;
     }
 
+    message Vertex {
+        int64 i = 1;
+        int64 j = 2;
+        int64 k = 3;
+        double u = 4;
+        double v = 5;
+        double w = 6;
+        bool ci = 7;
+        bool cj = 8;
+        bool ck = 9;
+    }
+
     message Vec2i {
         int64 x = 1;
         int64 y = 2;
@@ -33,7 +45,7 @@ message CutMeshProto {
     message CutFace {
         repeated SimplePolygon curves = 1;
         Vec3d normal = 2;
-        oneof id {
+         oneof id {
             int64 face_id = 3;
             AxialPlane plane_id = 4;
         }
@@ -52,6 +64,7 @@ message CutMeshProto {
         repeated Vec3d barycentric_coordinates = 2;
     }
 
+
     message Cube {
         Vec3i corner = 1;
         int64 radius = 2;
@@ -62,7 +75,7 @@ message CutMeshProto {
     Vec3d dx = 2;
     Vec3i shape = 3;
 
-    repeated Vec3d vertices = 4;
+    repeated Vertex vertices = 4;
 
 
     repeated Vec2i edges = 5;
@@ -73,8 +86,7 @@ message CutMeshProto {
     repeated Vec3i origF= 9;
     repeated int64 foldedFaces = 10;
 
-    map<int64,BarycentricTriangleFace> mesh_faces= 11;
-
-    map<int64,Cube> cubes = 12;
-    map<int64,int64> cube_regions = 13;
+    map<int64,Cube> cubes = 11;
+    map<int64,int64> cube_regions = 12;
+    map<int64,BarycentricTriangleFace> mesh_faces= 13;
 }

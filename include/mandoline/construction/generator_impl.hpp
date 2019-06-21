@@ -692,8 +692,29 @@ namespace mandoline::construction {
                 template <int D>
                     CutCellMesh<D> CutCellEdgeGenerator<D>::generate_edges() const {
                         //auto t = mtao::logging::timer("Generating edges");
-                        CutCellMesh<D> ret(*this,V());
-                        ret.cut_edges = mtao::eigen::stl2eigen(edges());
+                        int size = 0;
+                        for(auto&& c: crossings()) {
+                            int idx = c.index;
+                            size = std::max(size,idx+1);
+                        }
+                        size -= grid_vertex_size();
+                        size = std::max<int>(0,size);
+                        std::vector<VType> V(size);
+                        for(auto&& c: crossings()) {
+                            if(!is_grid_vertex(c.index)) {
+
+                                int idx = c.index - grid_vertex_size();
+                                if(idx >= 0 && idx < size) {
+                                    V[idx] = c.vertex();
+                                } else {
+                                    std::cout << "Fail" << std::endl;
+                                }
+
+                            }
+                        }
+                        std::cout << V.size() << std::endl;
+                        CutCellMesh<D> ret(*this,V);
+                        ret.m_cut_edges = mtao::eigen::stl2eigen(edges());
                         //ret.cut_mesh_edges = cut_edges;
                         return ret;
                     }

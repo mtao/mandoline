@@ -62,4 +62,27 @@ namespace mandoline::protobuf {
         b.y() = a.y();
         return b;
     }
+
+    void deserialize(const CutMeshProto::Vertex& a, Vertex<3>& b   ) {
+        b.coord[0] = a.i();
+        b.coord[1] = a.j();
+        b.coord[2] = a.k();
+        b.quot(0) = a.u();
+        b.quot(1) = a.v();
+        b.quot(2) = a.w();
+        b.clamped_indices[0] = a.ci();
+        b.clamped_indices[1] = a.cj();
+        b.clamped_indices[2] = a.ck();
+    }
+    void serialize(const Vertex<3>& a, CutMeshProto::Vertex& b) {
+        b.set_i(a.coord[0]);
+        b.set_j(a.coord[1]);
+        b.set_k(a.coord[2]);
+        b.set_u(a.quot(0));
+        b.set_v(a.quot(1));
+        b.set_w(a.quot(2));
+        b.set_ci(a.clamped_indices[0]);
+        b.set_cj(a.clamped_indices[1]);
+        b.set_ck(a.clamped_indices[2]);
+    }
 }

@@ -38,14 +38,14 @@ namespace mandoline::construction {
         {
             //auto t = mtao::logging::timer("Gluing halfedges to edges");
             mtao::map<std::array<int,2>,int> emap;
-            for(int i = 0; i < ret.cut_edges.cols(); ++i) {
+            for(int i = 0; i < ret.m_cut_edges.cols(); ++i) {
                 std::array<int,2> v;
-                IVecMap(v.data()) = ret.cut_edges.col(i);
+                IVecMap(v.data()) = ret.m_cut_edges.col(i);
                 emap[v] = i;
                 std::swap(v[0],v[1]);
                 emap[v] = i;
             }
-            ret.halfedges_per_edge.resizeLike(ret.cut_edges);
+            ret.halfedges_per_edge.resizeLike(ret.m_cut_edges);
 
 
             for(int i = 0; i < ret.hem.size(); ++i) {
@@ -57,7 +57,7 @@ namespace mandoline::construction {
                 v[1] = e.vertex();
                 int idx = ret.halfedge_to_edge_index[i] = emap[v];
                 auto hpee = ret.halfedges_per_edge.col(idx);
-                auto ee = ret.cut_edges.col(idx);
+                auto ee = ret.m_cut_edges.col(idx);
                 if(v[0] == ee(0)) {
                     hpee(0) = i;
                     hpee(1) = dhe;
@@ -70,7 +70,7 @@ namespace mandoline::construction {
             }
         }
 
-        ret.active_grid_cell_mask = m_active_grid_cell_mask;
+        ret.m_active_grid_cell_mask = m_active_grid_cell_mask;
         ret.active_cell_mask.resize(ret.cell_size());
         ret.active_cell_mask.setConstant(1);
 
