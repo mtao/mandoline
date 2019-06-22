@@ -626,20 +626,29 @@ namespace mandoline {
     }
 
     Eigen::SparseMatrix<double> CutCellMesh<3>::trilinear_matrix() const {
-        Eigen::SparseMatrix<double> A(vertex_size(), m_origV.cols());
+        Eigen::SparseMatrix<double> A(vertex_size(), StaggeredGrid::vertex_size());
         std::vector<Eigen::Triplet<double>> trips;
+        trips.reserve(StaggeredGrid::vertex_size() + 8 * cut_vertex_size());
         for(int i = 0; i < StaggeredGrid::vertex_size(); ++i) {
-            
+            trips.emplace_back(i,i,1);
         }
-        std::map<std::array<int,2>,double> mp;
-        for(auto&& [fid, btf]: m_mesh_faces) {
-            auto t = btf.sparse_entries(m_faces[fid], m_origF);
-            std::copy(t.begin(),t.end(),std::inserter(mp,mp.end()));
-        }
-        trips.reserve(mp.size());
-        for(auto&& [pr,v]: mp) {
-            auto [a,b] = pr;
-            trips.emplace_back(a,b,v);
+        int offset = StaggeredGrid::vertex_size();
+        for(auto&& [idx,v]: mtao::iterator::enumerate(cut_vertices())) {
+            int index = idx + offset;
+            coord_type a = v.coord;
+            for(int i = 0; i < 2; ++i) {
+                a[0] = v.coord[0] + i;
+                double vi = i==0?(1-v.quot(0)):v.quot(0);
+                for(int j = 0; j < 2; ++j) {
+                    a[1] = v.coord[1] + i;
+                    double vij = vi * (j==0?(1-v.quot(1)):v.quot(1));
+                    for(int k = 0; k < 2; ++k) {
+                        a[2] = v.coord[2] + i;
+                        double vijk = vij * (k==0?(1-v.quot(2)):v.quot(2));
+                        trips.emplace_back(index,vertex_index(a),vijk);
+                    }
+                }
+            }
         }
         A.setFromTriplets(trips.begin(),trips.end());
         return A;
@@ -647,29 +656,31 @@ namespace mandoline {
     Eigen::SparseMatrix<double> CutCellMesh<3>::face_grid_volume_matrix() const {
         auto trips = m_adaptive_grid.grid_face_projection(m_faces.size());
         auto FV = face_volumes();
-        std::vector<Eigen::Triplet<double>> trips;
         mtao::Vec3d gfv;
         gfv(0) = dx()(1) * dx()(2);
         gfv(1) = dx()(0) * dx()(2);
         gfv(2) = dx()(0) * dx()(1);
         for(auto&& [i,face]: mtao::iterator::enumerate(faces())) {
             if(face.count() == 1) {
-                int axis = face.masked_axis();
+                int axis = face.bound_axis();
                 constexpr static int maxval = std::numeric_limits<int>::max();
                 coord_type c{{maxval,maxval,maxval}};
                 for(auto&& ind: face.indices) {
                     for(auto&& i: ind) {
-                        auto v = grid_vertex(i).coord;
-                        for(auto&& [a,b]: mtao::iterator::enumerate(c,v)) {
+                        auto v = masked_vertex(i).coord;
+                        for(auto&& [a,b]: mtao::iterator::zip(c,v)) {
                             a = std::min(a,b);
                         }
                     }
                 }
-                trips.emplace_back(i,form_index<2>(c,axis),FV(i) / gfv(axis));
+                trips.emplace_back(i,staggered_index<2>(c,axis),FV(i));
             }
         }
         Eigen::SparseMatrix<double> A(this->face_size(),this->form_size<2>());
         A.setFromTriplets(trips.begin(),trips.end());
+        for(int i = 0; i < A.cols(); ++i) {
+            A.col(i) /= A.col(i).sum();
+        }
         return A;
     }
 
@@ -687,10 +698,14 @@ namespace mandoline {
             trips.emplace_back(a,b,v);
         }
         A.setFromTriplets(trips.begin(),trips.end());
+        for(int i = 0; i < A.cols(); ++i) {
+            A.col(i) /= A.col(i).sum();
+        }
         return A;
     }
     Eigen::SparseMatrix<double> CutCellMesh<3>::face_barycentric_volume_matrix() const {
         int face_size = 0;
+        //artifact from before i passed in m_origF
         if(m_origF.size() == 0) {
             for(auto&& f: faces()) {
                 if(f.is_mesh_face()) {

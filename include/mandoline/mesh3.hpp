@@ -66,9 +66,13 @@ namespace mandoline {
 
                 //Eigen::SparseMatrix<double> trilinear_matrix() const;
 
+                //mesh vertex -> cut vertex
                 Eigen::SparseMatrix<double> barycentric_matrix() const;
+                //mesh face -> cut face
                 Eigen::SparseMatrix<double> face_barycentric_volume_matrix() const;
+                //grid vertex -> cut vertex
                 Eigen::SparseMatrix<double> trilinear_matrix() const;
+                //grid face -> cut face
                 Eigen::SparseMatrix<double> face_grid_volume_matrix() const;
 
                 //an unsigned boundary map when its not necessary

@@ -24,11 +24,11 @@ namespace mandoline {
         }
     template <int D, typename Derived>
         auto CutCellMeshBase<D,Derived>::vertex(int idx) const -> Vec {
-            return get_world_vertex(grid_vertex(idx));
+            return get_world_vertex(masked_vertex(idx));
         }
 
     template <int D, typename Derived>
-        auto CutCellMeshBase<D,Derived>::grid_vertex(int idx) const -> Vec {
+        auto CutCellMeshBase<D,Derived>::masked_vertex(int idx) const -> Vertex {
             assert(idx >= 0);
             if(is_grid_vertex(idx) ) {
                 return StaggeredGrid::vertex_unindex(idx);

@@ -68,7 +68,7 @@ namespace mandoline {
             ColVecs cut_vertices_colvecs() const;
 
             Vec vertex(int vertex) const;
-            Vertex grid_vertex(int vertex) const;//in grid space, with masking
+            Vertex masked_vertex(int vertex) const;//in grid space, with masking
             const Vertex& cut_vertex(int vertex) const {
                 return m_cut_vertices[vertex];
             }

@@ -1,3 +1,6 @@
-
+ADD_DEFINITIONS(-g)
 ADD_EXECUTABLE(adaptive_grid_test adaptive_grid_test.cpp)
 TARGET_LINK_LIBRARIES(adaptive_grid_test mandoline_cutmesh3)
+
+ADD_EXECUTABLE(projection_unity_test projection_unity_test.cpp)
+TARGET_LINK_LIBRARIES(projection_unity_test mandoline_cutmesh3)

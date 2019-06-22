@@ -738,6 +738,7 @@ namespace mandoline {
     std::vector<Eigen::Triplet<double>> AdaptiveGrid::grid_face_projection(int offset) const {
         std::vector<Eigen::Triplet<double>> trips;
         mtao::VecXd ret(m_boundary.size());
+        trips.reserve(form_size<2>());
         for(auto&& [i,e]: mtao::iterator::enumerate(m_boundary)) {
             if(!is_valid_edge(e)) continue;
             auto [a,b] = e;
