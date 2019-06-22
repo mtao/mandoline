@@ -5,7 +5,7 @@ using namespace mtao::logging;
 using namespace mandoline;
 
 //we're collecting terms from a partition of unity of the output
-bool test_output_unity(const Eigen::SparseMatrix<double>& A, bool show_shape=true) {
+bool test_output_unity(const Eigen::SparseMatrix<double>& A, bool show_shape=true, bool check_coverage=true) {
     if(show_shape) {
         std::cout << A.cols() << " => " << A.rows() << std::endl;
     }
@@ -25,13 +25,21 @@ bool test_output_unity(const Eigen::SparseMatrix<double>& A, bool show_shape=tru
             }
         }
     }
+    if(check_coverage) {
+        for(int i = 0; i < A.cols(); ++i) {
+            if(A.col(i).nonZeros() == 0) {
+                std::cout << "Bad coverage" << i << "/" << A.cols() << std::endl;
+                return false;
+            }
+        }
+    }
     std::cout << "Works!" << std::endl;
     return true;
 }
 //we're splitting hte input terms
 bool test_input_unity(const Eigen::SparseMatrix<double>& A) {
     std::cout << A.cols() << " => " << A.rows() << std::endl;
-    return test_output_unity(A.transpose(),false);
+    return test_output_unity(A.transpose(),false,false);
 }
 
 
