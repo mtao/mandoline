@@ -449,7 +449,7 @@ namespace mandoline {
         ret.m_faces.resize(cmp.faces().size());
         for(int i = 0; i < cmp.faces().size(); ++i) {
             ret.m_faces[i] = CutFace<3>::from_proto(cmp.faces(i));
-            ret.m_faces[i].update_mask(ret.cut_vertices());
+            ret.m_faces[i].update_mask(ret.cut_vertices(),ret.vertex_grid());
         }
         ret.m_cells.resize(cmp.cells().size());
         for(int i = 0; i < cmp.cells().size(); ++i) {
@@ -660,6 +660,11 @@ namespace mandoline {
         gfv(0) = dx()(1) * dx()(2);
         gfv(1) = dx()(0) * dx()(2);
         gfv(2) = dx()(0) * dx()(1);
+        Eigen::SparseMatrix<double> A(this->face_size(),this->form_size<2>());
+        for(auto&& t: trips) {
+            const int row = t.row();
+            const int col = t.col();
+        }
         for(auto&& [i,face]: mtao::iterator::enumerate(faces())) {
             if(face.count() == 1) {
                 int axis = face.bound_axis();
@@ -673,14 +678,16 @@ namespace mandoline {
                         }
                     }
                 }
-                trips.emplace_back(i,staggered_index<2>(c,axis),FV(i));
+                const int row = i;
+                const int col = staggered_index<2>(c,axis);
+                double value = FV(i) / gfv(axis);
+                trips.emplace_back(row,col,value);
             }
         }
-        Eigen::SparseMatrix<double> A(this->face_size(),this->form_size<2>());
         A.setFromTriplets(trips.begin(),trips.end());
-        for(int i = 0; i < A.cols(); ++i) {
-            A.col(i) /= A.col(i).sum();
-        }
+        //mtao::VecXd sums = A * mtao::VecXd::Zero(A.cols());
+        //sums = (sums.array().abs() > 1e-10).select(1.0 / sums.array(), 0);
+        //A = sums.asDiagonal() * A;
         return A;
     }
 
@@ -698,9 +705,9 @@ namespace mandoline {
             trips.emplace_back(a,b,v);
         }
         A.setFromTriplets(trips.begin(),trips.end());
-        for(int i = 0; i < A.cols(); ++i) {
-            A.col(i) /= A.col(i).sum();
-        }
+        mtao::VecXd sums = A * mtao::VecXd::Zero(A.cols());
+        sums = (sums.array().abs() > 1e-10).select(1.0 / sums.array(), 0);
+        A = sums.asDiagonal() * A;
         return A;
     }
     Eigen::SparseMatrix<double> CutCellMesh<3>::face_barycentric_volume_matrix() const {

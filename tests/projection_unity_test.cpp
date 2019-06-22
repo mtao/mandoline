@@ -5,9 +5,14 @@ using namespace mtao::logging;
 using namespace mandoline;
 
 //we're collecting terms from a partition of unity of the output
-bool test_output_unity(const Eigen::SparseMatrix<double>& A) {
+bool test_output_unity(const Eigen::SparseMatrix<double>& A, bool show_shape=true) {
+    if(show_shape) {
+        std::cout << A.cols() << " => " << A.rows() << std::endl;
+    }
     mtao::VecXd V = A * mtao::VecXd::Ones(A.cols());
-    std::cout << V.transpose() << std::endl;
+    //std::cout << V.transpose() << std::endl;
+    //std::cout << "==============" << std::endl;
+    //std::cout <<  (A.transpose() * mtao::VecXd::Ones(A.rows())).transpose() << std::endl;
     mtao::VecXd b = (V.array() < .5).select(V,V.array()-1);
 
     {
@@ -25,7 +30,8 @@ bool test_output_unity(const Eigen::SparseMatrix<double>& A) {
 }
 //we're splitting hte input terms
 bool test_input_unity(const Eigen::SparseMatrix<double>& A) {
-    return test_output_unity(A.transpose());
+    std::cout << A.cols() << " => " << A.rows() << std::endl;
+    return test_output_unity(A.transpose(),false);
 }
 
 
@@ -48,11 +54,12 @@ int main(int argc, char * argv[]) {
     ccm.triangulate_faces();
 
     std::cout << "Barycentric matrix" << std::endl;
-    test_input_unity(ccm.barycentric_matrix() );
-    std::cout << "face bary matrix" << std::endl;
-    test_input_unity(ccm.face_barycentric_volume_matrix() );
+    test_output_unity(ccm.barycentric_matrix() );
     std::cout << "grid trilin matrix" << std::endl;
     test_output_unity(ccm.trilinear_matrix() );
+
+    std::cout << "face bary matrix" << std::endl;
+    test_input_unity(ccm.face_barycentric_volume_matrix() );
     std::cout << "grid face matrix" << std::endl;
     test_input_unity(ccm.face_grid_volume_matrix() );
 

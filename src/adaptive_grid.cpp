@@ -358,7 +358,6 @@ namespace mandoline {
 
 
     AdaptiveGridFactory::AdaptiveGridFactory(const GridData3& mask): original(!mask) {
-        print_gridb(mask);
         std::array<int,3> shape = mask.shape();
         int size = *std::max_element(shape.begin(),shape.end());
         int level_count = int(std::ceil(std::log2(size)));
@@ -746,11 +745,14 @@ namespace mandoline {
 
             auto& ca = cell(a);
             auto& cb = cell(b);
-            mtao::Vec3d cd = (ca.center() - cb.center()).cwiseAbs();
+            mtao::Vec3d cd = ca.center() - cb.center();
             int minwidth = std::min(ca.width(),cb.width());
-            cd.maxCoeff(&k);
+            cd.cwiseAbs().maxCoeff(&k);
             coord_type corner = ca.width() < cb.width() ? ca.corner():cb.corner();
-            corner[k] += minwidth;
+
+            if(cd(k) > 0) {
+                corner[k] += ca.width();
+            }
             {
                 const int w = minwidth;
                 const coord_type c = corner;
@@ -760,7 +762,9 @@ namespace mandoline {
                 coord_type a = c;
                 for(int& i = a[u] = c[u]; i < w+c[u]; ++i) {
                     for(int& j = a[v] = c[v]; j < w+c[v]; ++j) {
-                        trips.emplace_back(staggered_index<2>(a,k), offset+i, vol);
+                        const int row = offset+i;
+                        const int col = staggered_index<2>(a,k);
+                        trips.emplace_back(row, col, vol);
                     }
                 }
             }

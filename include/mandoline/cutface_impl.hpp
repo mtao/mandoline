@@ -62,15 +62,25 @@ namespace mandoline {
 
         }
     template <int D>
-            void CutFace<D>::update_mask(const std::vector<Vertex<D>>& V) {
-                coord_mask<D>& me = *this;
-                me = V[indices.begin()->front()].mask();
-                for(auto&& ind: indices) {
-                    for(auto&& i: ind) {
-                        me &= V[i].mask();
-                    }
+        template <typename Derived>
+        void CutFace<D>::update_mask(const std::vector<Vertex<D>>& V, const mtao::geometry::grid::indexing::IndexerBase<3,Derived>& indexer) {
+            int offset = indexer.size();
+            auto get_mask = [&](int idx) -> coord_mask<D> {
+                if(idx >= offset) {
+                    return V[idx - offset].mask();
+                } else {
+                    return indexer.unindex(idx);
+                }
+            };
+            coord_mask<D>& me = *this;
+            me = get_mask(indices.begin()->front());
+            for(auto&& ind: indices) {
+                for(auto&& i: ind) {
+                    auto mask = get_mask(i);
+                    me &= mask;
                 }
             }
+        }
 
     template <int D>
         void   CutFace<D>::serialize(CutMeshProto::CutFace& face) const {

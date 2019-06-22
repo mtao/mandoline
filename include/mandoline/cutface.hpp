@@ -1,6 +1,7 @@
 #pragma once
 #include "mandoline/coord_masked_geometry.hpp"
 #include "mandoline/vertex.hpp"
+#include <mtao/geometry/grid/grid.h>
 
 namespace mandoline {
 
@@ -69,7 +70,8 @@ namespace mandoline {
 
             void  serialize(CutMeshProto::CutFace& face) const ;
             static CutFace<D> from_proto(const CutMeshProto::CutFace& face) ;
-            void update_mask(const std::vector<Vertex<D>>& V);
+            template <typename Derived>
+            void update_mask(const std::vector<Vertex<D>>& V, const mtao::geometry::grid::indexing::IndexerBase<3,Derived>& indexer);
 
             mtao::ColVecs3i triangulate_fan() const;
             mtao::ColVecs3i triangulate_earclipping(const mtao::ColVecs2d& V) const;
