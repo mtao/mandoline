@@ -69,7 +69,7 @@ namespace mandoline::tools {
         data.clear();
 
 
-        data.bake(vertex_grid());
+        data.bake(vertex_grid(),false);
         auto& faces = data.cut_faces();
         auto CV = data.cut_vertices();
         for(int i = 0; i < CV.cols(); ++i) {

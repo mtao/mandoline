@@ -35,6 +35,7 @@ class MeshViewer: public mtao::opengl::Window3 {
 
         mandoline::CutCellMesh<3> ccm;
         mandoline::tools::MeshExploder exploder;
+        mtao::Vec3d wind_direction = mtao::Vec3d::Unit(1);
 
 
 
@@ -200,7 +201,7 @@ class MeshViewer: public mtao::opengl::Window3 {
                 set_region_colors();
             }
             if(ImGui::Button("Boundary colors")) {
-                mtao::VecXd C = divergence(ccm);
+                mtao::VecXd C = divergence(ccm,wind_direction);
                 //C.array() -= C.minCoeff();
                 C /= C.cwiseAbs().maxCoeff();
                 colors.row(0) = C.transpose();
@@ -210,8 +211,14 @@ class MeshViewer: public mtao::opengl::Window3 {
                 set_region_colors();
             }
 
+            {
+                mtao::Vec3f dir = wind_direction.cast<float>();
+                ImGui::SliderFloat3("wind direction", dir.data(),-1,1);
+                wind_direction = dir.cast<double>();
+            }
+
             if(ImGui::Button("Poisson colors")) {
-                mtao::VecXd C = pressure(ccm);
+                mtao::VecXd C = pressure(ccm,wind_direction);
                 //C.array() -= (C.minCoeff() + C.maxCoeff()) / 2;
                 C /= C.cwiseAbs().maxCoeff();
                 colors.row(0) = C.transpose();

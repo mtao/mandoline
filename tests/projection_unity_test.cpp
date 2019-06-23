@@ -79,7 +79,7 @@ int main(int argc, char * argv[]) {
         bool lerp_accurate = true;
         for(int i = 0; i < NV.cols(); ++i) {
             if(!ccm.is_grid_vertex(i)) {
-                if((NV.col(i) - ccm.vertex(i)).norm() > 1e-5) {
+                if((NV.col(i) - V.col(i)).norm() > 1e-5) {
                     std::cout << "Bary lerp fail " << i << ": " << NV.col(i).transpose() << " != " << ccm.vertex(i).transpose() << std::endl;
                     lerp_accurate = false;
                 }
@@ -102,15 +102,15 @@ int main(int argc, char * argv[]) {
     std::cout << "face bary matrix" << std::endl;
     test_input_unity(ccm.face_barycentric_volume_matrix() );
     std::cout << "grid face matrix" << std::endl;
-    test_input_unity(ccm.face_grid_volume_matrix() );
+    test_input_unity(ccm.face_grid_volume_matrix().cwiseAbs() );
 
     {
 
         auto A = ccm.face_barycentric_volume_matrix();
         auto B = ccm.face_grid_volume_matrix();
-        auto C = A * mtao::VecXd::Ones(A.cols());
-        auto D = B * mtao::VecXd::Ones(B.cols());
-        auto X = C+D;
+        mtao::VecXd C = (A * mtao::VecXd::Ones(A.cols())).cwiseAbs();
+        mtao::VecXd D = (B * mtao::VecXd::Ones(B.cols())).cwiseAbs();
+        mtao::VecXd X = C+D;
         if((X.array() == 0).any()) {
             std::cout << "Face projection is missing out on something" << std::endl;
         } else {

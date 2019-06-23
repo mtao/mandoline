@@ -89,7 +89,7 @@ std::map<int,int> face_regions(const mandoline::CutCellMesh<3>& ccm) {
 }
 
 
-mtao::VecXd flux(const mandoline::CutCellMesh<3>& ccm) {
+mtao::VecXd flux(const mandoline::CutCellMesh<3>& ccm, const mtao::Vec3d& direction) {
     auto FR = face_regions(ccm);
     mtao::VecXd FV = ccm.face_volumes();
     auto r = ccm.regions();
@@ -101,12 +101,13 @@ mtao::VecXd flux(const mandoline::CutCellMesh<3>& ccm) {
     for(auto&& [i,f]: mtao::iterator::enumerate(ccm.faces())) {
         //std::cout << FR.at(i) << "+=" << FV(i) << std::endl;;
         //std::cout << RV[FR.at(i)] << " => ";
-        if(f.is_axial_face()) {
+        if(f.is_axial_face() || ccm.is_folded_face(i)) {
             FV(i) = 0;
         } else {
             int region = FR.at(i);
+            region = 0;
             //FV(i) *= f.N(region%3);
-            R(i) = FV(i) * f.N(region%3) * (region%2==0?1:-1);
+            R(i) = FV(i) * f.N.dot(direction) * (region%2==0?1:-1);
             //RV[region] += FV(i);
         }
     }
@@ -123,7 +124,7 @@ mtao::VecXd flux(const mandoline::CutCellMesh<3>& ccm) {
     //std::cout << FV.transpose() << std::endl;
     return R;
 }
-mtao::VecXd divergence(const mandoline::CutCellMesh<3>& ccm) {
+mtao::VecXd divergence(const mandoline::CutCellMesh<3>& ccm, const mtao::Vec3d& direction) {
     mtao::VecXd H3 = ccm.primal_hodge3();
     //H3.setZero();
     //int i;
@@ -147,11 +148,12 @@ mtao::VecXd divergence(const mandoline::CutCellMesh<3>& ccm) {
     //}
     //std::cout << H3.transpose() << std::endl;
     //return H3;
-    mtao::VecXd R = H3.asDiagonal() * boundary(ccm).transpose() * flux(ccm);
-    R = boundary(ccm).transpose() * flux(ccm);
+    mtao::VecXd R = H3.asDiagonal() * boundary(ccm).transpose() * flux(ccm,direction);
+    R = boundary(ccm).transpose() * flux(ccm,direction);
     for(auto&& [i,c]: mtao::iterator::enumerate(ccm.cells())) {
         if(c.region > 0) {
-            R(i) = 0;
+        } else {
+            //R(i) = 0;
         }
     }
     std::cout << "Flux sum: " << R.sum() << "/" << R.norm() << std::endl;
@@ -163,18 +165,13 @@ Eigen::SparseMatrix<double> boundary(const mandoline::CutCellMesh<3>& ccm) {
 }
 Eigen::SparseMatrix<double> laplacian(const mandoline::CutCellMesh<3>& ccm) {
     auto B = ccm.boundary();
-    mtao::VecXd DM = mtao::VecXd::Ones(ccm.face_size());
-    for(auto&& [i,f]: mtao::iterator::enumerate(ccm.faces())) {
-        if(f.is_mesh_face()) {
-            DM(i) = 0;
-        }
-    }
+    mtao::VecXd DM = ccm.mesh_face_mask();
     B = DM.asDiagonal() * B;
     DM = mtao::VecXd::Ones(ccm.cell_size());
     for(auto&& [i,c]: mtao::iterator::enumerate(ccm.cells())) {
-        if(c.region > 0) {
-            DM(i) = 0;
-        }
+        //if(c.region > 0) {
+        //    DM(i) = 0;
+        //}
     }
     B = B * DM.asDiagonal();
 
@@ -183,9 +180,9 @@ Eigen::SparseMatrix<double> laplacian(const mandoline::CutCellMesh<3>& ccm) {
 
     return B.transpose() * DH2.asDiagonal() * B;
 }
-mtao::VecXd pressure(const mandoline::CutCellMesh<3>& ccm) {
+mtao::VecXd pressure(const mandoline::CutCellMesh<3>& ccm, const mtao::Vec3d& direction) {
     auto L = laplacian(ccm);
-    mtao::VecXd D = divergence(ccm);
+    mtao::VecXd D = divergence(ccm, direction);
     if constexpr(false) {
     //remove_noair_kernel(ccm,L,D);
     //std::cout << D.transpose() << std::endl;
@@ -200,9 +197,9 @@ mtao::VecXd pressure(const mandoline::CutCellMesh<3>& ccm) {
     mtao::VecXd R = solve_SPSD_system(L,D);
     //std::cout << "Answer norm: " << ((L * R) - D).norm() << std::endl;
     for(auto&& [i,c]: mtao::iterator::enumerate(ccm.cells())) {
-        if(c.region > 0) {
-            R(i) = 0;
-        }
+        //if(c.region > 0) {
+        //    R(i) = 0;
+        //}
     }
     std::cout << R.transpose() << std::endl;
     return R;
@@ -230,6 +227,8 @@ mtao::VecXd pressure(const mandoline::CutCellMesh<3>& ccm) {
         mtao::VecXd p = r;
         std::cout << "Init: " << D.norm() << std::endl;
         int i;
+        std::cout << "Initial p: " << p.norm() << std::endl;
+        std::cout << "Iniitial dots" << p.dot(L*p) << std::endl;
         for(i = 0; i < x.rows(); ++i) {
             double a = r.dot(r) / (p.dot(L * p));
             x = x + a * p;

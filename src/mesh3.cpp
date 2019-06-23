@@ -18,8 +18,11 @@ namespace mandoline {
     size_t CutCellMesh<3>::cell_size() const {
         return m_adaptive_grid.num_cells() + m_cells.size();
     }
+    size_t CutCellMesh<3>::cut_face_size() const {
+        return m_faces.size();
+    }
     size_t CutCellMesh<3>::face_size() const {
-        return m_adaptive_grid.num_faces() + m_faces.size();
+        return m_adaptive_grid.num_faces() + cut_face_size();
     }
     size_t CutCellMesh<3>::cut_cell_size() const { 
         return m_cells.size(); 
@@ -582,6 +585,15 @@ namespace mandoline {
         return FV;
     }
 
+    mtao::VecXd CutCellMesh<3>::mesh_face_mask() const {
+        mtao::VecXd M = mtao::VecXd::Ones(face_size());
+        for(auto&& [i,f]: mtao::iterator::enumerate(faces())) {
+            if(f.is_mesh_face()) {
+                M(i) = 0;
+            }
+        }
+        return M;
+    }
     mtao::VecXd CutCellMesh<3>::primal_hodge2() const {
         auto PV = face_volumes();
         auto DV = dual_edge_lengths();
@@ -680,7 +692,7 @@ namespace mandoline {
                 }
                 const int row = i;
                 const int col = staggered_index<2>(c,axis);
-                double value = FV(i) / gfv(axis);
+                double value = FV(i) / gfv(axis) * face.N(axis);//face.N(axis) should be a unit vector either facing up or down....
                 trips.emplace_back(row,col,value);
             }
         }

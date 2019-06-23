@@ -43,7 +43,7 @@ namespace mandoline::construction {
             void set_topology(const Faces& F = {});
             void set_topology(const Edges& E,const Faces& F = {},  const Faces& FEA = {}) ;
 
-            void bake(const std::optional<SGType>& grid= {});
+            void bake(const std::optional<SGType>& grid= {}, bool fuse=true);
             void clear();
             void reset_intersections() ;
 
@@ -103,7 +103,7 @@ namespace mandoline::construction {
             private:
             std::vector<const EdgeIntersection<D>*> flat_edge_intersections() const ;
             std::vector<const TriangleIntersection<D>*> flat_triangle_intersections() const ;
-            std::vector<Crossing<D>> compute_crossings() const ;
+            std::vector<Crossing<D>> compute_crossings(bool fuse=true) const ;
             std::vector<Crossing<D>> vertex_crossings() const ;
             std::vector<Crossing<D>> edge_crossings() const ;
             std::vector<Crossing<D>> face_crossings() const ;

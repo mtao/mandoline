@@ -108,6 +108,7 @@ construction::CutCellGenerator<3> make_generator(const mtao::ColVecs3d& VV, cons
     int N = clp.optT<int>("N");
     bool do_checks = clp.optT<bool>("checks");
     bool prescaled = clp.optT<bool>("prescaled");
+    bool normalize = clp.optT<bool>("normalize");
     if(N > 0) {
         NI = NJ = NK = N;
     }
@@ -123,6 +124,12 @@ construction::CutCellGenerator<3> make_generator(const mtao::ColVecs3d& VV, cons
     if(!prescaled) {
         auto bbox = mtao::geometry::bounding_box(V);
         V.colwise() -= bbox.center();
+    }
+    if(normalize) {
+        auto bbox = mtao::geometry::bounding_box(V);
+        double maxsize = bbox.sizes().maxCoeff();
+        V.colwise() -= bbox.center();
+        V.array() /= maxsize;
     }
     mtao::vector<mtao::Vec3d> stlp(V.cols());
     for(auto&& [i,v]: mtao::iterator::enumerate(stlp)) {

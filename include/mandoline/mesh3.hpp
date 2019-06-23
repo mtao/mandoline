@@ -43,6 +43,7 @@ namespace mandoline {
 
                 //info on faces
                 size_t face_size() const;
+                size_t cut_face_size() const;
                 bool is_mesh_face(int idx) const;
                 std::vector<bool> boundary_faces() const;
 
@@ -63,6 +64,7 @@ namespace mandoline {
                 mtao::VecXd primal_hodge2() const;
                 mtao::VecXd dual_hodge3() const;
                 mtao::VecXd primal_hodge3() const;
+                mtao::VecXd mesh_face_mask() const;//for removing mesh faces
 
                 //Eigen::SparseMatrix<double> trilinear_matrix() const;
 
@@ -118,6 +120,9 @@ namespace mandoline {
 
 
                 const std::map<int,int>& adaptive_grid_regions() const { return m_adaptive_grid_regions; }
+                const std::set<int>& folded_faces() const { return m_folded_faces;}
+                bool is_folded_face(int idx) const { return m_folded_faces.find(idx) != m_folded_faces.end();}
+
 
 
             private:

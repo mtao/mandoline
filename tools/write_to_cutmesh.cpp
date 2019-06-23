@@ -8,9 +8,14 @@ int main(int argc, char * argv[]) {
     auto clp = make_cutmesh_clparser();
     if(clp.parse(argc, argv)) {
 
-        std::string output_prefix = clp.arg(1);
+        if(clp.args().size() < 2) {
+            mtao::logging::warn() << "No filename, not outputting!";
+        }
         auto ccm = make_cutmesh(clp);
-        ccm.write(output_prefix);
+        if(clp.args().size() >= 2) {
+            std::string output_prefix = clp.arg(1);
+            ccm.write(output_prefix);
+        }
     }
 
     return 0;

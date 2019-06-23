@@ -50,6 +50,9 @@ class MeshViewer: public mtao::opengl::Window3 {
         int adaptive_level=0;
         mtao::ColVecs3d V;
         mtao::ColVecs3i F;
+        std::vector<std::array<int,2>> edges;
+        std::map<std::array<int,2>,std::vector<std::array<int,2>>> mapped_edges;
+        std::optional<std::array<int,2>> edge_choice = {};
 
         std::array<int,3> N{{5,5,5}};
         int& NI=N[0];
@@ -82,7 +85,7 @@ class MeshViewer: public mtao::opengl::Window3 {
             edge_drawable->activate_triangles({});
             edge_drawable->activate_edges();
 
-            edge_boundary_drawable = new mtao::opengl::Drawable<Magnum::Shaders::Flat3D>{edge_mesh,_flat_shader, drawables()};
+            edge_boundary_drawable = new mtao::opengl::Drawable<Magnum::Shaders::Flat3D>{edge_mesh,_flat_shader, edge_drawables};
             edge_boundary_drawable->activate_triangles({});
             edge_boundary_drawable->activate_edges();
 
@@ -112,6 +115,31 @@ class MeshViewer: public mtao::opengl::Window3 {
             grid.set(g);
 
 
+        }
+        void update_edges() {
+            if(edge_choice) {
+                if(auto it = mapped_edges.find(*edge_choice); it != mapped_edges.end()) {
+                    auto&& edges = it->second;
+                    if(edges.size() > 0) {
+                        auto E = mtao::eigen::stl2eigen(edges);
+
+                        edge_mesh.setEdgeBuffer(E.cast<unsigned int>().eval());
+
+                        edge_boundary_drawable->set_visibility(true);
+                        return;
+                    }
+
+                }
+            }
+            if(edges.size() > 0) {
+                auto E = mtao::eigen::stl2eigen(edges);
+
+                edge_mesh.setEdgeBuffer(E.cast<unsigned int>().eval());
+
+                edge_boundary_drawable->set_visibility(true);
+                return;
+            }
+            edge_boundary_drawable->set_visibility(false);
         }
         void gui() override {
             if(ImGui::InputInt3("N", &NI))  {
@@ -168,24 +196,49 @@ class MeshViewer: public mtao::opengl::Window3 {
                 }
                 auto F = mtao::eigen::hstack_iter(Fs.begin(),Fs.end()).cast<unsigned int>().eval();
                 mesh.setTriangleBuffer(V,F);
+                edge_mesh.setVertexBuffer(V);
 
 
                 using E = std::array<int,2>;
-                std::vector<E> edges;
+                edges.clear();
+                mapped_edges.clear();
                 for(int i = 0; i < ccm->cut_edge_size(); ++i) {
                     auto e = ccm->cut_edge(i);
-                    if((ccg.grid_vertex(e(0)).mask() & ccg.grid_vertex(e(1)).mask()).active()) {
+                    auto mask = ccg.grid_vertex(e(0)).mask() & ccg.grid_vertex(e(1)).mask();
+                    if(mask.active()) {
                         edges.emplace_back(E{{e(0),e(1)}});
+                        for(int i = 0; i < 3; ++i) {
+                            if(mask[i]) {
+                                mapped_edges[E{{i,*mask[i]}}].emplace_back(edges.back());
+                            }
+                        }
                     }
                 }
-                if(edges.size() > 0) {
-                    auto EE = mtao::eigen::stl2eigen(edges);
+                update_edges();
 
-                    edge_mesh.setEdgeBuffer(V,EE.cast<unsigned int>().eval());
-
-                    edge_boundary_drawable->set_visibility(true);
+            }
+            {
+                bool active = bool(edge_choice);
+                if(ImGui::Checkbox("Edge choice", &active)) {
+                    std::cout << "Checked!" << std::endl;
+                    if(active) {
+                        edge_choice = std::array<int,2>{{0,0}};
+                    } else {
+                        edge_choice.reset();
+                        update_edges();
+                    }
                 }
-
+                if(active) {
+                    bool changed= false;
+                    changed |= ImGui::InputInt("Axis", edge_choice->begin());
+                    changed |= ImGui::InputInt("Plane", edge_choice->begin()+1);
+                    if(changed) {
+                        auto&& [a,b] = *edge_choice;
+                        a =std::clamp<int>(a,0,2);
+                        b = std::clamp<int>(b,0,ccm->vertex_shape()[a] - 1);
+                        update_edges();
+                    }
+                }
             }
             ImGui::InputText("Filename",output_filename,128);
             if(ImGui::Button("Save")) {
@@ -198,10 +251,14 @@ class MeshViewer: public mtao::opengl::Window3 {
         void draw() override {
             Magnum::GL::Renderer::disable(Magnum::GL::Renderer::Feature::FaceCulling);
             Window3::draw();
+            Magnum::GL::Renderer::disable(Magnum::GL::Renderer::Feature::DepthTest);
+            camera().draw(edge_drawables);
+            Magnum::GL::Renderer::enable(Magnum::GL::Renderer::Feature::DepthTest);
         }
     private:
         Magnum::Shaders::MeshVisualizer _wireframe_shader;
         Magnum::Shaders::Flat3D _flat_shader;
+        Magnum::SceneGraph::DrawableGroup3D edge_drawables;
         mtao::opengl::objects::Mesh<3> mesh;
         mtao::opengl::objects::Grid<3> grid;
         mtao::opengl::objects::Mesh<3> edge_mesh;

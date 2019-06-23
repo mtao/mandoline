@@ -87,7 +87,7 @@ namespace mandoline::construction {
 
 
     template <int D, typename Indexer>
-        void CutData<D,Indexer>::bake(const std::optional<SGType>& grid) {
+        void CutData<D,Indexer>::bake(const std::optional<SGType>& grid, bool fuse) {
             auto t = mtao::logging::profiler("mesh bake",false,"profiler");
             {
                 auto t = mtao::logging::profiler("mesh vertex bake",false,"profiler");
@@ -301,7 +301,7 @@ namespace mandoline::construction {
         auto CutData<D,Indexer>::crossings() const -> const std::vector<Crossing<D>>& { return m_crossings; }
 
     template <int D, typename Indexer>
-        auto CutData<D,Indexer>::compute_crossings() const -> std::vector<Crossing<D>>{
+        auto CutData<D,Indexer>::compute_crossings(bool fuse) const -> std::vector<Crossing<D>>{
 
                 auto t2 = mtao::logging::timer("creating crossings");
             auto V = vertex_crossings();
@@ -330,22 +330,30 @@ namespace mandoline::construction {
                 int count = grid_size();
                 auto t = mtao::logging::timer("indexing crossings");
 
-                int i;
-                //for(auto&& [i,v]: mtao::iterator::enumerate(V.size()+E.size(),F)) {
-                for(i = 0; i < ret.size(); ++i) {
-                    auto& p = ret[i];
-                    auto& gv = p.vertex();
-                    if(gv.is_grid_vertex()) {
-                        p.index = index_map[gv] = grid_index(gv);
-                    } else {
-                        {
-                            if(auto it = index_map.find(gv); it != index_map.end()) {
-                                p.index = it->second;
-                            } else {
-                                p.index = index_map[gv] = count++;
+                if(fuse) {
+                    int i;
+                    //for(auto&& [i,v]: mtao::iterator::enumerate(V.size()+E.size(),F)) {
+                    for(i = 0; i < ret.size(); ++i) {
+                        auto& p = ret[i];
+                        auto& gv = p.vertex();
+                        if(gv.is_grid_vertex()) {
+                            p.index = index_map[gv] = grid_index(gv);
+                        } else {
+                            {
+                                if(auto it = index_map.find(gv); it != index_map.end()) {
+                                    p.index = it->second;
+                                } else {
+                                    p.index = index_map[gv] = count++;
+                                }
                             }
-                        }
 
+                        }
+                    }
+                } else {
+                    int i;
+                    for(i = 0; i < ret.size(); ++i) {
+                        auto& p = ret[i];
+                        p.index = i;
                     }
                 }
             return ret;

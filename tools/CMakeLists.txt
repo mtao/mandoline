@@ -14,6 +14,13 @@ TARGET_LINK_LIBRARIES(write_to_obj cutmesh_maker mandoline OpenMP::OpenMP_CXX mt
 ADD_EXECUTABLE(write_to_cutmesh write_to_cutmesh.cpp)
 TARGET_LINK_LIBRARIES(write_to_cutmesh cutmesh_maker mandoline OpenMP::OpenMP_CXX mtao_core)
 
+ADD_EXECUTABLE(remove_self_intersections remove_self_intersections.cpp
+    ../include/mandoline/construction/remesh_self_intersections.hpp
+    ../src/construction/remesh_self_intersections.cpp
+    )
+TARGET_LINK_LIBRARIES(remove_self_intersections gmp CGAL mpfr Boost::thread
+    mtao_core)
+
 IF(${USE_OPENGL})
 find_package(Magnum REQUIRED GL Shaders GlxContext GlfwApplication SceneGraph MeshTools)
 find_package(MagnumIntegration REQUIRED ImGui)

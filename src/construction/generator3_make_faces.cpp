@@ -107,6 +107,20 @@ namespace mandoline::construction {
 
         auto V = all_GV();
 
+        {
+            for(int i = 0; i < V.cols(); ++i) {
+                for(int j = i+1; j < V.cols(); ++j) {
+                    if(V.col(i) == V.col(j)) {
+                        std::cout << "Duplicate vertices? wat" << i << "->" << j  << "/" << grid_vertex_size() << "(" << V.col(i).transpose() << "||" << V.col(j).transpose()<< ")"<< std::endl;
+
+                        int gv = grid_vertex_size();
+                        std::cout << std::string(grid_vertex(i)) << ":" << std::string(grid_vertex(j))<< std::endl;
+                        std::cout << std::string(crossing(i)) << ":" << std::string(crossing(j))<< std::endl;
+                        std::cout << crossing(i).point().transpose() << ":" << crossing(j).point().transpose()<< std::endl;
+                    }
+                }
+            }
+        }
 
         mtao::ColVectors<double,2> subV(2,V.cols());
         std::vector<Vertex<3>> VV(num_vertices());
