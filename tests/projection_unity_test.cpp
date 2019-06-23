@@ -59,18 +59,64 @@ int main(int argc, char * argv[]) {
     CutCellMesh<3> ccm = CutCellMesh<3>::from_proto(input_cutmesh);
 
 
-    ccm.triangulate_faces();
+    //ccm.triangulate_faces();
 
     std::cout << "Barycentric matrix" << std::endl;
     test_output_unity(ccm.barycentric_matrix() );
     std::cout << "grid trilin matrix" << std::endl;
     test_output_unity(ccm.trilinear_matrix() );
+    {
+
+        auto A = ccm.barycentric_matrix();
+        auto B = ccm.trilinear_matrix();
+
+        auto V = ccm.vertices();
+        auto OV = ccm.origV();
+        auto GV = ccm.grid_vertices();
+
+        auto NV = OV * A.transpose();
+        auto NGV = GV * B.transpose();
+        bool lerp_accurate = true;
+        for(int i = 0; i < NV.cols(); ++i) {
+            if(!ccm.is_grid_vertex(i)) {
+                if((NV.col(i) - ccm.vertex(i)).norm() > 1e-5) {
+                    std::cout << "Bary lerp fail " << i << ": " << NV.col(i).transpose() << " != " << ccm.vertex(i).transpose() << std::endl;
+                    lerp_accurate = false;
+                }
+            }
+        }
+        if((NGV - V).norm() > 1e-7) {
+            std::cout << "grid lerp fail" << std::endl;
+            for(int i = 0; i < ccm.vertex_size(); ++i) {
+                if((NGV.col(i) - V.col(i)).norm() > 1e-7) {
+                    std::cout << NGV.col(i).transpose() << " != " << V.col(i).transpose() << std::endl;
+                }
+            }
+            lerp_accurate = false;
+        }
+        if(lerp_accurate) {
+            std::cout << "Projection operators were successful at lerping" << std::endl;
+        }
+    }
 
     std::cout << "face bary matrix" << std::endl;
     test_input_unity(ccm.face_barycentric_volume_matrix() );
     std::cout << "grid face matrix" << std::endl;
     test_input_unity(ccm.face_grid_volume_matrix() );
 
+    {
+
+        auto A = ccm.face_barycentric_volume_matrix();
+        auto B = ccm.face_grid_volume_matrix();
+        auto C = A * mtao::VecXd::Ones(A.cols());
+        auto D = B * mtao::VecXd::Ones(B.cols());
+        auto X = C+D;
+        if((X.array() == 0).any()) {
+            std::cout << "Face projection is missing out on something" << std::endl;
+        } else {
+            std::cout << "Face projection affects every cut-face" << std::endl;
+        }
+    }
 
     return 0;
 }

@@ -640,10 +640,10 @@ namespace mandoline {
                 a[0] = v.coord[0] + i;
                 double vi = i==0?(1-v.quot(0)):v.quot(0);
                 for(int j = 0; j < 2; ++j) {
-                    a[1] = v.coord[1] + i;
+                    a[1] = v.coord[1] + j;
                     double vij = vi * (j==0?(1-v.quot(1)):v.quot(1));
                     for(int k = 0; k < 2; ++k) {
-                        a[2] = v.coord[2] + i;
+                        a[2] = v.coord[2] + k;
                         double vijk = vij * (k==0?(1-v.quot(2)):v.quot(2));
                         trips.emplace_back(index,vertex_index(a),vijk);
                     }
@@ -705,7 +705,7 @@ namespace mandoline {
             trips.emplace_back(a,b,v);
         }
         A.setFromTriplets(trips.begin(),trips.end());
-        mtao::VecXd sums = A * mtao::VecXd::Zero(A.cols());
+        mtao::VecXd sums = A * mtao::VecXd::Ones(A.cols());
         sums = (sums.array().abs() > 1e-10).select(1.0 / sums.array(), 0);
         A = sums.asDiagonal() * A;
         return A;
@@ -730,9 +730,9 @@ namespace mandoline {
             trips.emplace_back(fid, btf.parent_fid, vol);
         }
         A.setFromTriplets(trips.begin(),trips.end());
-        for(int i = 0; i < A.cols(); ++i) {
-            A.col(i) /= A.col(i).sum();
-        }
+        //for(int i = 0; i < A.cols(); ++i) {
+        //    A.col(i) /= A.col(i).sum();
+        //}
         return A;
     }
     Eigen::SparseMatrix<double> CutCellMesh<3>::boundary() const {

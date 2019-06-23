@@ -738,7 +738,7 @@ namespace mandoline {
         std::vector<Eigen::Triplet<double>> trips;
         mtao::VecXd ret(m_boundary.size());
         trips.reserve(form_size<2>());
-        for(auto&& [i,e]: mtao::iterator::enumerate(m_boundary)) {
+        for(auto&& [index,e]: mtao::iterator::enumerate(m_boundary)) {
             if(!is_valid_edge(e)) continue;
             auto [a,b] = e;
             int k = 0;
@@ -754,15 +754,15 @@ namespace mandoline {
                 corner[k] += ca.width();
             }
             {
-                const int w = minwidth;
+                const double w = minwidth;
                 const coord_type c = corner;
                 const int u = (k+1)%3;
                 const int v = (k+2)%3;
-                double vol = 1. / w*w;
+                double vol = 1/(w*w);
                 coord_type a = c;
                 for(int& i = a[u] = c[u]; i < w+c[u]; ++i) {
                     for(int& j = a[v] = c[v]; j < w+c[v]; ++j) {
-                        const int row = offset+i;
+                        const int row = offset+index;
                         const int col = staggered_index<2>(a,k);
                         trips.emplace_back(row, col, vol);
                     }
