@@ -3,7 +3,8 @@
 
 int main(int argc, char* argv[]) {
     auto ccm = read(argv[1]);
-    std::cout << divergence(ccm).transpose() << std::endl;
+    mtao::Vec3d dir = mtao::Vec3d::Unit(1);
+    std::cout << divergence(ccm,dir).transpose() << std::endl;
     auto B = boundary(ccm);
     Eigen::SparseMatrix<double> B2 = boundary(ccm).transpose();
     std::cout << B.rows() << "," << B.cols() << std::endl;
@@ -33,7 +34,7 @@ int main(int argc, char* argv[]) {
         }
     }
     std::cout << std::endl;
-    pressure(ccm);
+    pressure(ccm,dir);
     //std::cout << std::endl;
     //std::cout << ccm.dual_edge_lengths().transpose() << std::endl << std::endl;
     //std::cout << ccm.face_volumes().transpose() << std::endl << std::endl;
