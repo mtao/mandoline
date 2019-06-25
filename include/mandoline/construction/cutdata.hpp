@@ -100,6 +100,9 @@ namespace mandoline::construction {
             //TODO: figure out what i wanted from these
             void clean_edges();
             void clean_triangles();
+
+            const std::vector<EdgeIntersections<D>>& edge_intersections() const { return m_edge_intersections; }
+            const std::vector<TriangleIntersections<D>>& triangle_intersections() const { return m_triangle_intersections;}
             private:
             std::vector<const EdgeIntersection<D>*> flat_edge_intersections() const ;
             std::vector<const TriangleIntersection<D>*> flat_triangle_intersections() const ;

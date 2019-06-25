@@ -38,17 +38,25 @@ namespace mandoline::construction {
         m_cut_faces = data().cut_faces();
 
         {
+            auto t = mtao::logging::profiler("caching axial primal faces",false,"profiler");
+            std::vector<bool> active(data().nF());
+            auto&& ti = data().triangle_intersections();
+            std::transform(ti.begin(),ti.end(), active.begin(), [](auto&& ti) {
+                    return ti.active();
+                    });
             cut_cell_to_primal_map.clear();
             for(auto&& [i,f]: mtao::iterator::enumerate(m_cut_faces)) {
                 cut_cell_to_primal_map[i] = f.parent_fid;
-                for(auto&& [i,c]: mtao::iterator::enumerate(f.mask())) {
-                    if(c) {
-                        double Ni = origN.col(f.parent_fid)(i);
-                        if(Ni > 0) {
-                            axial_primal_faces[i].insert(smallest_ordered_edge(f.indices));
-                        } else {
-                            std::vector<int> IR(f.indices.rbegin(),f.indices.rend());
-                            axial_primal_faces[i].insert(smallest_ordered_edge(IR));
+                if(active[f.parent_fid]) {
+                    for(auto&& [i,c]: mtao::iterator::enumerate(f.mask())) {
+                        if(c) {
+                            double Ni = origN.col(f.parent_fid)(i);
+                            if(Ni > 0) {
+                                axial_primal_faces[i].insert(smallest_ordered_edge(f.indices));
+                            } else {
+                                std::vector<int> IR(f.indices.rbegin(),f.indices.rend());
+                                axial_primal_faces[i].insert(smallest_ordered_edge(IR));
+                            }
                         }
                     }
                 }
@@ -107,20 +115,6 @@ namespace mandoline::construction {
 
         auto V = all_GV();
 
-        {
-            for(int i = 0; i < V.cols(); ++i) {
-                for(int j = i+1; j < V.cols(); ++j) {
-                    if(V.col(i) == V.col(j)) {
-                        std::cout << "Duplicate vertices? wat" << i << "->" << j  << "/" << grid_vertex_size() << "(" << V.col(i).transpose() << "||" << V.col(j).transpose()<< ")"<< std::endl;
-
-                        int gv = grid_vertex_size();
-                        std::cout << std::string(grid_vertex(i)) << ":" << std::string(grid_vertex(j))<< std::endl;
-                        std::cout << std::string(crossing(i)) << ":" << std::string(crossing(j))<< std::endl;
-                        std::cout << crossing(i).point().transpose() << ":" << crossing(j).point().transpose()<< std::endl;
-                    }
-                }
-            }
-        }
 
         mtao::ColVectors<double,2> subV(2,V.cols());
         std::vector<Vertex<3>> VV(num_vertices());
