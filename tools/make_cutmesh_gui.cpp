@@ -36,6 +36,7 @@ class MeshViewer: public mtao::opengl::Window3 {
         float permeability = 100.0;
         float timestep = 1000.0;
         bool animate = false;
+        float bbox_offset = 0.0;
         using Vec = mtao::VectorX<GLfloat>;
         using Vec3 = mtao::Vec3f;
         Vec data;
@@ -170,6 +171,14 @@ class MeshViewer: public mtao::opengl::Window3 {
             }
             if(edge_drawable) {
                 edge_drawable->gui();
+            }
+            if(ImGui::InputFloat("Boundingbox Offset", &bbox_offset))  {
+                mtao::Vec3f C = (orig_bbox.min() + orig_bbox.max()) / 2;
+                mtao::Vec3f s = orig_bbox.sizes() / 2;
+                bbox.min() = C - (1 + bbox_offset) * s;
+                bbox.max() = C + (1 + bbox_offset) * s;
+                update();
+
             }
             if(ImGui::Button("Reset BBox")) {
                 bbox = orig_bbox;
