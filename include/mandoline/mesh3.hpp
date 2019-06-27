@@ -56,6 +56,7 @@ namespace mandoline {
                 //Differential geometry info
                 Eigen::SparseMatrix<double> boundary() const;
                 VecX cell_volumes() const;
+                mtao::ColVecs3d face_centroids() const;
                 mtao::ColVecs3d cell_centroids() const;
                 ColVecs dual_vertices() const;//alias for centroids
                 VecX face_volumes(bool from_triangulation = false)const ;

@@ -73,6 +73,8 @@ class MeshViewer: public mtao::opengl::Window3 {
 
 
             input_mesh.setTriangleBuffer((ccm.origV()).cast<float>(), ccm.origF().cast<unsigned int>());
+            face_centroid_mesh.setVertexBuffer(ccm.face_centroids().cast<float>().eval());
+            cell_centroid_mesh.setVertexBuffer(ccm.cell_centroids().cast<float>().eval());
 
 
             input_phong = new mtao::opengl::Drawable<Magnum::Shaders::Phong>{input_mesh,phong_shader, drawables()};
@@ -91,6 +93,25 @@ class MeshViewer: public mtao::opengl::Window3 {
             face_wireframe = new mtao::opengl::Drawable<Magnum::Shaders::MeshVisualizer>{face_mesh,wireframe_shader, wireframe_drawables};
             face_mesh.setParent(&root());
 
+            cell_flat = new mtao::opengl::Drawable<Magnum::Shaders::Flat3D>{cell_centroid_mesh,flat_shader, drawables()};
+            cell_centroid_mesh.setParent(&root());
+            face_flat = new mtao::opengl::Drawable<Magnum::Shaders::Flat3D>{face_centroid_mesh,flat_shader, drawables()};
+            face_centroid_mesh.setParent(&root());
+
+            face_flat->deactivate();
+            cell_flat->deactivate();
+            face_flat->activate_points();
+            cell_flat->activate_points();
+
+
+                face_flat->data().color[0] = 1;
+                face_flat->data().color[1] = 0;
+                face_flat->data().color[2] = 0;
+                face_flat->data().color[3] = 1;
+                cell_flat->data().color[0] = 0;
+                cell_flat->data().color[1] = 1;
+                cell_flat->data().color[2] = 0;
+                cell_flat->data().color[3] = 1;
             for(auto&& r: {input_wireframe, cell_wireframe, face_wireframe} ){
                 r->data().color[3] = 0;
                 r->data().color[0] = 0;
@@ -107,6 +128,8 @@ class MeshViewer: public mtao::opengl::Window3 {
             if(cell_wireframe) {cell_wireframe->gui("Cell Wireframe");}
             if(face_wireframe) {face_wireframe->gui("Face Wireframe");}
 
+            if(cell_flat) {cell_flat->gui("Cell Flat");}
+            if(face_flat) {face_flat->gui("Face Flat");}
             auto&& io = ImGui::GetIO();
 
 
@@ -129,6 +152,7 @@ class MeshViewer: public mtao::opengl::Window3 {
             Magnum::GL::Renderer::disable(Magnum::GL::Renderer::Feature::FaceCulling);
             Magnum::GL::Renderer::enable(Magnum::GL::Renderer::Feature::PolygonOffsetFill);
             Magnum::GL::Renderer::setPolygonOffset(2.f,1.f);
+            Magnum::GL::Renderer::setPointSize(10.);
             Window3::draw();
 
             
@@ -139,16 +163,22 @@ class MeshViewer: public mtao::opengl::Window3 {
     private:
         Magnum::SceneGraph::DrawableGroup3D wireframe_drawables;
         Magnum::Shaders::Phong phong_shader;
+        Magnum::Shaders::Flat3D flat_shader;
         Magnum::Shaders::MeshVisualizer wireframe_shader;
         mtao::opengl::objects::Mesh<3> input_mesh;
         mtao::opengl::objects::Mesh<3> cell_mesh;
         mtao::opengl::objects::Mesh<3> face_mesh;
+        mtao::opengl::objects::Mesh<3> cell_centroid_mesh;
+        mtao::opengl::objects::Mesh<3> face_centroid_mesh;
         mtao::opengl::Drawable<Magnum::Shaders::Phong>* input_phong = nullptr;
         mtao::opengl::Drawable<Magnum::Shaders::Phong>* cell_phong = nullptr;
         mtao::opengl::Drawable<Magnum::Shaders::Phong>* face_phong = nullptr;
         mtao::opengl::Drawable<Magnum::Shaders::MeshVisualizer>* input_wireframe= nullptr;
         mtao::opengl::Drawable<Magnum::Shaders::MeshVisualizer>* cell_wireframe = nullptr;
         mtao::opengl::Drawable<Magnum::Shaders::MeshVisualizer>* face_wireframe = nullptr;
+
+        mtao::opengl::Drawable<Magnum::Shaders::Flat3D>* cell_flat = nullptr;
+        mtao::opengl::Drawable<Magnum::Shaders::Flat3D>* face_flat = nullptr;
 
 
 };

@@ -59,18 +59,42 @@ namespace mandoline {
 
         return mtao::eigen::vstack(V,adaptive_grid().cell_volumes());
     }
+    auto CutCellMesh<3>::face_centroids() const -> mtao::ColVecs3d{
+        /*
+           VecX V(cell_size());
+           V.topRows(StaggeredGrid::cell_size()).array() = dx().prod();
+           */
+        mtao::ColVecs3d ret(3,m_faces.size());
+        auto Vs = vertices();
+        for(auto&& [i,f]: mtao::iterator::enumerate(m_faces)) {
+            auto v = ret.col(i);
+            v.setZero();
+            int count = 0;
+            for(auto&& ind: f.indices) {
+                for(auto&& j: ind) {
+                    v += Vs.col(j);
+                    count++;
+                }
+            }
+            if(count > 0) {
+                v /= count;
+            }
+        }
+        auto r = adaptive_grid().boundary_centroids();
+        return mtao::eigen::hstack(ret,r);
+    }
     auto CutCellMesh<3>::cell_centroids() const -> mtao::ColVecs3d{
         /*
            VecX V(cell_size());
            V.topRows(StaggeredGrid::cell_size()).array() = dx().prod();
            */
-        mtao::ColVecs3d face_brep_cents(3,m_faces.size());
+        mtao::ColVecs3d face_brep_cents(3,face_size());
         auto Vs = vertices();
         for(auto&& [i,f]: mtao::iterator::enumerate(m_faces)) {
             face_brep_cents.col(i) = f.brep_centroid(Vs);
             //face_brep_cents.col(i) = f.brep_volume(Vs) * f.brep_centroid(Vs);
         }
-        mtao::ColVecs3d V(3,m_cells.size());
+        mtao::ColVecs3d V(3,cell_size());
         V.setZero();
         auto vols = cell_volumes();
         for(auto&& [k,c]: mtao::iterator::enumerate(m_cells)) {
@@ -79,6 +103,7 @@ namespace mandoline {
         }
 
 
+        adaptive_grid().cell_centroids(V);
         return V;
     }
     auto CutCellMesh<3>::dual_vertices() const -> ColVecs {

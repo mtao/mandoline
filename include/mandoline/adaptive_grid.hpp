@@ -59,6 +59,8 @@ namespace mandoline {
             std::array<int,4> face(int idx, int axis, bool sign) const;
             mtao::ColVecs3i triangulated(int idx) const;
             mtao::ColVecs3i triangulated(const Cell& c) const;
+            mtao::ColVecs3d boundary_centroids() const;
+            void cell_centroids(mtao::ColVecs3d&) const;
             GridData3i grid() const;
             const std::vector<Edge>& boundary() const { return m_boundary; }
             const std::map<int,Cell>& cells() const { return m_cells; }

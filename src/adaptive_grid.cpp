@@ -690,6 +690,15 @@ namespace mandoline {
         }
         return ret;
     }
+    void AdaptiveGrid::cell_centroids(mtao::ColVecs3d& R) const {
+        for(auto&& [i,c]: cells()) {
+            auto cent = R.col(i);
+            cent = mtao::eigen::stl2eigen(c.corner()).cast<double>();
+            double w = c.width();
+            cent.array() += w / 2.0;
+            cent = vertex_grid().world_coord(cent);
+        }
+    }
     mtao::VecXd AdaptiveGrid::cell_volumes() const {
         mtao::VecXd R(num_cells());
         if(num_cells() == 0) {
@@ -733,6 +742,39 @@ namespace mandoline {
         return cells().size();
     }
 
+    mtao::ColVecs3d AdaptiveGrid::boundary_centroids() const {
+        mtao::ColVecs3d C(3,boundary().size());
+        for(auto&& [index,e]: mtao::iterator::enumerate(m_boundary)) {
+            auto cent = C.col(index);
+            cent.setZero();
+            if(!is_valid_edge(e)) continue;
+            auto [a,b] = e;
+            int k = 0;
+
+            auto& ca = cell(a);
+            auto& cb = cell(b);
+            mtao::Vec3d cd = ca.center() - cb.center();
+            int minwidth = std::min(ca.width(),cb.width());
+            cd.cwiseAbs().maxCoeff(&k);
+            coord_type corner = ca.width() < cb.width() ? ca.corner():cb.corner();
+
+            if(cd(k) > 0) {
+                corner[k] += ca.width();
+            }
+            {
+                const double w = minwidth;
+                const coord_type c = corner;
+                const int u = (k+1)%3;
+                const int v = (k+2)%3;
+                cent = mtao::eigen::stl2eigen(c).cast<double>();
+                cent(u) +=w/2.0;
+                cent(v) +=w/2.0;
+                cent = vertex_grid().world_coord(cent);
+
+            }
+        }
+        return C;
+    }
 
     std::vector<Eigen::Triplet<double>> AdaptiveGrid::grid_face_projection(int offset) const {
         std::vector<Eigen::Triplet<double>> trips;
