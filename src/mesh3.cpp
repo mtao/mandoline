@@ -584,27 +584,31 @@ namespace mandoline {
             //Use barycentric for tri-mesh cut-faces, planar areas for axial cut-faces, and let the adaptive grid do it's thing
             auto trimesh_vols = mtao::geometry::volumes(m_origV,m_origF);
 
-            FV = face_barycentric_volume_matrix() * trimesh_vols;
-            auto subVs = compute_subVs();
-            for(auto&& [i,f]: mtao::iterator::enumerate(faces())) {
-                if(f.is_axial_face()) {
-                    auto [dim,coord] = f.as_axial_id();
-                    auto& vol = FV(i) = 0;
-                    auto& V = subVs[dim];
-                    for(auto&& indices: f.indices) {
-                        vol += mtao::geometry::curve_volume(V,indices);
-                    }
-                    if(vol < 0) {
-                        mtao::logging::warn() << "Negative volume! warn mtao because this shouldn't happen";
-                        vol = -vol;
-                    }
+            if(trimesh_vols.size() > 0) {
+                FV = face_barycentric_volume_matrix() * trimesh_vols;
+                auto subVs = compute_subVs();
+                for(auto&& [i,f]: mtao::iterator::enumerate(faces())) {
+                    if(f.is_axial_face()) {
+                        auto [dim,coord] = f.as_axial_id();
+                        auto& vol = FV(i) = 0;
+                        auto& V = subVs[dim];
+                        for(auto&& indices: f.indices) {
+                            vol += mtao::geometry::curve_volume(V,indices);
+                        }
+                        if(vol < 0) {
+                            mtao::logging::warn() << "Negative volume! warn mtao because this shouldn't happen";
+                            vol = -vol;
+                        }
 
+                    }
+                    if(!std::isfinite(FV(i))) {
+                        FV(i) = 0;
+                    }
                 }
-                if(!std::isfinite(FV(i))) {
-                    FV(i) = 0;
-                }
+            } else {
+                FV.resize(adaptive_grid().num_faces());
             }
-        FV.tail(adaptive_grid().num_faces()) = adaptive_grid().face_volumes();
+            FV.tail(adaptive_grid().num_faces()) = adaptive_grid().face_volumes();
         }
 
         return FV;
