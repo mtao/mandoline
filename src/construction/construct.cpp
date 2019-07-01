@@ -25,9 +25,41 @@ namespace mandoline::construction {
         }
         return ccg.generate();
     }
-    CutCellMesh<3> from_grid(const mtao::ColVecs3d& V, const mtao::ColVecs3i& F, const std::array<int,3>& cell_shape, int level, std::optional<double> threshold) {
+    CutCellMesh<3> from_grid_unnormalized(const mtao::ColVecs3d& V, const mtao::ColVecs3i& F, const std::array<int,3>& cell_shape, int level, std::optional<double> threshold) {
         using Vec = mtao::Vec3d;
         auto sg = CutCellMesh<3>::StaggeredGrid(cell_shape, Vec::Ones());
         return from_grid(V,F,sg,level,threshold);
     }
+
+
+    DeformingGeometryConstructor::DeformingGeometryConstructor(const mtao::ColVecs3d& V, const mtao::ColVecs3i& F, const mtao::geometry::grid::StaggeredGrid3d& grid, int adaptive_level, std::optional<double> threshold): _ccg(new CutCellGenerator<3>(V,grid, threshold)) {
+
+        _ccg->adaptive = true;
+        _ccg->adaptive_level = adaptive_level;
+        {
+            auto t = mtao::logging::profiler("generator_bake",false,"profiler");
+            _ccg->add_boundary_elements(F);
+            _ccg->bake();
+        }
+    }
+    DeformingGeometryConstructor::~DeformingGeometryConstructor() {
+        delete _ccg;
+    }
+    void DeformingGeometryConstructor::set_adaptivity(int res) {
+        _ccg->adaptive_level = res;
+    }
+    void DeformingGeometryConstructor::update_vertices(const mtao::ColVecs3d& V) {
+        _ccg->update_vertices(V);
+    }
+    void DeformingGeometryConstructor::update_grid(const mtao::geometry::grid::StaggeredGrid3d&& g) {
+        _ccg->update_grid(g);
+    }
+    void DeformingGeometryConstructor::bake() {
+        _ccg->clear();
+        _ccg->bake();
+    }
+    CutCellMesh<3> DeformingGeometryConstructor::emit() const {
+        return _ccg->generate();
+    }
+
 }

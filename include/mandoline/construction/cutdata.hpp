@@ -59,6 +59,11 @@ namespace mandoline::construction {
 
 
             void update_vertices(const mtao::vector<VType>& V);
+            void update_grid(const Indexer& indexer);
+            template <typename S, bool UVG>
+            void update_grid(const mtao::geometry::grid::StaggeredGrid<S,D,UVG>& sg) { update_grid(sg.vertex_grid()); }
+
+
             void set_vertices(const mtao::vector<VType>& V) { m_V = V; }
 
 

@@ -25,21 +25,37 @@ namespace mandoline::construction {
     template <int D>
         CutCellEdgeGenerator<D>::CutCellEdgeGenerator(const VecVector& V, const StaggeredGrid& g, std::optional<double> threshold): StaggeredGrid(g), m_data(g.vertex_grid()), m_origV(V) {
             //CutCellEdgeGenerator<D>::CutCellEdgeGenerator(const VecVector& V, const StaggeredGrid& g, std::optional<double> threshold): StaggeredGrid(g), m_origV(V) {
-            m_data.m_V.reserve(V.size());
+            m_data.m_V.resize(V.size());
 
-            double mythresh = -1;
-            if(threshold) { mythresh =  *threshold; }
-            if(mythresh < 0) { mythresh =  threshold_epsilon; }
-            std::transform(V.begin(),V.end(),std::back_inserter(m_data.m_V), [&](const Vec& v) {
-                    auto gv = get_vertex(v);
-
-                    if(threshold) {
-                    gv.apply_thresholding(mythresh);
-                    }
-
-                    return gv;
-                    });
+            update_vertices(V);
         }
+
+        template <int D>
+            void CutCellEdgeGenerator<D>::update_vertices(const VecVector& V, const std::optional<double>& threshold) {
+                m_origV = V;
+                assert(V.size() == m_data.m_V.size());
+                double mythresh = -1;
+                if(threshold) { mythresh =  *threshold; }
+                if(mythresh < 0) { mythresh =  threshold_epsilon; }
+                std::transform(V.begin(),V.end(),m_data.m_V.begin(), [&](const Vec& v) {
+                        auto gv = get_vertex(v);
+
+                        if(threshold) {
+                        gv.apply_thresholding(mythresh);
+                        }
+
+                        return gv;
+                        });
+            }
+        template <int D>
+            void CutCellEdgeGenerator<D>::update_grid(const StaggeredGrid& sg) {
+                StaggeredGrid::operator=(sg);
+                m_data.update_grid(sg);
+            }
+        template <int D>
+            void CutCellEdgeGenerator<D>::update_vertices(const ColVecs& V, const std::optional<double>& threshold) {
+                update_vertices(colvecs_to_vecvector(V), threshold);
+            }
         template <int D>
             CutCellEdgeGenerator<D>::CutCellEdgeGenerator(const StaggeredGrid& g ): CutCellEdgeGenerator(VecVector{},g.shape()) {
             }
@@ -49,9 +65,21 @@ namespace mandoline::construction {
            return get_crossings(get_orig_line(eidx),edge_index);
            }
            */
+        template <int D>
+            void CutCellEdgeGenerator<D>::clear() {
+                m_data.clear();
+                m_origEMap.clear();
+                m_per_axis_crossings = {};
+                m_newV.clear();
+                m_crossings.clear();
+                m_edges.clear();
+                cut_edges = {};
+                m_cut_faces.clear();
+            }
 
         template <int D>
             void CutCellEdgeGenerator<D>::bake() {
+
 
                 {
                     m_data.bake(*this);

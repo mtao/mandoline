@@ -135,10 +135,32 @@ namespace mandoline::construction {
 
 
 
+    void CutCellGenerator<3>::clear() {
+        cut_cell_to_primal_map.clear();
+        origN = {};
+        axis_hem_data = {};
+        axial_primal_faces = {};
+        m_newF = {};
+        m_faces.clear();
+        mesh_face_indices.clear();
+        axis_face_indices = {};
+        folded_faces.clear();
+        adaptive_edges.clear();
+        adaptive_bedges.clear();
+        cell_boundaries.clear();
+        boundary_vertices.clear();
+        boundary_faces.clear();
+        
+        CCEG::clear();
+    }
 
     void CutCellGenerator<3>::bake() {
+
+
+
         auto t2 = mtao::logging::profiler("general bake",false,"profiler");
         CCEG::bake();
+
 
         auto t = mtao::logging::profiler("grid bake cells",false,"profiler");
         bake_cells();

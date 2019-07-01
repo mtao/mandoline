@@ -76,6 +76,9 @@ namespace mandoline::construction {
                 virtual void bake_edges();
                 virtual void bake_faces() {}
                 virtual void bake_cells() {}
+                
+                virtual void clear();
+
                 CutCellMesh<D> generate_edges() const;
                 CutCellMesh<D> generate_faces() const;
                 CutCellMesh<D> generate() const;
@@ -241,6 +244,9 @@ namespace mandoline::construction {
                 const mtao::map<Edge, int>& origEMap() const { return m_origEMap; }
                 auto&& grid_vertices() const { return data().V(); }
                 const CutData<D>& data() const { return m_data; }
+                void update_vertices(const ColVecs& V, const std::optional<double>& threshold = {});
+                void update_vertices(const VecVector& V, const std::optional<double>& threshold = {});
+                void update_grid(const StaggeredGrid& indexer);
                 std::set<Edge> edges() const;
                 std::set<Edge> edge_slice(int dim, int slice) const;
                 std::array<mtao::map<int,std::set<Edge>>,D> axial_edges() const;
@@ -339,6 +345,7 @@ namespace mandoline::construction {
                 std::optional<std::map<int,int>> adaptive_grid_regions;
                 void set_region_map(const std::map<int,std::set<int>>& region_vertices);
                 void bake() override;
+                void clear() override;
 
                 Edge smallest_ordered_edge(const std::vector<int>& v) const;
 
@@ -376,8 +383,8 @@ namespace mandoline::construction {
 
                 mtao::Vec3d area_normal(const std::vector<int>& F) const;
                 mtao::Vec3d area_normal(const std::set<std::vector<int>>& F) const;
-                mtao::map<int,int> cut_cell_to_primal_map;
                 std::set<Edge> edge_slice(int dim, int slice) const;
+                mtao::map<int,int> cut_cell_to_primal_map;
                 mtao::ColVecs3d origN;
                 std::array<mtao::map<int,AxisHEMData>,3> axis_hem_data;
                 std::array<std::set<Edge>,3> axial_primal_faces;

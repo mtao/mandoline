@@ -18,7 +18,9 @@
 #include <mtao/opengl/objects/grid.h>
 #include <mtao/geometry/grid/grid.h>
 #include <mtao/geometry/grid/staggered_grid.hpp>
-#include <mandoline/construction/generator.hpp>
+#include <mtao/geometry/prune_vertices.hpp>
+#include <mandoline/construction/construct.hpp>
+#include <mandoline/construction/remesh_self_intersections.hpp>
 #include <mandoline/mesh3.hpp>
 
 #include <glm/gtc/matrix_transform.hpp> 
@@ -36,7 +38,7 @@ class MeshViewer: public mtao::opengl::Window3 {
         float permeability = 100.0;
         float timestep = 1000.0;
         bool animate = false;
-        float bbox_offset = 0.0;
+        float bbox_offset = .1;
         using Vec = mtao::VectorX<GLfloat>;
         using Vec3 = mtao::Vec3f;
         Vec data;
@@ -47,7 +49,6 @@ class MeshViewer: public mtao::opengl::Window3 {
         Eigen::AlignedBox<float,3> bbox, orig_bbox;
         Eigen::SparseMatrix<float> L;
         bool use_cube = false;
-        bool adaptive=true;
         int adaptive_level=0;
         mtao::ColVecs3d V;
         mtao::ColVecs3i F;
@@ -59,8 +60,13 @@ class MeshViewer: public mtao::opengl::Window3 {
         int& NI=N[0];
         int& NJ=N[1];
         int& NK=N[2];
+        std::optional<mandoline::construction::DeformingGeometryConstructor> constructor;
         std::optional<mandoline::CutCellMesh<3>> ccm;
 
+            auto staggered_grid() const { 
+                return mtao::geometry::grid::StaggeredGrid3f::from_bbox
+                (bbox, std::array<int,3>{{NI,NJ,NK}}, use_cube);
+            }
 
         MeshViewer(const Arguments& args): Window3(args), _wireframe_shader{Magnum::Shaders::MeshVisualizer::Flag::Wireframe}, output_view(output_filename,mtao::types::container_size(output_filename)) {
             Corrade::Utility::Arguments myargs;
@@ -72,6 +78,14 @@ class MeshViewer: public mtao::opengl::Window3 {
             orig_bbox = bbox = mtao::geometry::bounding_box(V.cast<float>().eval());
             mtao::Vec3f trans_e= -((bbox.min() + bbox.max()) / 2).cast<float>();
             Magnum::Math::Vector3<float> trans(trans_e.x(),trans_e.y(),trans_e.z());
+
+            //std::tie(V,F) = mtao::geometry::prune(V,F,0);
+            //std::tie(V,F) = mandoline::construction::remesh_self_intersections(V,F);
+
+            constructor.emplace(V,F,staggered_grid());
+
+
+
             mesh.translate(trans);
             edge_mesh.translate(trans);
             grid.translate(trans);
@@ -101,18 +115,12 @@ class MeshViewer: public mtao::opengl::Window3 {
             update();
         }
         void update() {
+            auto sg = staggered_grid();
             //mtao::geometry::grid::Grid3f g(std::array<int,3>{{NI,NJ,NK}});
-            auto sg = mtao::geometry::grid::StaggeredGrid3f::from_bbox
-                (bbox, std::array<int,3>{{NI,NJ,NK}}, use_cube);
-            std::cout << "cell shape: " << mtao::eigen::stl2eigen(sg.cell_shape()).transpose() << std::endl;
-            std::cout << sg.cell_grid().size() << std::endl;
-            std::cout << "vertex shape: " << mtao::eigen::stl2eigen(sg.vertex_shape()).transpose() << std::endl;
-            std::cout << sg.vertex_grid().size() << std::endl;
-            //auto g = mtao::geometry::grid::Grid3f::from_bbox
-            //    (bbox, std::array<int,3>{{NI,NJ,NK}}, use_cube);
+            constructor->update_grid(sg);
+            constructor->update_vertices(V);
             auto g = sg.vertex_grid();
 
-            std::cout << "vertex shape: " << mtao::eigen::stl2eigen(g.shape()).transpose() << std::endl;
             grid.set(g);
 
 
@@ -157,12 +165,9 @@ class MeshViewer: public mtao::opengl::Window3 {
             if(ImGui::Checkbox("Cubes", &use_cube)) {
                 update();
             }
-            if(ImGui::Checkbox("Adaptive", &adaptive)) {
-                update();
-            }
             if(ImGui::InputInt("Adaptive level", &adaptive_level))  {
-                adaptive = true;
 
+                constructor->set_adaptivity(adaptive_level);
                 update();
             }
 
@@ -185,18 +190,9 @@ class MeshViewer: public mtao::opengl::Window3 {
                 update();
             }
             if(ImGui::Button("Make CCM")) {
-                Eigen::AlignedBox<double,3> bbox(this->bbox.min().cast<double>(),this->bbox.max().cast<double>());
-                auto sg = mtao::geometry::grid::StaggeredGrid3d::from_bbox
-                    (bbox, std::array<int,3>{{NI,NJ,NK}}, use_cube);
-                auto ccg = mandoline::construction::CutCellGenerator<3>(V,sg, {});
-                ccg.add_boundary_elements(F);
-                ccg.adaptive = adaptive;
-                if(adaptive) {
-                    ccg.adaptive_level = adaptive_level;
-                }
-                ccg.bake();
+                constructor->bake();
+                ccm = constructor->emit();
                 std::vector<mtao::ColVecs3i> Fs;
-                ccm = ccg.generate();
                 mtao::ColVecs3f V = ccm->vertices().cast<float>();
                 for(auto&& f: ccm->faces()) {
                     if(f.is_mesh_face()) {
@@ -213,7 +209,7 @@ class MeshViewer: public mtao::opengl::Window3 {
                 mapped_edges.clear();
                 for(int i = 0; i < ccm->cut_edge_size(); ++i) {
                     auto e = ccm->cut_edge(i);
-                    auto mask = ccg.grid_vertex(e(0)).mask() & ccg.grid_vertex(e(1)).mask();
+                    auto mask = ccm->masked_vertex(e(0)).mask() & ccm->masked_vertex(e(1)).mask();
                     if(mask.active()) {
                         edges.emplace_back(E{{e(0),e(1)}});
                         for(int i = 0; i < 3; ++i) {

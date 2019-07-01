@@ -243,6 +243,10 @@ namespace mandoline::construction {
             std::copy(V.begin(),V.end(),m_V.begin());
             clear();
         }
+    template <int D, typename Indexer>
+        void CutData<D,Indexer>::update_grid(const Indexer& I) {
+            Indexer::operator=(I);
+        }
 
     template <int D, typename Indexer>
         void CutData<D,Indexer>::clear() {
