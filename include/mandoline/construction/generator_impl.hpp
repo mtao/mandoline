@@ -116,6 +116,7 @@ namespace mandoline::construction {
                 }
                 maxind++;
                 maxind -= data().grid_size();
+                maxind = std::max<int>(maxind,0);
                 //maxind -= data.nV();
                 //std::cout << "Max ind: " << maxind << std::endl;
                 m_crossings.resize(maxind);

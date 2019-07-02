@@ -199,27 +199,29 @@ class MeshViewer: public mtao::opengl::Window3 {
                         Fs.push_back(f.triangulate_fan());
                     }
                 }
-                auto F = mtao::eigen::hstack_iter(Fs.begin(),Fs.end()).cast<unsigned int>().eval();
-                mesh.setTriangleBuffer(V,F);
-                edge_mesh.setVertexBuffer(V);
+                if(Fs.size() > 0) {
+                    auto F = mtao::eigen::hstack_iter(Fs.begin(),Fs.end()).cast<unsigned int>().eval();
+                    mesh.setTriangleBuffer(V,F);
+                    edge_mesh.setVertexBuffer(V);
 
 
-                using E = std::array<int,2>;
-                edges.clear();
-                mapped_edges.clear();
-                for(int i = 0; i < ccm->cut_edge_size(); ++i) {
-                    auto e = ccm->cut_edge(i);
-                    auto mask = ccm->masked_vertex(e(0)).mask() & ccm->masked_vertex(e(1)).mask();
-                    if(mask.active()) {
-                        edges.emplace_back(E{{e(0),e(1)}});
-                        for(int i = 0; i < 3; ++i) {
-                            if(mask[i]) {
-                                mapped_edges[E{{i,*mask[i]}}].emplace_back(edges.back());
+                    using E = std::array<int,2>;
+                    edges.clear();
+                    mapped_edges.clear();
+                    for(int i = 0; i < ccm->cut_edge_size(); ++i) {
+                        auto e = ccm->cut_edge(i);
+                        auto mask = ccm->masked_vertex(e(0)).mask() & ccm->masked_vertex(e(1)).mask();
+                        if(mask.active()) {
+                            edges.emplace_back(E{{e(0),e(1)}});
+                            for(int i = 0; i < 3; ++i) {
+                                if(mask[i]) {
+                                    mapped_edges[E{{i,*mask[i]}}].emplace_back(edges.back());
+                                }
                             }
                         }
                     }
+                    update_edges();
                 }
-                update_edges();
 
             }
             {
