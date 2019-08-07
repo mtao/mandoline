@@ -1,4 +1,4 @@
 ADD_EXECUTABLE(cutmesh_viewer cutmesh_viewer.cpp)
 find_package(Magnum REQUIRED GL Shaders GlxContext GlfwApplication SceneGraph MeshTools)
 find_package(MagnumIntegration REQUIRED ImGui)
-TARGET_LINK_LIBRARIES(cutmesh_viewer mandoline_cutmesh3 mtao_opengl)
+TARGET_LINK_LIBRARIES(cutmesh_viewer mandoline_cutmesh3 mtao::visualization)

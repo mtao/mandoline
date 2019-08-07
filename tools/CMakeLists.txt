@@ -31,6 +31,6 @@ IF(${USE_OPENGL})
 find_package(Magnum REQUIRED GL Shaders GlxContext GlfwApplication SceneGraph MeshTools)
 find_package(MagnumIntegration REQUIRED ImGui)
 ADD_EXECUTABLE(make_cutmesh_gui make_cutmesh_gui.cpp)
-TARGET_LINK_LIBRARIES(make_cutmesh_gui mandoline OpenMP::OpenMP_CXX mtao_core mtao_opengl)
+TARGET_LINK_LIBRARIES(make_cutmesh_gui mandoline OpenMP::OpenMP_CXX mtao_core mtao::visualization)
 
 ENDIF(${USE_OPENGL})

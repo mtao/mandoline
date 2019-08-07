@@ -11,8 +11,6 @@ OPTION(USE_OPENMP "Use OpenMP stuff" ON)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${MTAO_PATH}/cmake")
 #set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${LIBIGL_PATH}/cmake")
 MESSAGE(STATUS "MODULE PATH:${CMAKE_MODULE_PATH}")
-ADD_SUBDIRECTORY("${MTAO_PATH}")
-ADD_SUBDIRECTORY("${LIBIGL_PATH}")
 #INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/include
 #    ${CMAKE_CURRENT_SOURCE_DIR}/extern/core/extern/imgui
 #    ${CMAKE_CURRENT_SOURCE_DIR}/extern/libigl/include
@@ -25,6 +23,24 @@ ENDIF(USE_OPENMP)
 FIND_PACKAGE(Eigen3 REQUIRED)
 #FIND_PACKAGE(libigl REQUIRED)
 FIND_PACKAGE(Boost COMPONENTS thread REQUIRED)
+ADD_SUBDIRECTORY("${MTAO_PATH}" EXCLUDE_FROM_ALL)
+
+
+
+
+option(LIBIGL_USE_STATIC_LIBRARY "Use libigl as static library" OFF)
+option(LIBIGL_WITH_COMISO            "Use CoMiso"                   OFF)
+option(LIBIGL_WITH_EMBREE            "Use Embree"                   OFF)
+option(LIBIGL_WITH_OPENGL            "Use OpenGL"                   OFF)
+option(LIBIGL_WITH_OPENGL_GLFW       "Use GLFW"                     OFF)
+option(LIBIGL_WITH_OPENGL_GLFW_IMGUI "Use ImGui"                    OFF)
+option(LIBIGL_WITH_PNG               "Use PNG"                      OFF)
+option(LIBIGL_WITH_TETGEN            "Use Tetgen"                   OFF)
+option(LIBIGL_WITH_TRIANGLE          "Use Triangle"                 OFF)
+option(LIBIGL_WITH_PREDICATES        "Use exact predicates"         OFF)
+option(LIBIGL_WITH_XML               "Use XML"                      OFF)
+option(LIBIGL_WITH_PYTHOFF            "Use Python"                  OFF)
+ADD_SUBDIRECTORY("${LIBIGL_PATH}" EXCLUDE_FROM_ALL)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/include)
 INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIR} ${EIGEN3_INCLUDE_DIR}/unsupported)
