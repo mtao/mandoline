@@ -1,5 +1,5 @@
 #pragma once
-#ifdef _OPENMP
+#ifdef MTAO_OPENMP
 # include <omp.h>
 #endif
 #include <mtao/types.hpp>

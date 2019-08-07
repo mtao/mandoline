@@ -454,10 +454,11 @@ namespace mandoline::construction {
 
 
 
-#ifdef _OPENMP
             std::vector<std::set<Edge>> per_edges(m_edge_intersections.size());
             int i = 0;
+#ifdef MTAO_OPENMP
 #pragma omp parallel for
+#endif//MTAO_OPENMP
             for(i=0; i < m_edge_intersections.size(); ++i) {
                 auto gv = m_edge_intersections[i].vptr_edges();
                 auto&& e = per_edges[i];
@@ -474,23 +475,6 @@ namespace mandoline::construction {
             for(auto&& e:  per_edges) {
                 edges.insert(e.begin(),e.end());
             }
-#else//_OPENMP
-            for(auto&& eis: m_edge_intersections) {
-                Edge e;
-                for(auto&& gv: eis.vptr_edges()) {
-                    std::transform(gv.begin(),gv.end(),e.begin(),[&](const VType* p) {
-                            return gv_idx_map.at(p);
-                            });
-                    if(e[0] != e[1]) {
-                        std::sort(e.begin(),e.end());
-                        edges.insert(e);
-                    }
-                }
-                //edges.insert(edges.end(),t.begin(),t.end());
-            }
-#endif//_OPENMP
-
-
             return edges;
         }
 
@@ -514,13 +498,10 @@ namespace mandoline::construction {
             auto t = mtao::logging::timer("data pulling face edges");
             std::set<Edge> edges;
 
-#ifdef _OPENMP
-            /*
-               int numthreads = omp_get_num_threads();
-               std::vector<std::vector<VPtrEdge>> thread_edges(numthreads);
-               */
             int i = 0;
+#ifdef MTAO_OPENMP
 #pragma omp parallel for
+#endif//MTAO_OPENMP
             for(i=0; i < m_triangle_intersections.size(); ++i) {
                 auto& FT = m_triangle_intersections[i];
                 //if(!FT.is_cut()) {
@@ -531,7 +512,9 @@ namespace mandoline::construction {
                     Edge e{{index(ve[0]),index(ve[1])}};
                     if(e[0] != e[1]) {
                         std::sort(e.begin(),e.end());
+#ifdef MTAO_OPENMP
 #pragma omp critical
+#endif//MTAO_OPENMP
                         edges.insert(e);
 
                     }
@@ -539,20 +522,6 @@ namespace mandoline::construction {
             }
 
 
-#else//_OPENMP
-            for(auto&& eis: m_edge_intersections) {
-                for(auto&& gv: eis.vptr_edges()) {
-                    for(auto&& ve: gv) {
-                        Edge e{{index(ve[0]),index(ve[1])}};
-                        if(e[0] != e[1]) {
-                            std::sort(e.begin(),e.end());
-                            edges.insert(e);
-                        }
-                    }
-                    //edges.insert(edges.end(),t.begin(),t.end());
-                }
-            }
-#endif//_OPENMP
 
             return edges;
         }

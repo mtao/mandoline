@@ -2,19 +2,31 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.10.1)
 SET(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/extern/core/cmake)
-ADD_SUBDIRECTORY(extern/core)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/extern/core/extern/imgui
-    ${CMAKE_CURRENT_SOURCE_DIR}/extern/libigl/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/extern/core/include)
 
+SET(MTAO_PATH "${CMAKE_CURRENT_SOURCE_DIR}/extern/core" CACHE STRING "location of mtao core libs" )
+SET(LIBIGL_PATH "${CMAKE_CURRENT_SOURCE_DIR}/extern/libigl" CACHE STRING "location of libigl libs" )
 OPTION(USE_OPENGL "Build opengl stuff" ON)
+OPTION(USE_OPENMP "Use OpenMP stuff" ON)
 
-FIND_PACKAGE(OpenMP)
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${MTAO_PATH}/cmake")
+#set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${LIBIGL_PATH}/cmake")
+MESSAGE(STATUS "MODULE PATH:${CMAKE_MODULE_PATH}")
+ADD_SUBDIRECTORY("${MTAO_PATH}")
+ADD_SUBDIRECTORY("${LIBIGL_PATH}")
+#INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/include
+#    ${CMAKE_CURRENT_SOURCE_DIR}/extern/core/extern/imgui
+#    ${CMAKE_CURRENT_SOURCE_DIR}/extern/libigl/include
+#    ${CMAKE_CURRENT_SOURCE_DIR}/extern/core/include)
+
+IF(USE_OPENMP)
+    FIND_PACKAGE(OpenMP REQUIRED)
+ENDIF(USE_OPENMP)
+
 FIND_PACKAGE(Eigen3 REQUIRED)
+#FIND_PACKAGE(libigl REQUIRED)
 FIND_PACKAGE(Boost COMPONENTS thread REQUIRED)
 
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/include)
 INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIR} ${EIGEN3_INCLUDE_DIR}/unsupported)
 
 find_package(Protobuf REQUIRED)
@@ -137,60 +149,68 @@ SET(TOOLS_HDRS
     include/mandoline/tools/exploded_mesh.hpp
     )
 
+ADD_LIBRARY(cutmesh2_obj OBJECT ${CUTMESH2_SRCS} ${CUTMESH2_HDRS})
+ADD_LIBRARY(cutmesh3_obj OBJECT ${CUTMESH3_SRCS} ${CUTMESH3_HDRS})
+ADD_LIBRARY(construction_obj OBJECT ${CONSTRUCTION_SRCS} ${CONSTRUCTION_HDRS})
+ADD_LIBRARY(tools_obj OBJECT ${TOOLS_SRCS} ${TOOLS_HDRS})
+
+SET(MY_INCLUDES $<TARGET_PROPERTY:mtao::headers,INTERFACE_INCLUDE_DIRECTORIES>
+ $<TARGET_PROPERTY:igl::core,INTERFACE_INCLUDE_DIRECTORIES>
+    )
+TARGET_INCLUDE_DIRECTORIES(cutmesh2_obj PUBLIC ${MY_INCLUDES})
+TARGET_INCLUDE_DIRECTORIES(cutmesh3_obj PUBLIC ${MY_INCLUDES})
+TARGET_INCLUDE_DIRECTORIES(construction_obj PUBLIC ${MY_INCLUDES})
+TARGET_INCLUDE_DIRECTORIES(tools_obj PUBLIC ${MY_INCLUDES})
+
 ADD_DEFINITIONS(-g)
+IF(OpenMP_Found)
+    ADD_DEFINITIONS(-DMTAO_OPENMP)
+ENDIF(OpenMP_Found)
+
 ADD_LIBRARY(mandoline
-    ${CUTMESH2_SRCS}
-    ${CUTMESH3_HDRS}
-
-    ${CUTMESH3_SRCS}
-    ${CUTMESH2_HDRS}
-
-    ${CONSTRUCTION_SRCS}
-    ${CONSTRUCTION_HDRS}
-
-    ${TOOLS_SRCS}
-    ${TOOLS_HDRS}
+    $<TARGET_OBJECTS:cutmesh2_obj>
+    $<TARGET_OBJECTS:cutmesh3_obj>
+    $<TARGET_OBJECTS:construction_obj>
+    $<TARGET_OBJECTS:tools_obj>
     )
 TARGET_LINK_LIBRARIES(mandoline
-    mtao_geometry OpenMP::OpenMP_CXX
+    mtao::geometry OpenMP::OpenMP_CXX
     gmp CGAL::CGAL mpfr Boost::thread
+    igl::core
     ${Protobuf_LIBRARIES}
     )
 
 ADD_LIBRARY(mandoline2 EXCLUDE_FROM_ALL
-    ${CUTMESH2_SRCS}
-    ${CUTMESH2_HRDS}
-    ${CONSTRUCTION_SRCS}
-    ${CONSTRUCTION_HDRS}
+    $<TARGET_OBJECTS:cutmesh2_obj>
+    $<TARGET_OBJECTS:construction_obj>
     )
 TARGET_LINK_LIBRARIES(mandoline2
-    mtao_geometry OpenMP::OpenMP_CXX
+    mtao::geometry OpenMP::OpenMP_CXX
     gmp CGAL::CGAL mpfr Boost::thread
+    igl::core
     ${Protobuf_LIBRARIES}
     )
 
 
 ADD_LIBRARY(mandoline3 EXCLUDE_FROM_ALL
-    ${CUTMESH3_SRCS}
-    ${CUTMESH3_HRDS}
-    ${CONSTRUCTION_SRCS}
-    ${CONSTRUCTION_HDRS}
-    ${TOOLS_SRCS}
-    ${TOOLS_HDRS}
+    $<TARGET_OBJECTS:cutmesh3_obj>
+    $<TARGET_OBJECTS:construction_obj>
+    $<TARGET_OBJECTS:tools_obj>
     )
 TARGET_LINK_LIBRARIES(mandoline3 
-    mtao_geometry OpenMP::OpenMP_CXX
+    mtao::geometry OpenMP::OpenMP_CXX
     gmp CGAL::CGAL mpfr Boost::thread
+    igl::core
     ${Protobuf_LIBRARIES}
     )
 
 ADD_LIBRARY(mandoline_cutmesh3
-    ${CUTMESH3_SRCS}
-    ${CUTMESH3_HRDS}
+    $<TARGET_OBJECTS:cutmesh3_obj>
     )
 TARGET_LINK_LIBRARIES(mandoline_cutmesh3
-    mtao_geometry OpenMP::OpenMP_CXX
+    mtao::geometry OpenMP::OpenMP_CXX
     gmp CGAL::CGAL mpfr Boost::thread
+    igl::core
     ${Protobuf_LIBRARIES}
     )
 
