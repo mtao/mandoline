@@ -1,4 +1,5 @@
 #include "setup.h"
+#include "solver.hpp"
 void remove_noair_kernel(const mandoline::CutCellMesh<3>& ccm, Eigen::SparseMatrix<double>& M, Eigen::VectorXd& rhs) {
     M.makeCompressed();
     //pin one pressure sample to remove the 1D null space, and make truly Positive Definite
@@ -221,6 +222,8 @@ mtao::VecXd pressure(const mandoline::CutCellMesh<3>& ccm, const mtao::Vec3d& di
     }
     return D;
     } else {
+        mtao::VecXd phi = ldlt_pcg_solve(L,D);
+        /*
         mtao::VecXd x = L * D;
         x.setZero();
         mtao::VecXd r = D - L * x;
@@ -241,7 +244,24 @@ mtao::VecXd pressure(const mandoline::CutCellMesh<3>& ccm, const mtao::Vec3d& di
             p = r + b * p;
         }
         std::cout << i << ") Residual: " << r.norm() << std::endl;
-        return x;
+        */
+        int count = 0;
+        double min = std::numeric_limits<double>::max();
+        double max = std::numeric_limits<double>::min();
+        for(auto&& [i,c]: mtao::iterator::enumerate(ccm.cells())) {
+            if(c.region == 0) {
+                phi(i) = 0;
+            } else {
+                min = std::min(phi(i),min);
+                max = std::max(phi(i),max);
+            }
+        }
+        for(auto&& [i,c]: mtao::iterator::enumerate(ccm.cells())) {
+            if(c.region == 0) {
+                phi(i) = (min+max)/2;
+            }
+        }
+        return phi;
         
     }
 

@@ -11,6 +11,7 @@
 #include <mtao/types.h>
 #include <Corrade/Containers/Array.h>
 #include <Corrade/Containers/ArrayView.h>
+#include <igl/read_triangle_mesh.h>
 
 #include <Magnum/Shaders/VertexColor.h>
 #include <Magnum/GL/Renderer.h>
@@ -72,7 +73,13 @@ class MeshViewer: public mtao::opengl::Window3 {
             Corrade::Utility::Arguments myargs;
             myargs.addArgument("filename").parse(args.argc,args.argv);
             std::string filename = myargs.value("filename");
-            std::tie(V,F) = mtao::geometry::mesh::read_objD(filename);
+            Eigen::MatrixXd VV;
+            Eigen::MatrixXi FF;
+            igl::read_triangle_mesh(filename,VV,FF);
+
+            //std::tie(V,F) = mtao::geometry::mesh::read_objD(filename);
+            V = VV.transpose();
+            F = FF.transpose();
                 std::cout << "V/E/F " << V.cols() << "/" << mtao::geometry::mesh::boundary_facets(F).cols() << "/" << F.cols() << std::endl;
             mesh.setTriangleBuffer(V.cast<float>(),F.cast<unsigned int>());
             orig_bbox = bbox = mtao::geometry::bounding_box(V.cast<float>().eval());

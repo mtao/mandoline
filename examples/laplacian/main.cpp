@@ -22,6 +22,7 @@
 #include <Magnum/EigenIntegration/Integration.h>
 #include <mandoline/tools/planar_slicer.hpp>
 #include "setup.h"
+#include <igl/parula.h>
 
 #include <thread>
 #include "mandoline/mesh3.hpp"
@@ -104,7 +105,10 @@ class MeshViewer: public mtao::opengl::Window3 {
             ccm.triangulate_faces();
             input_mesh.setTriangleBuffer(ccm.origV().cast<float>(),ccm.origF().cast<unsigned int>());
 
+            auto bb = ccm.bbox();
+            mtao::Vec3d C = (bb.min() + bb.max())/2;
 
+            root().translate(Magnum::Math::Vector3<float>(-C.x(),-C.y(),-C.z()));
 
 
 
@@ -224,6 +228,9 @@ class MeshViewer: public mtao::opengl::Window3 {
                 colors.row(0) = C.transpose();
                 colors.row(1) = -C.transpose().array();
                 colors.row(2).array() = 0;
+                Eigen::MatrixXd COL;
+                igl::parula(C,true,COL);
+                colors.topRows<3>() = COL.transpose();
                 colors.row(3).array() = 1;
                 set_region_colors();
             }
