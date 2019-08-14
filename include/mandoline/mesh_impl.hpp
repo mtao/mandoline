@@ -1,5 +1,6 @@
 #pragma once
 #include "mandoline/mesh.hpp"
+#include "mtao/geometry/grid/triangulation.hpp"
 
 namespace mandoline {
     template <int D, typename Derived>
@@ -112,5 +113,9 @@ namespace mandoline {
             coord[et]--;
             int nidx = StaggeredGrid::template staggered_index<D>(coord,et);
             return Edge{{et,nidx}};
+        }
+    template <int D, typename Derived>
+        auto CutCellMeshBase<D,Derived>::edges() const -> Edges {
+            return mtao::eigen::hstack(mtao::geometry::grid::GridTriangulator<StaggeredGrid>(vertex_grid()).edges(),cut_edges());
         }
 }

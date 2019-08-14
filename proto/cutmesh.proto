@@ -64,6 +64,16 @@ message CutMeshProto {
         repeated Vec3d barycentric_coordinates = 2;
     }
 
+    message Square {
+        Vec3i corner = 1;
+        int64 radius = 2;
+        int64 axis = 3;
+    }
+    message Face {
+        Square geometry = 1;
+        Vec2i dual_edge = 2;
+    }
+
 
     message Cube {
         Vec3i corner = 1;
@@ -87,6 +97,7 @@ message CutMeshProto {
     repeated int64 foldedFaces = 10;
 
     map<int64,Cube> cubes = 11;
+    map<int64,Square> squares = 14;
     map<int64,int64> cube_regions = 12;
     map<int64,BarycentricTriangleFace> mesh_faces= 13;
 }

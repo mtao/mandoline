@@ -38,6 +38,9 @@ class MeshViewer: public mtao::opengl::Window3 {
         mandoline::tools::MeshExploder exploder;
         mtao::Vec3d wind_direction = mtao::Vec3d::Unit(1);
 
+        std::optional<int> current_picked_face = {};
+        mtao::VecXd face_pick_flux;
+
 
 
         float scale = 1.1;
@@ -104,6 +107,8 @@ class MeshViewer: public mtao::opengl::Window3 {
             ccm = mandoline::CutCellMesh<3>::from_proto(filename);
             ccm.triangulate_faces();
             input_mesh.setTriangleBuffer(ccm.origV().cast<float>(),ccm.origF().cast<unsigned int>());
+
+            face_pick_flux = mtao::VecXd::Zero(ccm.face_size());
 
             auto bb = ccm.bbox();
             mtao::Vec3d C = (bb.min() + bb.max())/2;
@@ -267,6 +272,17 @@ class MeshViewer: public mtao::opengl::Window3 {
             
             Magnum::GL::Renderer::setPolygonOffset(0,0);
 
+        }
+        void mousePressEvent(MouseEvent& event) override{
+            Window2::mousePressEvent(event);
+            if(!ImGui::GetIO().WantCaptureMouse) {
+                if(event.button() == MouseEvent::Button::Left) { 
+                    auto T = input_mesh.absoluteTransformationMatrix();
+                    std::cout << std::string(T) << std::endl;
+                    update();
+
+                }
+            }
         }
     private:
         Magnum::Shaders::Phong phong_shader;

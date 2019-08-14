@@ -55,6 +55,31 @@ namespace mandoline {
         return ret;
 
     }
+    void   AdaptiveGrid::Square::serialize(CutMeshProto::Square& c) const {
+        protobuf::serialize(corner(),*c.mutable_corner());
+        c.set_radius(width());
+
+    }
+    AdaptiveGrid::Square AdaptiveGrid::Square::from_proto(const CutMeshProto::Square& c) {
+        Square ret;
+        protobuf::deserialize(c.corner(),std::get<0>(ret));
+        std::get<1>(ret) = c.radius();
+        std::get<2>(ret) = c.axis();
+        return ret;
+
+    }
+    void   AdaptiveGrid::Face::serialize(CutMeshProto::Face& c) const {
+        Square::serialize(*c.mutable_geometry);
+        protobuf::serialize(c.dual_edge,dual_edge);
+
+    }
+    AdaptiveGrid::Face AdaptiveGrid::Face::from_proto(const CutMeshProto::Face& c) {
+        Face ret;
+        ret.Square::operator=(from_proto(c.geometry));
+        protobuf::deserialize(c.dual_edge, ret.dual_edge);
+        return ret;
+
+    }
 
     const AdaptiveGridFactory::Indexer AdaptiveGridFactory::cmask_indexer(std::array<int,3>{{width,width,width}});
     const AdaptiveGridFactory::Indexer AdaptiveGridFactory::vmask_indexer(std::array<int,3>{{1+width,1+width,1+width}});
@@ -618,8 +643,7 @@ namespace mandoline {
     }
     auto AdaptiveGrid::boundary_triplets(int offset) const -> std::vector<Eigen::Triplet<double>> {
         std::vector<Eigen::Triplet<double>> trips;
-        auto& b = boundary();
-        for(auto&& [i,e]: mtao::iterator::enumerate(b)) {
+        for(auto&& [i,face]: mtao::iterator::enumerate(m_faces)) {
             if(is_valid_edge(e)) {
                 auto [l,h] = e;
                 trips.emplace_back(offset+i,l,-1);
@@ -832,4 +856,11 @@ namespace mandoline {
         return trips;
     }
 
+    auto AdaptiveGrid::boundary_pairs() const -> std::vector<Edge> {
+        std::vector<Edge> R(m_faces.size());
+        std::transform(m_faces.begin(),m_faces.end(),R.begin(),[](const Face& f) {
+                return f.dual_edge;
+                });
+        return R;
+    }
 }

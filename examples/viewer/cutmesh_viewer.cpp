@@ -72,6 +72,7 @@ class MeshViewer: public mtao::opengl::Window3 {
             auto bbox = ccm.bbox();
 
 
+            edges_mesh.setEdgeBuffer((ccm.vertices()).cast<float>(), ccm.edges().cast<unsigned int>());
             input_mesh.setTriangleBuffer((ccm.origV()).cast<float>(), ccm.origF().cast<unsigned int>());
             face_centroid_mesh.setVertexBuffer(ccm.face_centroids().cast<float>().eval());
             cell_centroid_mesh.setVertexBuffer(ccm.cell_centroids().cast<float>().eval());
@@ -103,6 +104,10 @@ class MeshViewer: public mtao::opengl::Window3 {
             face_flat->activate_points();
             cell_flat->activate_points();
 
+            edges_mesh.setParent(&root());
+            edges_flat = new mtao::opengl::Drawable<Magnum::Shaders::Flat3D>{edges_mesh,flat_shader, drawables()};
+            edges_flat->deactivate();
+            edges_flat->activate_edges();
 
                 face_flat->data().color[0] = 1;
                 face_flat->data().color[1] = 0;
@@ -166,6 +171,7 @@ class MeshViewer: public mtao::opengl::Window3 {
         Magnum::Shaders::Flat3D flat_shader;
         Magnum::Shaders::MeshVisualizer wireframe_shader;
         mtao::opengl::objects::Mesh<3> input_mesh;
+        mtao::opengl::objects::Mesh<3> edges_mesh;
         mtao::opengl::objects::Mesh<3> cell_mesh;
         mtao::opengl::objects::Mesh<3> face_mesh;
         mtao::opengl::objects::Mesh<3> cell_centroid_mesh;
@@ -177,6 +183,7 @@ class MeshViewer: public mtao::opengl::Window3 {
         mtao::opengl::Drawable<Magnum::Shaders::MeshVisualizer>* cell_wireframe = nullptr;
         mtao::opengl::Drawable<Magnum::Shaders::MeshVisualizer>* face_wireframe = nullptr;
 
+        mtao::opengl::Drawable<Magnum::Shaders::Flat3D>* edges_flat = nullptr;
         mtao::opengl::Drawable<Magnum::Shaders::Flat3D>* cell_flat = nullptr;
         mtao::opengl::Drawable<Magnum::Shaders::Flat3D>* face_flat = nullptr;
 

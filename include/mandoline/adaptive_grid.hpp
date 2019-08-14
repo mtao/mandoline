@@ -36,12 +36,23 @@ namespace mandoline {
                 using Parent = std::tuple<coord_type,int,int>;
                 using Parent::Parent;
                 using Parent::operator=;
+                void  serialize(CutMeshProto::Square&) const;
+                static Cell from_proto(const CutMeshProto::Square&);
                 const coord_type& corner() const { return std::get<0>(*this); }
                 coord_type vertex(int a, int b) const;
                 int width() const { return std::get<2>(*this); }
                 int dimension() const { return std::get<1>(*this); }
-                void  serialize(CutMeshProto::Cube&) const;
-                static Cell from_proto(const CutMeshProto::Cube&);
+                void  serialize(CutMeshProto::Square&) const;
+                static Cell from_proto(const CutMeshProto::Square&);
+            };
+            struct Face: public Square {
+                const Square& geometry() const { return *this; }
+                void  serialize(CutMeshProto::Face&) const;
+                static Cell from_proto(const CutMeshProto::Face&);
+                Edge dual_edge;
+                bool has_negative() const { return dual_edge[0] != -1; }
+                bool has_positive() const { return dual_edge[1] != -1; }
+                bool full_edge() const { return has_positive() && has_negative(); }
             };
 
             friend class CutCellMesh<3>;
@@ -62,7 +73,8 @@ namespace mandoline {
             mtao::ColVecs3d boundary_centroids() const;
             void cell_centroids(mtao::ColVecs3d&) const;
             GridData3i grid() const;
-            const std::vector<Edge>& boundary() const { return m_boundary; }
+            //const std::vector<Edge>& boundary() const { return m_boundary; }
+            std::vector<Edge> boundary_pairs() const;
             const std::map<int,Cell>& cells() const { return m_cells; }
             const Cell& cell(int idx) const { return m_cells.at(idx); }
             mtao::VecXd dual_edge_lengths() const;
@@ -85,7 +97,9 @@ namespace mandoline {
 
         private:
 
-            std::vector<Edge> m_boundary;//Beware of -1!
+            //std::vector<Edge> m_boundary;//Beware of -1!
+            std::vector<Face> m_faces;
+            std::vector<Edge> m_edges;
             std::map<int,Cell> m_cells;
     };
 
