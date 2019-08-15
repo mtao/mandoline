@@ -35,21 +35,30 @@ namespace mandoline {
             struct Square: public std::tuple<coord_type,int,int> {
                 using Parent = std::tuple<coord_type,int,int>;
                 using Parent::Parent;
+                Square(Square&&) = default;
+                Square& operator=(Square&&) = default;
+                Square(const Square&) = default;
+                Square& operator=(const Square&) = default;
                 using Parent::operator=;
                 void  serialize(CutMeshProto::Square&) const;
-                static Cell from_proto(const CutMeshProto::Square&);
+                static Square from_proto(const CutMeshProto::Square&);
                 const coord_type& corner() const { return std::get<0>(*this); }
                 coord_type vertex(int a, int b) const;
                 int width() const { return std::get<2>(*this); }
                 int dimension() const { return std::get<1>(*this); }
-                void  serialize(CutMeshProto::Square&) const;
-                static Cell from_proto(const CutMeshProto::Square&);
+                int axis() const { return std::get<1>(*this); }
             };
             struct Face: public Square {
+                Face(Square&& s, const Edge& e): Square(std::move(s)), dual_edge(e) {}
+                Face() = default;
+                Face(Face&&) = default;
+                Face& operator=(Face&&) = default;
+                Face(const Face&) = default;
+                Face& operator=(const Face&) = default;
                 const Square& geometry() const { return *this; }
                 void  serialize(CutMeshProto::Face&) const;
-                static Cell from_proto(const CutMeshProto::Face&);
-                Edge dual_edge;
+                static Face from_proto(const CutMeshProto::Face&);
+                Edge dual_edge = {{-1,-1}};
                 bool has_negative() const { return dual_edge[0] != -1; }
                 bool has_positive() const { return dual_edge[1] != -1; }
                 bool full_edge() const { return has_positive() && has_negative(); }
@@ -65,7 +74,7 @@ namespace mandoline {
             AdaptiveGrid(AdaptiveGrid&&) = default;
             AdaptiveGrid& operator=(const AdaptiveGrid&) = default;
             AdaptiveGrid& operator=(AdaptiveGrid&&) = default;
-            AdaptiveGrid(const Base& b, const std::map<int,Cell>& cells = {}): Base(b), m_cells(cells) {m_boundary = boundary(grid());}
+            AdaptiveGrid(const Base& b, const std::map<int,Cell>& cells = {}): Base(b), m_cells(cells) {make_faces();}
             std::array<int,4> face(const Cell& c, int axis, bool sign) const;
             std::array<int,4> face(int idx, int axis, bool sign) const;
             mtao::ColVecs3i triangulated(int idx) const;
@@ -83,8 +92,8 @@ namespace mandoline {
             std::vector<Eigen::Triplet<double>> boundary_triplets(int min_edge_index) const;
             int num_faces() const;
             int num_cells() const;
-            std::vector<Edge> boundary(const GridData3i& grid) const;
-            void make_boundary();
+            std::vector<Face> faces(const GridData3i& grid) const;
+            void make_faces();
             static GridData3i grid_from_cells(const coord_type& shape, const std::map<int,Cell>& cells);
             std::vector<Eigen::Triplet<double>> grid_face_projection(int min_edge_index) const;
             std::vector<Eigen::Triplet<double>> grid_cell_projection() const;

@@ -48,8 +48,8 @@ namespace mandoline::construction {
     void DeformingGeometryConstructor::set_adaptivity(int res) {
         _ccg->adaptive_level = res;
     }
-    void DeformingGeometryConstructor::update_vertices(const mtao::ColVecs3d& V) {
-        _ccg->update_vertices(V);
+    void DeformingGeometryConstructor::update_vertices(const mtao::ColVecs3d& V, const std::optional<double>& threshold) {
+        _ccg->update_vertices(V, threshold);
     }
     void DeformingGeometryConstructor::update_grid(const mtao::geometry::grid::StaggeredGrid3d&& g) {
         _ccg->update_grid(g);
@@ -59,6 +59,19 @@ namespace mandoline::construction {
         _ccg->bake();
     }
     CutCellMesh<3> DeformingGeometryConstructor::emit() const {
+
+        /*
+            auto&& C = _ccg->crossings();
+            for(auto&& c: C) {
+                if(c.vertex().coord[1] == 0) {
+                    if(c.vertex().quot(1) < 1e-5) {
+                    std::cout << "Low quot" << std::string(c) << std::endl;
+                    }
+                } else if(c.vertex().coord[1] < 0) {
+                    std::cout << "WTF <0 ?" << std::string(c) << std::endl;
+                }
+            }
+            */
         return _ccg->generate();
     }
 

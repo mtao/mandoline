@@ -499,7 +499,7 @@ namespace mandoline {
         for(auto&& [a,b]: cmp.cubes()) {
             ret.m_adaptive_grid.m_cells[a] = AdaptiveGrid::Cell::from_proto(b);
         }
-        ret.m_adaptive_grid.make_boundary();
+        ret.m_adaptive_grid.make_faces();
         for(auto&& [a,b]: cmp.cube_regions()) {
             ret.m_adaptive_grid_regions[a] = b;
         }

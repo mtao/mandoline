@@ -242,7 +242,21 @@ namespace mandoline::construction {
             assert(V.size() == m_V.size());
             std::copy(V.begin(),V.end(),m_V.begin());
             clear();
+            update_topology_masks();
         }
+
+    template <int D, typename Indexer>
+        void CutData<D,Indexer>::update_topology_masks() {
+            for(auto&& eis: m_edge_intersections) {
+                using Base = typename EdgeIntersections<D>::Base;
+                eis.Base::set_container_mask(eis.vptr_edge);
+            }
+            for(auto&& tis: m_triangle_intersections) {
+                using Base = typename TriangleIntersections<D>::Base;
+                tis.Base::set_container_mask(tis.vptr_tri);
+            }
+        }
+
     template <int D, typename Indexer>
         void CutData<D,Indexer>::update_grid(const Indexer& I) {
             Indexer::operator=(I);

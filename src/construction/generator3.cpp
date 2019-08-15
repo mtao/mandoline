@@ -226,11 +226,12 @@ namespace mandoline::construction {
                 if(adaptive) {
                     auto& ag = *adaptive_grid;
                     auto grid = ag.grid();
-                    auto bdry = ag.boundary(grid);
+                    auto ag_faces = ag.faces(grid);
                     for(auto&& [c,b]: ag.cells()) {
                         cell_ds.add_node(c);
                     }
-                    for(auto&& [a,b]: bdry) {
+                    for(auto&& f: ag_faces) {
+                        auto&& [a,b] = f.dual_edge;
                         if(a >= 0 && b >= 0) {
                             cell_ds.join(a,b);
                         }

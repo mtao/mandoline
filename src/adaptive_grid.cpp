@@ -58,6 +58,7 @@ namespace mandoline {
     void   AdaptiveGrid::Square::serialize(CutMeshProto::Square& c) const {
         protobuf::serialize(corner(),*c.mutable_corner());
         c.set_radius(width());
+        c.set_axis(axis());
 
     }
     AdaptiveGrid::Square AdaptiveGrid::Square::from_proto(const CutMeshProto::Square& c) {
@@ -69,14 +70,14 @@ namespace mandoline {
 
     }
     void   AdaptiveGrid::Face::serialize(CutMeshProto::Face& c) const {
-        Square::serialize(*c.mutable_geometry);
-        protobuf::serialize(c.dual_edge,dual_edge);
+        Square::serialize(*c.mutable_geometry());
+        protobuf::serialize(dual_edge, *c.mutable_dual_edge());
 
     }
     AdaptiveGrid::Face AdaptiveGrid::Face::from_proto(const CutMeshProto::Face& c) {
         Face ret;
-        ret.Square::operator=(from_proto(c.geometry));
-        protobuf::deserialize(c.dual_edge, ret.dual_edge);
+        ret.Square::operator=(Square::from_proto(c.geometry()));
+        protobuf::deserialize(c.dual_edge(), ret.dual_edge);
         return ret;
 
     }
@@ -644,6 +645,7 @@ namespace mandoline {
     auto AdaptiveGrid::boundary_triplets(int offset) const -> std::vector<Eigen::Triplet<double>> {
         std::vector<Eigen::Triplet<double>> trips;
         for(auto&& [i,face]: mtao::iterator::enumerate(m_faces)) {
+            auto& e = face.dual_edge;
             if(is_valid_edge(e)) {
                 auto [l,h] = e;
                 trips.emplace_back(offset+i,l,-1);
@@ -652,12 +654,40 @@ namespace mandoline {
         }
         return trips;
     }
-    auto AdaptiveGrid::boundary(const GridData3i& grid) const -> std::vector<Edge> {
-        std::set<Edge> boundaries;
-        auto add_bdry = [&](int a, int b) {
-            Edge e{{a,b}};
-            if(is_valid_edge(e)) {
-                boundaries.emplace(e);
+    auto AdaptiveGrid::faces(const GridData3i& grid) const -> std::vector<Face> {
+        auto myless = [](const Face& a, const Face& b) {
+            return std::less<Edge>()(a.dual_edge,b.dual_edge);
+        };
+        std::set<Face,decltype(myless)> faces(myless);
+        auto add_bdry = [&](int d, int a, int b) {
+            Edge dual_edge{{a,b}};
+            if(is_valid_edge(dual_edge)) {
+                Face f;
+                int axis=d, width;
+                coord_type corner;
+                f.dual_edge = dual_edge;
+                if(a == -1) {
+                    auto&& c = cell(b);
+                    corner = c.corner();
+                    width = c.width();
+                } else if(b == -1) {
+                    auto&& c = cell(a);
+                    corner = c.corner();
+                    width = c.width();
+                    corner[d] += width;
+                } else {
+                    auto&& ca = cell(a);
+                    auto&& cb = cell(b);
+                    width = std::min(ca.width(),cb.width());
+                    //if higher one is the smaller one we just use it
+                    if(width == cb.width()) {//checking cb is important
+                        corner = cb.corner();
+                    } else {
+                        corner = ca.corner();
+                        corner[d] += width;
+                    }
+                }
+                faces.emplace(Square{corner,axis,width},dual_edge);
             }
 
         };
@@ -672,11 +702,11 @@ namespace mandoline {
                         bool high = abc[d] == shape[d]-1;
                         if( low ^ high) {
                             if(low) {
-                                add_bdry(-1,grid(abc));
+                                add_bdry(d,-1,grid(abc));
                             } else {
                                 coord_type tmp = abc;
                                 tmp[d]--;
-                                add_bdry(grid(tmp),-1);
+                                add_bdry(d,grid(tmp),-1);
                             }
                         } else {
                             int pidx = cell_index(abc);
@@ -686,7 +716,7 @@ namespace mandoline {
                             int pid = grid.get(pidx);
                             int nid = grid.get(nidx);
                             if(pid >= 0 && nid >= 0) {
-                                add_bdry(nid,pid);
+                                add_bdry(d,nid,pid);
                             }
                         }
                     }
@@ -694,20 +724,21 @@ namespace mandoline {
             }
         }
 
-        std::vector<Edge> boundaries_vec(boundaries.size());
-        std::copy(boundaries.begin(),boundaries.end(),boundaries_vec.begin());
+        std::vector<Face> faces_vec(faces.size());
+        std::copy(faces.begin(),faces.end(),faces_vec.begin());
 
-        return boundaries_vec;
+        return faces_vec;
     }
-    void AdaptiveGrid::make_boundary() {
-        m_boundary = boundary(grid());
+    void AdaptiveGrid::make_faces() {
+        m_faces = faces(grid());
     }
 
     mtao::VecXd AdaptiveGrid::dual_edge_lengths() const {
 
         auto&dx = Base::dx();
-        mtao::VecXd ret(m_boundary.size());
-        for(auto&& [i,e]: mtao::iterator::enumerate(m_boundary)) {
+        mtao::VecXd ret(num_faces());
+        for(auto&& [i,f]: mtao::iterator::enumerate(m_faces)) {
+            auto&& e = f.dual_edge;
             if(!is_valid_edge(e)) continue;
             auto [a,b] = e;
             ret(i) = (dx.asDiagonal() * (cell(a).center() - cell(b).center())).norm();
@@ -740,35 +771,32 @@ namespace mandoline {
 
     mtao::VecXd AdaptiveGrid::face_volumes() const {
         auto&dx = Base::dx();
-        mtao::VecXd ret(m_boundary.size());
-        for(auto&& [i,e]: mtao::iterator::enumerate(m_boundary)) {
-            if(!is_valid_edge(e)) continue;
-            auto [a,b] = e;
-            int k = 0;
-
-            auto& ca = cell(a);
-            auto& cb = cell(b);
-            mtao::Vec3d cd = (ca.center() - cb.center()).cwiseAbs();
-            int minwidth = std::min(ca.width(),cb.width());
-            cd.maxCoeff(&k);
-            double v = minwidth * minwidth;
+        mtao::VecXd ret(num_faces());
+        mtao::Vec3d dws = mtao::Vec3d::Ones();
+        for(int i = 0; i < 3; ++i) {
             for(int j = 0; j < 2; ++j) {
-                v *= dx((j+k)%3);
+                dws(i) = dx((j+i)%3);
             }
-            ret(i) = v;
+        }
+        for(auto&& [i,f]: mtao::iterator::enumerate(m_faces)) {
+            auto&& e = f.dual_edge;
+            if(!is_valid_edge(e)) continue;
+            int w= f.width();
+            ret(i) = w * w * dws(f.axis());
         }
         return ret;
     }
     int AdaptiveGrid::num_faces() const {
-        return boundary().size();
+        return m_faces.size();
     }
     int AdaptiveGrid::num_cells() const {
         return cells().size();
     }
 
     mtao::ColVecs3d AdaptiveGrid::boundary_centroids() const {
-        mtao::ColVecs3d C(3,boundary().size());
-        for(auto&& [index,e]: mtao::iterator::enumerate(m_boundary)) {
+        mtao::ColVecs3d C(3,num_faces());
+        for(auto&& [index,f]: mtao::iterator::enumerate(m_faces)) {
+            auto&& e = f.dual_edge;
             auto cent = C.col(index);
             cent.setZero();
             if(!is_valid_edge(e)) continue;
@@ -802,9 +830,10 @@ namespace mandoline {
 
     std::vector<Eigen::Triplet<double>> AdaptiveGrid::grid_face_projection(int offset) const {
         std::vector<Eigen::Triplet<double>> trips;
-        mtao::VecXd ret(m_boundary.size());
+        mtao::VecXd ret(num_faces());
         trips.reserve(form_size<2>());
-        for(auto&& [index,e]: mtao::iterator::enumerate(m_boundary)) {
+        for(auto&& [index,f]: mtao::iterator::enumerate(m_faces)) {
+            auto&& e = f.dual_edge;
             if(!is_valid_edge(e)) continue;
             auto [a,b] = e;
             int k = 0;

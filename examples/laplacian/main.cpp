@@ -274,12 +274,12 @@ class MeshViewer: public mtao::opengl::Window3 {
 
         }
         void mousePressEvent(MouseEvent& event) override{
-            Window2::mousePressEvent(event);
+            Window3::mousePressEvent(event);
             if(!ImGui::GetIO().WantCaptureMouse) {
                 if(event.button() == MouseEvent::Button::Left) { 
                     auto T = input_mesh.absoluteTransformationMatrix();
-                    std::cout << std::string(T) << std::endl;
-                    update();
+                    //std::cout << std::string(T) << std::endl;
+                    //update();
 
                 }
             }

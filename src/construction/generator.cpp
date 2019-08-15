@@ -116,7 +116,15 @@ namespace mandoline::construction {
                 auto VV = V;
                 VV.row(0) = V.row(1);
                 VV.row(1) = V.row(0);
-                ehem = EmbeddedHalfEdgeMesh<double,2>::from_edges(VV,E);
+                std::set<Edge> E2;
+                for(int i = 0; i < E.cols(); ++i) {
+                    auto e_ = E.col(i);
+                    Edge e{{e_(0),e_(1)}};
+                    std::sort(e.begin(),e.end());
+                    E2.emplace(e);
+                }
+                ehem = EmbeddedHalfEdgeMesh<double,2>::from_edges(VV,mtao::eigen::stl2eigen(E2));
+                //ehem = EmbeddedHalfEdgeMesh<double,2>::from_edges(VV,E);
             }
             //auto ehem = EmbeddedHalfEdgeMesh<double,2>::from_edges(ret.vertices(),ret.cut_edges);
 

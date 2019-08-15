@@ -42,6 +42,7 @@ namespace mandoline::construction {
 
             void set_topology(const Faces& F = {});
             void set_topology(const Edges& E,const Faces& F = {},  const Faces& FEA = {}) ;
+            void update_topology_masks();
 
             void bake(const std::optional<SGType>& grid= {}, bool fuse=true);
             void clear();

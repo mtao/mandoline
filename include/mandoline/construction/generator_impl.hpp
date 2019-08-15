@@ -46,6 +46,7 @@ namespace mandoline::construction {
 
                         return gv;
                         });
+                m_data.update_topology_masks();
             }
         template <int D>
             void CutCellEdgeGenerator<D>::update_grid(const StaggeredGrid& sg) {

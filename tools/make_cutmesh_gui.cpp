@@ -95,10 +95,12 @@ class MeshViewer: public mtao::opengl::Window3 {
 
             mesh.translate(trans);
             edge_mesh.translate(trans);
+            vertex_mesh.translate(trans);
             grid.translate(trans);
             float s = 1./bbox.sizes().maxCoeff();
             mesh.scale(Magnum::Math::Vector3<float>(s));
             edge_mesh.scale(Magnum::Math::Vector3<float>(s));
+            vertex_mesh.scale(Magnum::Math::Vector3<float>(s));
             grid.scale(Magnum::Math::Vector3<float>(s));
             mv_drawable = new mtao::opengl::Drawable<Magnum::Shaders::MeshVisualizer>{mesh,_wireframe_shader, drawables()};
 
@@ -108,6 +110,7 @@ class MeshViewer: public mtao::opengl::Window3 {
             edge_drawable->activate_edges();
 
             edge_boundary_drawable = new mtao::opengl::Drawable<Magnum::Shaders::Flat3D>{edge_mesh,_flat_shader, edge_drawables};
+            point_drawable = new mtao::opengl::Drawable<Magnum::Shaders::Flat3D>{vertex_mesh,_flat_shader, edge_drawables};
             edge_boundary_drawable->activate_triangles({});
             edge_boundary_drawable->activate_edges();
 
@@ -115,6 +118,10 @@ class MeshViewer: public mtao::opengl::Window3 {
 
 
             edge_mesh.setParent(&root());
+            vertex_mesh.setVertexBuffer(mtao::Vec3f(1,1,1));
+            point_drawable->deactivate();
+            point_drawable->activate_points();
+            vertex_mesh.setParent(&root());
             edge_boundary_drawable->set_visibility(false);
             grid.setParent(&root());
 
@@ -125,7 +132,7 @@ class MeshViewer: public mtao::opengl::Window3 {
             auto sg = staggered_grid();
             //mtao::geometry::grid::Grid3f g(std::array<int,3>{{NI,NJ,NK}});
             constructor->update_grid(sg);
-            constructor->update_vertices(V);
+            constructor->update_vertices(V,1e-9);
             auto g = sg.vertex_grid();
 
             grid.set(g);
@@ -133,6 +140,7 @@ class MeshViewer: public mtao::opengl::Window3 {
 
         }
         void update_edges() {
+            mtao::ColVecs3f VV = ccm->vertices().cast<float>();
             if(edge_choice) {
                 if(auto it = mapped_edges.find(*edge_choice); it != mapped_edges.end()) {
                     auto&& edges = it->second;
@@ -140,6 +148,13 @@ class MeshViewer: public mtao::opengl::Window3 {
                         auto E = mtao::eigen::stl2eigen(edges);
 
                         edge_mesh.setEdgeBuffer(E.cast<unsigned int>().eval());
+                std::set<int> Vidx;
+                std::copy(E.data(),E.data()+E.size(),std::inserter(Vidx,Vidx.end()));
+                mtao::ColVecs3f V(3,Vidx.size());
+                for(auto&& [i,j]: mtao::iterator::enumerate(Vidx)) {
+                    V.col(i) = VV.col(j).cast<float>();
+                }
+                vertex_mesh.setVertexBuffer(V);
 
                         edge_boundary_drawable->set_visibility(true);
                         return;
@@ -149,6 +164,7 @@ class MeshViewer: public mtao::opengl::Window3 {
             }
             if(edges.size() > 0) {
                 auto E = mtao::eigen::stl2eigen(edges);
+                vertex_mesh.setVertexBuffer(VV.cast<float>());
 
                 edge_mesh.setEdgeBuffer(E.cast<unsigned int>().eval());
 
@@ -217,7 +233,9 @@ class MeshViewer: public mtao::opengl::Window3 {
                     mapped_edges.clear();
                     for(int i = 0; i < ccm->cut_edge_size(); ++i) {
                         auto e = ccm->cut_edge(i);
-                        auto mask = ccm->masked_vertex(e(0)).mask() & ccm->masked_vertex(e(1)).mask();
+                        auto va = ccm->masked_vertex(e(0));
+                        auto vb = ccm->masked_vertex(e(1));
+                        auto mask = va.mask() & vb.mask();
                         if(mask.active()) {
                             edges.emplace_back(E{{e(0),e(1)}});
                             for(int i = 0; i < 3; ++i) {
@@ -263,6 +281,7 @@ class MeshViewer: public mtao::opengl::Window3 {
             }
         }
         void draw() override {
+            Magnum::GL::Renderer::setPointSize(10.);
             Magnum::GL::Renderer::disable(Magnum::GL::Renderer::Feature::FaceCulling);
             Window3::draw();
             Magnum::GL::Renderer::disable(Magnum::GL::Renderer::Feature::DepthTest);
@@ -276,9 +295,11 @@ class MeshViewer: public mtao::opengl::Window3 {
         mtao::opengl::objects::Mesh<3> mesh;
         mtao::opengl::objects::Grid<3> grid;
         mtao::opengl::objects::Mesh<3> edge_mesh;
+        mtao::opengl::objects::Mesh<3> vertex_mesh;
         mtao::opengl::Drawable<Magnum::Shaders::MeshVisualizer>* mv_drawable = nullptr;
         mtao::opengl::Drawable<Magnum::Shaders::Flat3D>* edge_drawable = nullptr;
         mtao::opengl::Drawable<Magnum::Shaders::Flat3D>* edge_boundary_drawable = nullptr;
+        mtao::opengl::Drawable<Magnum::Shaders::Flat3D>* point_drawable = nullptr;
 
 
 };
