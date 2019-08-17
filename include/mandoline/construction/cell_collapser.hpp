@@ -11,6 +11,7 @@
 #include "mandoline/cutface.hpp"
 #include <mtao/logging/logger.hpp>
 #include <mtao/logging/profiler.hpp>
+#include <Eigen/Eigenvalues>
 
 
 namespace mandoline::construction {
@@ -70,7 +71,36 @@ namespace mandoline::construction {
                 }
                 auto va = V.col(a);
                 auto vb = V.col(b);
-                mtao::Vec3d t = (va - vb).normalized();
+                auto vba = va - vb;
+
+#ifdef MANDOLINE_USE_FLOP_FREE_ANGLE_COMPUTATION
+                int maxcoeff;
+                if(vba.norm() < 1e-8) {
+                    mtao::Mat3d A = mtao::Mat3d::Zero();
+
+                    for(auto&& hfp: hfs) {
+                        auto [fidx,e] = *hfp;
+
+                        bool sign = std::get<1>(m_halfface_to_cell.at(*hfp));
+                        if(sign) {
+                            auto&& F = m_faces.at(fidx);
+                            auto&& N =  F.N;
+                            A += N * N.transpose();
+                            Eigen::SelfAdjointEigenSolver<mtao::Mat3d> eigensolver(A);
+                            if(eigensolver.info() != Eigen::Success) {
+                                vba.cwiseAbs().maxCoeff(&maxcoeff);
+                            } else {
+                                eigensolver.eigenvectors().col(0).cwiseAbs().maxCoeff(&maxcoeff);
+                            }
+                        }
+                    }
+                } else {
+                    vba.cwiseAbs().maxCoeff(&maxcoeff);
+                }
+                int ui = (maxcoeff+1)%3;
+                int uj = (maxcoeff+2)%3;
+#else//MANDOLINE_USE_FLOP_FREE_ANGLE_COMPUTATION
+                mtao::Vec3d t = (vba).normalized();
                 mtao::Matrix<double,3,2> uv;
                 auto u = uv.col(0);
                 auto v = uv.col(1);
@@ -81,15 +111,21 @@ namespace mandoline::construction {
                     }
                 }
                 v = u.cross(t);
+#endif//MANDOLINE_USE_FLOP_FREE_ANGLE_COMPUTATION
                 mtao::map<double,HalfFace> index_map;
                 for(auto&& hfp: hfs) {
                     auto [fidx,e] = *hfp;
 
                     auto&& F = m_faces.at(fidx);
-                    auto& N = F.N;
                     bool sign = std::get<1>(m_halfface_to_cell.at(*hfp));
+                    auto N = (sign?1:-1) * F.N;
 
-                    mtao::Vec2d p = uv.transpose() * (sign?1:-1) * N;
+#ifdef MANDOLINE_USE_FLOP_FREE_ANGLE_COMPUTATION
+                    mtao::Vec2d p(N(ui),N(uj));
+#else//MANDOLINE_USE_FLOP_FREE_ANGLE_COMPUTATION
+                    mtao::Vec2d p = uv.transpose() * N;
+#endif//MANDOLINE_USE_FLOP_FREE_ANGLE_COMPUTATION
+
                     double ang = mtao::geometry::trigonometry::angle(p)(0);
                     index_map[ang] = *hfp;
                 }

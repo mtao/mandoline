@@ -60,7 +60,6 @@ namespace mandoline::construction {
     }
     CutCellMesh<3> DeformingGeometryConstructor::emit() const {
 
-        /*
             auto&& C = _ccg->crossings();
             for(auto&& c: C) {
                 if(c.vertex().coord[1] == 0) {
@@ -71,7 +70,6 @@ namespace mandoline::construction {
                     std::cout << "WTF <0 ?" << std::string(c) << std::endl;
                 }
             }
-            */
         return _ccg->generate();
     }
 

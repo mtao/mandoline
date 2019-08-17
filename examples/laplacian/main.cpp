@@ -2,6 +2,7 @@
 #include "mtao/geometry/mesh/read_obj.hpp"
 #include "mtao/geometry/bounding_box.hpp"
 #include <mtao/types.hpp>
+#include <igl/colormap.h>
 #include <mtao/cmdline_parser.hpp>
 #include "mtao/opengl/Window.h"
 #include <iostream>
@@ -41,6 +42,8 @@ class MeshViewer: public mtao::opengl::Window3 {
         std::optional<int> current_picked_face = {};
         mtao::VecXd face_pick_flux;
 
+        float strip_rate = .05;
+        float strip_size = .05;
 
 
         float scale = 1.1;
@@ -228,16 +231,43 @@ class MeshViewer: public mtao::opengl::Window3 {
 
             if(ImGui::Button("Poisson colors")) {
                 mtao::VecXd C = pressure(ccm,wind_direction);
+                C.array() /= C.maxCoeff();
+
+                face_pick_flux = C;
                 //C.array() -= (C.minCoeff() + C.maxCoeff()) / 2;
-                C /= C.cwiseAbs().maxCoeff();
-                colors.row(0) = C.transpose();
-                colors.row(1) = -C.transpose().array();
-                colors.row(2).array() = 0;
+                //C /= C.cwiseAbs().maxCoeff();
+                //colors.row(0) = C.transpose();
+                //colors.row(1) = -C.transpose().array();
+                //colors.row(2).array() = 0;
                 Eigen::MatrixXd COL;
-                igl::parula(C,true,COL);
+                C = (C.array() + 1) / 2;
+                igl::parula(C,false,COL);
                 colors.topRows<3>() = COL.transpose();
                 colors.row(3).array() = 1;
                 set_region_colors();
+            }
+            bool a = ImGui::InputFloat("Strip size", &strip_size);
+            bool b = ImGui::InputFloat("Strip rate", &strip_rate);
+            if(a | b) {
+                mtao::VecXd d = face_pick_flux;
+                d = (strip_rate * d.array()).atan();
+                d.array() /= d.maxCoeff();
+                d.array() -= d.minCoeff();
+                d /= d.maxCoeff();
+                std::cout << d.minCoeff() << ":::" << d.maxCoeff() << std::endl;
+                d = 1-(d.array()/strip_size*M_PI).array().sin().pow(4).abs().eval();
+                d = d.array() * face_pick_flux.array();
+                d = (d.array() + 1) / 2;
+                //d.array() *= face_pick_flux.array();
+                Eigen::MatrixXd COL;
+                igl::parula(d,false,COL);
+                COL.setConstant(1);
+                COL.array().colwise() *= d.array();
+                igl::colormap(igl::COLOR_MAP_TYPE_INFERNO,d,false,COL);
+                colors.topRows<3>() = COL.transpose();
+                colors.row(3).array() = 1;
+                set_region_colors();
+
             }
             if(input_phong) {input_phong->gui("Input Phong");}
 

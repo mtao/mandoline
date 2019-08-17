@@ -234,6 +234,21 @@ namespace mandoline {
         }
 
     template <int D>
+        auto Vertex<D>::operator-(const Vertex& o) const -> Vertex<D> {
+            using namespace mtao::eigen;
+            Vertex ret;
+            auto mcm = stl2eigen(coord);
+            auto ocm = stl2eigen(o.coord);
+            auto rcm = stl2eigen(ret.coord);
+            rcm = mcm - ocm;
+            ret.clamped_indices = clamped_indices & o.clamped_indices;
+            //ret.clamped_indices = 0;
+            ret.quot = quot - o.quot;
+            ret.repair();
+            return ret;
+        }
+
+    template <int D>
         auto Vertex<D>::operator*(double val) const -> Vertex<D> {
             using namespace mtao::eigen;
             auto mcm = stl2eigen(coord);

@@ -1,5 +1,6 @@
 #include "setup.h"
 #include "solver.hpp"
+#include <random>
 void remove_noair_kernel(const mandoline::CutCellMesh<3>& ccm, Eigen::SparseMatrix<double>& M, Eigen::VectorXd& rhs) {
     M.makeCompressed();
     //pin one pressure sample to remove the 1D null space, and make truly Positive Definite
@@ -157,6 +158,37 @@ mtao::VecXd divergence(const mandoline::CutCellMesh<3>& ccm, const mtao::Vec3d& 
             //R(i) = 0;
         }
     }
+    R.setConstant(0);
+    int coeff;
+    direction.maxCoeff(&coeff);
+    std::cout << "Direction: " << direction.transpose() << " => " << coeff << std::endl;
+    for(auto&& [idx,cell]: ccm.adaptive_grid().cells()) {
+        int cidx = cell.corner()[coeff];
+        if(cidx == 0) {
+            R(idx) = 1;
+        } else if(cidx == ccm.cell_shape()[coeff]-1) {
+            R(idx) = -1;
+        }
+    }
+    return R;
+    R.setConstant(0);
+    std::random_device rd;  //Will be used to obtain a seed for the random number engine
+    std::mt19937 gen(rd()); //Standard mersenne_twister_engine seeded with rd()
+    std::uniform_int_distribution<> dis(ccm.cut_cell_size(), ccm.cell_size()-1);
+    int idx = dis(gen);
+    std::cout << "Hitting dx: " << idx << std::endl;
+    R(idx) = 1;
+
+    for(auto&& face: ccm.adaptive_grid().faces()) {
+        if(face.axis() == 1) {
+            auto [a,b] = face.dual_edge;
+            if(a == -1) {
+                R(b) = 1;
+            } else if(b == -1) {
+                R(a) = -1;
+            }
+        }
+    }
     std::cout << "Flux sum: " << R.sum() << "/" << R.norm() << std::endl;
     return R;
 }
@@ -185,66 +217,69 @@ mtao::VecXd pressure(const mandoline::CutCellMesh<3>& ccm, const mtao::Vec3d& di
     auto L = laplacian(ccm);
     mtao::VecXd D = divergence(ccm, direction);
     if constexpr(false) {
-    //remove_noair_kernel(ccm,L,D);
-    //std::cout << D.transpose() << std::endl;
-    fix_axis_aligned_indefiniteness(L,D);
-    //std::cout << D.transpose() << std::endl;
-    D.setRandom();
-    std::cout << L.rows() << "," << L.cols() << " * " << D.rows() << std::endl;
-    //std::cout << L << std::endl;
-    //Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>> solver(L);
-    //Eigen::ConjugateGradient<Eigen::SparseMatrix<double>> solver(L);
-    //mtao::VecXd R = solver.solve(D);
-    mtao::VecXd R = solve_SPSD_system(L,D);
-    //std::cout << "Answer norm: " << ((L * R) - D).norm() << std::endl;
-    for(auto&& [i,c]: mtao::iterator::enumerate(ccm.cells())) {
-        //if(c.region > 0) {
-        //    R(i) = 0;
-        //}
-    }
-    std::cout << R.transpose() << std::endl;
-    return R;
+        //remove_noair_kernel(ccm,L,D);
+        //std::cout << D.transpose() << std::endl;
+        fix_axis_aligned_indefiniteness(L,D);
+        //std::cout << D.transpose() << std::endl;
+        D.setRandom();
+        std::cout << L.rows() << "," << L.cols() << " * " << D.rows() << std::endl;
+        //std::cout << L << std::endl;
+        //Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>> solver(L);
+        //Eigen::ConjugateGradient<Eigen::SparseMatrix<double>> solver(L);
+        //mtao::VecXd R = solver.solve(D);
+        mtao::VecXd R = solve_SPSD_system(L,D);
+        //std::cout << "Answer norm: " << ((L * R) - D).norm() << std::endl;
+        for(auto&& [i,c]: mtao::iterator::enumerate(ccm.cells())) {
+            //if(c.region > 0) {
+            //    R(i) = 0;
+            //}
+        }
+        std::cout << R.transpose() << std::endl;
+        return R;
     } else if constexpr(false) {
 
 
         D.setRandom();
-    std::vector<mtao::VecXd> eigs;
-    for(int i = 0; i < 5; ++i) {
-        for(int j = 0; j < 100; ++j) {
+        std::vector<mtao::VecXd> eigs;
+        for(int i = 0; i < 5; ++i) {
+            for(int j = 0; j < 100; ++j) {
 
-            D = L * D;
-            for(auto&& e: eigs) {
-                D -= e * e.dot(D);
+                D = L * D;
+                for(auto&& e: eigs) {
+                    D -= e * e.dot(D);
+                }
+                D /= D.norm();
             }
-            D /= D.norm();
+            eigs.push_back(D);
         }
-        eigs.push_back(D);
-    }
-    return D;
+        return D;
     } else {
         mtao::VecXd phi = ldlt_pcg_solve(L,D);
+        return phi;
+        mtao::VecXd H3 = ccm.dual_hodge3();
+        return H3.asDiagonal() * phi;
         /*
-        mtao::VecXd x = L * D;
-        x.setZero();
-        mtao::VecXd r = D - L * x;
-        mtao::VecXd p = r;
-        std::cout << "Init: " << D.norm() << std::endl;
-        int i;
-        std::cout << "Initial p: " << p.norm() << std::endl;
-        std::cout << "Iniitial dots" << p.dot(L*p) << std::endl;
-        for(i = 0; i < x.rows(); ++i) {
-            double a = r.dot(r) / (p.dot(L * p));
-            x = x + a * p;
-            double rk = r.dot(r);
-            r = r - a * L * p;
-            if(r.norm() < 1e-5) {
-                break;
-            }
-            double b = r.dot(r) / rk;
-            p = r + b * p;
-        }
-        std::cout << i << ") Residual: " << r.norm() << std::endl;
-        */
+           mtao::VecXd x = L * D;
+           x.setZero();
+           mtao::VecXd r = D - L * x;
+           mtao::VecXd p = r;
+           std::cout << "Init: " << D.norm() << std::endl;
+           int i;
+           std::cout << "Initial p: " << p.norm() << std::endl;
+           std::cout << "Iniitial dots" << p.dot(L*p) << std::endl;
+           for(i = 0; i < x.rows(); ++i) {
+           double a = r.dot(r) / (p.dot(L * p));
+           x = x + a * p;
+           double rk = r.dot(r);
+           r = r - a * L * p;
+           if(r.norm() < 1e-5) {
+           break;
+           }
+           double b = r.dot(r) / rk;
+           p = r + b * p;
+           }
+           std::cout << i << ") Residual: " << r.norm() << std::endl;
+           */
         int count = 0;
         double min = std::numeric_limits<double>::max();
         double max = std::numeric_limits<double>::min();
@@ -262,7 +297,7 @@ mtao::VecXd pressure(const mandoline::CutCellMesh<3>& ccm, const mtao::Vec3d& di
             }
         }
         return phi;
-        
+
     }
 
     //mtao::VecXd H2 = ccm.primal_hodge2();

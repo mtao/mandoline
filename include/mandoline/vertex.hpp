@@ -68,6 +68,7 @@ namespace mandoline {
 
             //Vector field operations
             Vertex operator+(const Vertex& o) const;
+            Vertex operator-(const Vertex& o) const;
             Vertex operator*(double val) const;
             Vertex lerp(const Vertex& other, double t) const;
 

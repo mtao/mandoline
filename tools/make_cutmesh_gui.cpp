@@ -132,7 +132,7 @@ class MeshViewer: public mtao::opengl::Window3 {
             auto sg = staggered_grid();
             //mtao::geometry::grid::Grid3f g(std::array<int,3>{{NI,NJ,NK}});
             constructor->update_grid(sg);
-            constructor->update_vertices(V,1e-9);
+            constructor->update_vertices(V);
             auto g = sg.vertex_grid();
 
             grid.set(g);

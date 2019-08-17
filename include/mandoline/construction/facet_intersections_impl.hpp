@@ -12,6 +12,7 @@ namespace mandoline::construction {
             auto& gvstart = *vptr_edge[0];
             auto& gvend = *vptr_edge[1];
 
+
             mtao::eigen::stl2eigen(tangent) = gvend.p() - gvstart.p();
 
             //normalize and move to the upper left quadrant
@@ -92,7 +93,11 @@ namespace mandoline::construction {
                     }
 
                     VType np = gvstart * (1-t) + gvend * t;
-                    mask().clamp(np);
+                    //VType np = gvstart +  ( gvend - gvstart  ) * t;
+                    {
+                        auto M = mask();
+                        M.clamp(np);
+                    }
 
                     int abs_grid = i + b;
                     np.coord[d]  = abs_grid;
@@ -110,7 +115,17 @@ namespace mandoline::construction {
 
                     EdgeIsect sect{np, t, edge_index};
 
-                    sect.apply_thresholding();
+                    //sect.apply_thresholding();
+                    {
+                        auto M = mask();
+                    for(int i = 0; i < D; ++i) {
+                        if(!M[i]) {
+                            if(gvstart.coord[i] == gvend.coord[i]) {
+                                np.clamped_indices[i] = {};
+                            }
+                        }
+                    }
+                    }
                     auto mask = sect.mask();
                     if(grid) {
                         //auto g = grid->template grid<D-1>(D==2?(1-d):d);
