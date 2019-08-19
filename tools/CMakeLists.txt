@@ -27,6 +27,18 @@ ADD_EXECUTABLE(remove_self_intersections remove_self_intersections.cpp
 TARGET_LINK_LIBRARIES(remove_self_intersections gmp CGAL mpfr Boost::thread
     mtao::common igl::core)
 
+
+ADD_EXECUTABLE(cutmesh_validation
+    validation/cutmesh_validation.cpp 
+    validation/faces_fully_utilized.cpp validation/paired_boundary.cpp validation/pcwn_count.cpp validation/possible_cells.cpp
+    validation/grid_cells.cpp
+    validation/region_volumes.cpp
+    )
+
+TARGET_LINK_LIBRARIES(cutmesh_validation gmp CGAL mpfr Boost::thread
+    mandoline
+    )
+
 IF(${USE_OPENGL})
 find_package(Magnum REQUIRED GL Shaders GlxContext GlfwApplication SceneGraph MeshTools)
 find_package(MagnumIntegration REQUIRED ImGui)
