@@ -21,9 +21,13 @@ bool paired_boundary(const mandoline::CutCellMesh<3>&);
 
 //UTILITY
 //
+mtao::ColVecs2i regions(const mtao::ColVecs3d& V, const mtao::ColVecs3i& F);
+std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> orig_with_bbox(const mandoline::CutCellMesh<3>&);
 std::array<int,2> region_counts(const mandoline::CutCellMesh<3>&, const mtao::ColVecs2i&);
 mtao::ColVecs2i input_mesh_regions(const mandoline::CutCellMesh<3>&);
 std::map<int,double> region_volumes(const mandoline::CutCellMesh<3>&);
 mtao::VecXd brep_region_volumes(const mandoline::CutCellMesh<3>&);
+Eigen::VectorXd brep_region_volumes(const mtao::ColVecs3d& V, const mtao::ColVecs3i& F);
+Eigen::VectorXd brep_region_volumes(const mtao::ColVecs3d& V, const mtao::ColVecs3i& F, const mtao::ColVecs2i& C);
 //for a set of vertices that comprise a face, list the set of potential cells that it resides within
 std::set<std::array<int,3>> possible_cells(const mandoline::CutCellMesh<3>& ccm, const std::vector<int>& face);
