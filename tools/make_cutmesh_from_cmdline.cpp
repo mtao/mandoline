@@ -31,7 +31,7 @@ using namespace mandoline;
 
 mtao::CommandLineParser make_cutmesh_clparser() {
     mtao::CommandLineParser clp;
-    clp.add_option("adaptive");
+    clp.add_option("adaptive",true);
     clp.add_option("normalize");
     clp.add_option("checks");
     clp.add_option("prescaled");
@@ -109,6 +109,7 @@ construction::CutCellGenerator<3> make_generator(const mtao::ColVecs3d& VV, cons
     bool do_checks = clp.optT<bool>("checks");
     bool prescaled = clp.optT<bool>("prescaled");
     bool normalize = clp.optT<bool>("normalize");
+    std::cout << "N: " << N << std::endl;
     if(N > 0) {
         NI = NJ = NK = N;
     }
@@ -148,10 +149,12 @@ construction::CutCellGenerator<3> make_generator(const mtao::ColVecs3d& VV, cons
     } else {
         auto bbox = mtao::geometry::bounding_box(V);
 
+        double bbox_offset = .1;
 
-        double s =1.2 *  bbox.sizes().maxCoeff();
-        bbox.min() -= dx * s / 1.2 * 1.01;
-        bbox.max() += dx * s / 1.2 * 1.01;
+        mtao::Vec3d C = (bbox.min() + bbox.max()) / 2;
+        mtao::Vec3d s = bbox.sizes() / 2;
+        bbox.min() = C - (1 + bbox_offset) * s;
+        bbox.max() = C + (1 + bbox_offset) * s;
 
         auto sg = CutCellMesh<3>::StaggeredGrid::from_bbox(bbox,NN,true);
         ccg = construction::CutCellGenerator<3>(stlp,sg, {});

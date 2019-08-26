@@ -16,3 +16,6 @@ FIND_PACKAGE(CGAL REQUIRED COMPONENTS Core)
 ADD_EXECUTABLE(igl_boolean_performance_test igl_boolean_performance_test.cpp)
 TARGET_LINK_LIBRARIES(igl_boolean_performance_test mtao::headers igl::core gmp
     CGAL::CGAL CGAL::CGAL_Core mtao::common)
+
+ADD_EXECUTABLE(mandoline_construction_performance_test mandoline_construction_performance_test.cpp)
+TARGET_LINK_LIBRARIES(mandoline_construction_performance_test cutmesh_maker mandoline OpenMP::OpenMP_CXX mtao::common)
