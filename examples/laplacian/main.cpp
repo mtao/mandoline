@@ -1,5 +1,6 @@
 #include "mtao/geometry/mesh/boundary_facets.h"
 #include "mtao/geometry/mesh/read_obj.hpp"
+#include "mtao/geometry/mesh/write_ply.hpp"
 #include "mtao/geometry/bounding_box.hpp"
 #include <mtao/types.hpp>
 #include <igl/colormap.h>
@@ -45,10 +46,16 @@ class MeshViewer: public mtao::opengl::Window3 {
         float strip_rate = .05;
         float strip_size = .05;
 
+        int multi_index = 0;
+        bool show_multi = false;
 
         float scale = 1.1;
         bool do_slice = true;
         mtao::ColVectors<double,4> colors;
+        mtao::ColVectors<double,3> cachedV;
+        mtao::ColVectors<double,3> cachedC;
+        mtao::ColVectors<int,3> cachedF;
+
 
         std::map<int,mandoline::tools::SliceGenerator> slicers;
         std::set<int> regions;
@@ -66,6 +73,10 @@ class MeshViewer: public mtao::opengl::Window3 {
                 auto& slicer = slicers[r];
                 slicer.set_vertices(VV);
                 if(!do_slice) {
+                    if(i == multi_index) {
+                        cachedV = VV;
+                        cachedF = FF;
+                    }
                     exploded_meshes[i].setTriangleBuffer(VV.cast<float>(), FF.cast<unsigned int>());
                 }
             }
@@ -76,6 +87,10 @@ class MeshViewer: public mtao::opengl::Window3 {
                 auto& slicer = slicers[r];
                 if(do_slice) {
                     auto [VV,FF] = slicer.slice(origin.cast<double>(),direction.cast<double>());
+                    if(i == multi_index) {
+                        cachedV = VV;
+                        cachedF = FF;
+                    }
                     exploded_meshes[i].setTriangleBuffer(VV.cast<float>(), FF.cast<unsigned int>());
                 }
             }
@@ -93,8 +108,18 @@ class MeshViewer: public mtao::opengl::Window3 {
                 Eigen::SparseMatrix<float> BM = slicer.barycentric_map().cast<float>();
                 mtao::ColVecs4f C2 = C * BM.transpose();
                 exploded_meshes[i].setColorBuffer(C2.cast<float>().eval());
+                if(show_multi) {
+                    if(i == multi_index) {
+                        cachedC = C2.topRows<3>().cast<double>();
+                    }
+                }
                 } else {
                 exploded_meshes[i].setColorBuffer(C.cast<float>().eval());
+                if(show_multi) {
+                    if(i == multi_index) {
+                        cachedC = C.topRows<3>().cast<double>();
+                    }
+                }
                 }
             }
         }
@@ -160,8 +185,6 @@ class MeshViewer: public mtao::opengl::Window3 {
 
 
         }
-        bool show_multi = false;
-        int index = 0;
         void gui() override {
 
             if(ImGui::Checkbox("Slice", &do_slice)) {
@@ -175,9 +198,9 @@ class MeshViewer: public mtao::opengl::Window3 {
                 }
             }
             if(show_multi) {
-                if(ImGui::InputInt("Region id", &index) || multi_dirty) {
+                if(ImGui::InputInt("Region id", &multi_index) || multi_dirty) {
                     for(auto&& [i,c]: mtao::iterator::enumerate(exploded_vcolors )) {
-                        if(i == index) {
+                        if(i == multi_index) {
                             c->set_visibility(true);
                         } else {
                             c->set_visibility(false);
@@ -291,6 +314,12 @@ class MeshViewer: public mtao::opengl::Window3 {
                 }
             }
 
+            if(ImGui::Button("Save")) {
+                update_slice();
+                set_region_colors();
+                std::cout << cachedV.cols() << " " << cachedC.cols() << std::endl;
+                mtao::geometry::mesh::write_plyD(cachedV,cachedC,cachedF,"output.ply");
+            }
 
         }
         void  draw() override {
