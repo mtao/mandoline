@@ -25,6 +25,7 @@
 #include <mandoline/tools/planar_slicer.hpp>
 #include "setup.h"
 #include <igl/parula.h>
+#include <igl/colormap.h>
 
 #include <thread>
 #include "mandoline/mesh3.hpp"
@@ -87,10 +88,12 @@ class MeshViewer: public mtao::opengl::Window3 {
                 auto& slicer = slicers[r];
                 if(do_slice) {
                     auto [VV,FF] = slicer.slice(origin.cast<double>(),direction.cast<double>());
+                if(show_multi) {
                     if(i == multi_index) {
                         cachedV = VV;
                         cachedF = FF;
                     }
+                }
                     exploded_meshes[i].setTriangleBuffer(VV.cast<float>(), FF.cast<unsigned int>());
                 }
             }
@@ -264,11 +267,18 @@ class MeshViewer: public mtao::opengl::Window3 {
                 //colors.row(2).array() = 0;
                 Eigen::MatrixXd COL;
                 C = (C.array() + 1) / 2;
+                /*
+                C.array() -= .5;
+                C *= 3;
+                C.array() += .5;
+                */
                 igl::parula(C,false,COL);
+                COL.colwise() = C;
                 colors.topRows<3>() = COL.transpose();
                 colors.row(3).array() = 1;
                 set_region_colors();
             }
+            /*
             bool a = ImGui::InputFloat("Strip size", &strip_size);
             bool b = ImGui::InputFloat("Strip rate", &strip_rate);
             if(a | b) {
@@ -292,6 +302,7 @@ class MeshViewer: public mtao::opengl::Window3 {
                 set_region_colors();
 
             }
+            */
             if(input_phong) {input_phong->gui("Input Phong");}
 
             auto&& io = ImGui::GetIO();
