@@ -22,9 +22,6 @@ jobs:
                 name: Installing boost threads
                 command: 'apt-get install -y libboost-thread-dev'
             - run:
-                name: Installing boost threads
-                command: 'apt-get install -y libboost-thread-dev'
-            - run:
                 name: Installing mpfr
                 command: 'apt-get install -y libmpfr-dev libmpfrc++-dev'
             - run:
@@ -35,7 +32,7 @@ jobs:
                 command: 'apt-get install -y libeigen3-dev'
             - run:
                 name: Making CMake build files
-                command: 'cmake -H. -Bbuild'
+                command: 'cmake -H. -Bbuild -DUSE_OPENGL=OFF'
             - run:
                 name: Building Mandoline
                 command: 'cmake --build build'
