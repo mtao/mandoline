@@ -4,6 +4,7 @@ jobs:
     build:
         docker:
             - image: "ubuntu:devel"
+            - image: "gcc:9.2.0"
         steps:
             - checkout
             - run:
@@ -12,9 +13,6 @@ jobs:
             - run:
                 name: Fetching submodules
                 command: 'git submodule update --recursive --init'
-            - run:
-                name: Installing gcc
-                command: 'apt-get install -y gcc-9 g++-9'
             - run:
                 name: Installing cmake
                 command: 'apt-get install -y cmake'
