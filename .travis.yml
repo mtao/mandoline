@@ -1,0 +1,18 @@
+language: cpp
+dist: bionic
+compiler: gcc
+addons:
+    apt:
+        packages:
+            - cmake-data
+            - cmake
+            - libboost-thread-dev
+            - libmpfr-dev
+            - libmpfrc++-dev
+            - libcgal-dev
+            - libeigen3-dev
+
+
+script: 
+    - cmake -H. -Bbuild
+    - cmake -- build build
