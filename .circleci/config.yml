@@ -1,0 +1,36 @@
+version: 2
+
+jobs:
+    build:
+        docker:
+            - image: "ubuntu/latest"
+        steps:
+            - checkout
+            - run:
+                name: Fetching submodules
+                command: 'git submodule update --recursive --init'
+            - run:
+                name: Installing gcc
+                command: 'apt-get update && apt-get install -y gcc g++'
+            - run:
+                name: Installing cmake
+                command: 'apt-get update && apt-get install -y cmake'
+            - run:
+                name: Installing boost threads
+                command: 'apt-get update && apt-get install -y libboost-thread-dev'
+            - run:
+                name: Installing boost threads
+                command: 'apt-get update && apt-get install -y libboost-thread-dev'
+            - run:
+                name: Installing mpfr
+                command: 'apt-get update && apt-get install -y libmpfr-dev libmpfrc++-dev'
+            - run:
+                name: Installing CGAL
+                command: 'apt-get update && apt-get install -y libcgal-dev'
+            - run:
+                name: Making CMake build files
+                command: 'cmake -Bbuild'
+            - run:
+                name: Building Mandoline
+                command: 'cmake --build build'
+

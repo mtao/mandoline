@@ -7,6 +7,7 @@ SET(MTAO_PATH "${CMAKE_CURRENT_SOURCE_DIR}/extern/core" CACHE STRING "location o
 SET(LIBIGL_PATH "${CMAKE_CURRENT_SOURCE_DIR}/extern/libigl" CACHE STRING "location of libigl libs" )
 OPTION(USE_OPENGL "Build opengl stuff" ON)
 OPTION(USE_OPENMP "Use OpenMP stuff" ON)
+OPTION(HANDLE_SELF_INTERSECTIONS "Handle Self-Intersections" ON)
 
 MESSAGE(STATUS "MTAO Path: ${MTAO_PATH}")
 MESSAGE(STATUS "LIBIGL Path: ${LIBIGL_PATH}")
@@ -25,6 +26,8 @@ MESSAGE(STATUS "MODULE PATH:${CMAKE_MODULE_PATH}")
 FIND_PACKAGE(Eigen3 REQUIRED)
 #FIND_PACKAGE(libigl REQUIRED)
 FIND_PACKAGE(Boost COMPONENTS thread REQUIRED)
+
+SET(MTAO_USE_PNGPP  OFF)
 ADD_SUBDIRECTORY("${MTAO_PATH}" ${CMAKE_BINARY_DIR}/mtao EXCLUDE_FROM_ALL)
 
 
@@ -185,6 +188,12 @@ IF(OpenMP_Found)
     ADD_DEFINITIONS(-DMTAO_OPENMP)
 ENDIF(OpenMP_Found)
 
+IF(HANDLE_SELF_INTERSECTIONS)
+    SET(SELF_INTERSECTION_LIB
+        gmp CGAL::CGAL mpfr
+        )
+ENDIF(HANDLE_SELF_INTERSECTIONS)
+
 ADD_DEFINITIONS(-DUSE_FLOP_FREE_ANGLE_COMPUTATION)
 ADD_LIBRARY(mandoline
     $<TARGET_OBJECTS:cutmesh2_obj>
@@ -194,7 +203,7 @@ ADD_LIBRARY(mandoline
     )
 TARGET_LINK_LIBRARIES(mandoline
     mtao::geometry OpenMP::OpenMP_CXX
-    gmp CGAL::CGAL mpfr Boost::thread
+    ${SELF_INTERSECTION_LIBS} Boost::thread
     igl::core
     ${Protobuf_LIBRARIES}
     )
@@ -205,7 +214,7 @@ ADD_LIBRARY(mandoline2 EXCLUDE_FROM_ALL
     )
 TARGET_LINK_LIBRARIES(mandoline2
     mtao::geometry OpenMP::OpenMP_CXX
-    gmp CGAL::CGAL mpfr Boost::thread
+    ${SELF_INTERSECTION_LIBS} Boost::thread
     igl::core
     ${Protobuf_LIBRARIES}
     )
@@ -218,7 +227,7 @@ ADD_LIBRARY(mandoline3 EXCLUDE_FROM_ALL
     )
 TARGET_LINK_LIBRARIES(mandoline3 
     mtao::geometry OpenMP::OpenMP_CXX
-    gmp CGAL::CGAL mpfr Boost::thread
+    ${SELF_INTERSECTION_LIBS} Boost::thread
     igl::core
     ${Protobuf_LIBRARIES}
     )
@@ -228,11 +237,17 @@ ADD_LIBRARY(mandoline_cutmesh3
     )
 TARGET_LINK_LIBRARIES(mandoline_cutmesh3
     mtao::geometry OpenMP::OpenMP_CXX
-    gmp CGAL::CGAL mpfr Boost::thread
+    ${SELF_INTERSECTION_LIBS} Boost::thread
     igl::core
     ${Protobuf_LIBRARIES}
     )
 
+IF(HANDLE_SELF_INTERSECTIONS)
+    FOREACH(TARG mandoline mandoline2 mandoline3)
+        TARGET_COMPILE_DEFINITIONS(${TARG}
+            PUBLIC MANDOLINE_HANDLE_SELF_INTERSECTIONS)
+    ENDFOREACH()
+ENDIF(HANDLE_SELF_INTERSECTIONS)
 
 ADD_SUBDIRECTORY(examples EXCLUDE_FROM_ALL)
 ADD_SUBDIRECTORY(tests EXCLUDE_FROM_ALL)
