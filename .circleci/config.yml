@@ -29,6 +29,9 @@ jobs:
                 name: Installing Eigen
                 command: 'apt-get install -y libeigen3-dev'
             - run:
+                name: Installing protobuf
+                command: 'apt-get install -y protobuf-compiler'
+            - run:
                 name: Making CMake build files
                 command: 'cmake -H. -Bbuild -DUSE_OPENGL=OFF'
             - run:
