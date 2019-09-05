@@ -7,6 +7,9 @@ jobs:
         steps:
             - checkout
             - run:
+                name: Installing git
+                command: 'apt-get update && apt-get install -y git'
+            - run:
                 name: Fetching submodules
                 command: 'git submodule update --recursive --init'
             - run:
