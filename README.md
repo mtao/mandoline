@@ -11,7 +11,7 @@ Mandoline depends on a C++17 enabled  compiler
 ### Built-in Libraries
 Mandoline depends on Michael Tao's messy ``[core](https://github.com/mtao/core)'' library, [libigl](https://github.com/libigl/libigl).
 
--core and libigl are included as submodules, and can be added by:
+- core and libigl are included as submodules, and can be added by:
 ```bash
 git submodule update --init --recursive
 ```

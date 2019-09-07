@@ -11,8 +11,9 @@ addons:
             - libmpfrc++-dev
             - libcgal-dev
             - libeigen3-dev
+            - protobuf-compiler
 
 
 script: 
     - cmake -H. -Bbuild
-    - cmake -- build build
+    - cmake --build build

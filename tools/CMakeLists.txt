@@ -15,10 +15,12 @@ ADD_EXECUTABLE(obj_to_cutmesh obj_to_cutmesh.cpp)
 TARGET_LINK_LIBRARIES(obj_to_cutmesh cutmesh_maker mandoline OpenMP::OpenMP_CXX mtao::common)
 
 
-find_package(Corrade REQUIRED Utility)
+find_package(Corrade Utility)
 
+IF(Corrade_FOUND)
 ADD_EXECUTABLE(cfg_to_cutmesh cfg_to_cutmesh.cpp)
 TARGET_LINK_LIBRARIES(cfg_to_cutmesh cutmesh_maker mandoline OpenMP::OpenMP_CXX mtao::common  Corrade::Utility)
+ENDIF(Corrade_FOUND)
 
 ADD_EXECUTABLE(remove_self_intersections remove_self_intersections.cpp
     ../include/mandoline/construction/remesh_self_intersections.hpp
