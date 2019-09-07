@@ -33,7 +33,7 @@ jobs:
                 command: 'apt-get install -y protobuf-compiler'
             - run:
                 name: Making CMake build files
-                command: 'cmake -H. -Bbuild -DUSE_OPENGL=OFF'
+                command: 'cmake -H. -Bbuild -DUSE_OPENGL=OFF -DCMAKE_BUILD_TYPE="Release"'
             - run:
                 name: Building Mandoline
                 command: 'cmake --build build'
