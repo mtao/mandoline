@@ -2,6 +2,8 @@
 
 sudo apt install -y git cmake libboost-thread-dev libmpfr-dev libmpfrc++-dev libcgal-dev libeigen3-dev protobuf-compiler mercurial
 
+git submodule update --recursive --init
+
 
 mkdir mosra; pushd mosra;
 for repo in corrade magnum magnum-integration;
@@ -30,6 +32,6 @@ popd
 mkdir build
 pushd build
 cmake .. -DCMAKE_BUILD_TYPE=Release -DMTAO_CUSTOM_EIGEN_PATH=$(pwd)/../extern/eigen
-make -j$( nproc ) make_cutmesh_gui obj_to_cutmesh exploded_mesh 
+make -j$( nproc ) make_cutmesh_gui exploded_mesh 
 popd
 
