@@ -23,9 +23,14 @@ OPTION(MTAO_USE_ELTOPO "Should we build the el topo submodule" OFF)
 OPTION(MTAO_USE_OPENGL "Build opengl stuff" ${USE_OPENGL})
 OPTION(MTAO_USE_PNGPP "Use PNG++ for screenshots" OFF)
 
-#NOTE: MTAO library will infest a custom Eigen path to everyone
+#NOTE: MTAO library can potentially infest a custom Eigen path to everyone
 # this eigen path can be chosen by the MTAO_CUSTOM_EIGEN_PATH variable
 ADD_SUBDIRECTORY("${MTAO_PATH}" ${CMAKE_BINARY_DIR}/mtao EXCLUDE_FROM_ALL)
+
+
+if(NOT TARGET Eigen3::Eigen)
+FIND_PACKAGE(Eigen3 REQUIRED)
+ENDIF()
 
 
 IF(USE_OPENMP)
