@@ -92,9 +92,10 @@ namespace mandoline {
                 //Caches triangulations for each CutFace, important for triangulating things like cells
                 void triangulate_faces();
 
+                //If the input ColVecs3d has nonzero size then the mesh is with reference to those vertices
                 //Triangulation of different mesh elements
-                mtao::ColVecs3i triangulate_face(int face_index) const;
-                mtao::ColVecs3i triangulated_cell(int cell_index, bool use_base = true, bool use_flap = true) const;
+                std::tuple<mtao::ColVecs3d,mtao::ColVecs3i> triangulate_face(int face_index) const;
+                std::tuple<mtao::ColVecs3d,mtao::ColVecs3i> triangulated_cell(int cell_index, bool use_base = true, bool use_flap = true) const;
 
                 std::tuple<mtao::ColVecs3d,mtao::ColVecs3i> compact_triangulated_cell(int cell_index) const;
                 std::tuple<mtao::ColVecs3d,mtao::ColVecs3i> compact_triangulated_face(int face_index) const;

@@ -50,6 +50,7 @@ namespace mandoline {
             CutFace& operator=(CutFace&&) = default;
 
             std::optional<std::tuple<int,bool>> external_boundary = {};
+            std::optional<mtao::ColVecs3d> triangulated_vertices;
             std::optional<mtao::ColVecs3i> triangulation;
             bool is_mesh_face() const ;
             bool is_axial_face() const ;
@@ -75,10 +76,12 @@ namespace mandoline {
 
             mtao::ColVecs3i triangulate_fan() const;
             mtao::ColVecs3i triangulate_earclipping(const mtao::ColVecs2d& V) const;
-            mtao::ColVecs3i triangulate_triangle(const mtao::ColVecs2d& V) const;
+            mtao::ColVecs3i triangulate_triangle(const mtao::ColVecs2d& V, bool add_vertices = false) const;
             mtao::ColVecs3i triangulate(const std::array<mtao::ColVecs2d,D>& V) const;
+            std::tuple<mtao::ColVecs3d,mtao::ColVecs3i> triangulate(const std::array<mtao::ColVecs2d,D>& V, bool add_vertices) const;
             void cache_triangulation(const std::array<mtao::ColVecs2d,D>& V) ;
             void cache_triangulation(const mtao::ColVecs3i& F) ;
+            void cache_triangulation(const mtao::ColVecs3d& V, const mtao::ColVecs3i& F) ;
 
 
 

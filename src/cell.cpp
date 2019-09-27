@@ -92,6 +92,34 @@ namespace mandoline {
 
         return mtao::eigen::hstack_iter(T.begin(),T.end());
     }
+    std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> CutCell::triangulated_with_additional_vertices(const std::vector<CutFace<3>>& Fs, int vertex_offset) const {
+        std::vector<mtao::ColVecs3i> T;
+        for(auto&& [s,b]: *this) {
+            auto&& F = Fs[s];
+            if(F.triangulation; auto&& t = *F.triangulation) {
+                if(F.triangulated_vertices; auto&& v = *F.triangulated_vertices) {
+                    V.emplace_back(v);
+                    T.emplace_back(t.array()+vertex_offset);
+                    vertex_offset += v.cols();
+
+                } else {
+                    V.emplace_back({});
+                    T.emplace_back(t);
+                }
+                if(!b) {
+                    auto&& b = T.back();
+                    auto tmp = b.row(0).eval();
+                    b.row(0) = b.row(1);
+                    b.row(1) = tmp;
+                }
+            } else {
+                mtao::logging::error() << "Cell tried to fetch triangulation from an untriangulated face";
+            }
+        }
+
+        return {mtao::eigen::hstack_iter(V.begin(),V.end());
+        mtao::eigen::hstack_iter(T.begin(),T.end())};
+    }
 
     double CutCell::volume(const mtao::VecXd& face_brep_vols) const {
 

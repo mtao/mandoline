@@ -236,8 +236,12 @@ namespace mandoline {
             }
         }
 
+        auto V = vertices();
+
         std::vector<mtao::ColVecs3i> Fs(indices.size());
-        for(auto&& [F,index]: mtao::iterator::zip(Fs,indices)) {
+        std::vector<mtao::ColVecs3d> Vs(indices.size());
+        int vertex_offset = V.cols();
+        for(auto&& [V,F,index]: mtao::iterator::zip(Vs,Fs,indices)) {
             if(m_mesh_faces) {
                 if(is_cut_cell(index)) {
                     std::vector<mtao::ColVecs3i> FF;
@@ -251,6 +255,7 @@ namespace mandoline {
                 }
             } else {
                 if(is_cut_cell(index)) {
+
                     F = triangulated_cell(index,show_base,show_flaps);
                 } else {
                     if(show_base) {
@@ -276,7 +281,6 @@ namespace mandoline {
         }
 
         std::ofstream ofs(ss.str());
-        auto V = vertices();
         //if(normalize_output) {
         //    auto bb = mtao::geometry::bounding_box(V);
 
@@ -521,10 +525,10 @@ namespace mandoline {
         }
         return subVs;
     }
-    mtao::ColVecs3i CutCellMesh<3>::triangulate_face(int face_index) const {
+    std::tuple<mtao::ColVecs3d,mtao::ColVecs3i> CutCellMesh<3>::triangulate_face(int face_index) const {
         mtao::logging::warn() << "Inefficient use of triangulation!  try caching your triangulations";
         std::array<mtao::ColVecs2d,3> subVs = compute_subVs();
-        return m_faces[face_index].triangulate(subVs);
+        return m_faces[face_index].triangulate(subVs,true);
     }
 
     void CutCellMesh<3>::triangulate_faces() {
@@ -832,7 +836,7 @@ namespace mandoline {
         return active_cells().size();
     }
 
-    mtao::ColVecs3i CutCellMesh<3>::triangulated_cell(int idx, bool use_base, bool use_flap) const {
+    std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> CutCellMesh<3>::triangulated_cell(int idx, bool use_base, bool use_flap) const {
         if(is_cut_cell(idx)) {
             std::vector<mtao::ColVecs3i> mFs;
             for(auto&& [fidx,b]: m_cells[idx]) {

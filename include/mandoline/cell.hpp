@@ -20,6 +20,7 @@ namespace mandoline {
 
         std::vector<Eigen::Triplet<double>> boundary_triplets() const;
         mtao::ColVecs3i triangulated(const std::vector<CutFace<3>>& Fs) const;
+        std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> triangulated_with_additional_vertices(const std::vector<CutFace<3>>& Fs, int vertex_offset) const;
 
         /*
            coord_type grid_cell(const std::vector<CutFace<3>>& F) const;
