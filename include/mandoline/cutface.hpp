@@ -76,10 +76,10 @@ namespace mandoline {
 
             mtao::ColVecs3i triangulate_fan() const;
             mtao::ColVecs3i triangulate_earclipping(const mtao::ColVecs2d& V) const;
-            mtao::ColVecs3i triangulate_triangle(const mtao::ColVecs2d& V, bool add_vertices = false) const;
+            std::tuple<mtao::ColVecs2d,mtao::ColVecs3i> triangulate_triangle(const mtao::ColVecs2d& V, bool add_vertices = false, double axis_val = 0.0) const;
             mtao::ColVecs3i triangulate(const std::array<mtao::ColVecs2d,D>& V) const;
-            std::tuple<mtao::ColVecs3d,mtao::ColVecs3i> triangulate(const std::array<mtao::ColVecs2d,D>& V, bool add_vertices) const;
-            void cache_triangulation(const std::array<mtao::ColVecs2d,D>& V) ;
+            std::tuple<mtao::ColVecs3d,mtao::ColVecs3i> triangulate(const std::array<mtao::ColVecs2d,D>& V, bool add_vertices, double axis_val = 0) const;
+            void cache_triangulation(const std::array<mtao::ColVecs3d,D>& V) ;
             void cache_triangulation(const mtao::ColVecs3i& F) ;
             void cache_triangulation(const mtao::ColVecs3d& V, const mtao::ColVecs3i& F) ;
 
@@ -101,7 +101,7 @@ namespace mandoline {
     template <>
         mtao::ColVecs3i CutFace<3>::triangulate_earclipping(const mtao::ColVecs2d& V) const;
     template <>
-        mtao::ColVecs3i CutFace<3>::triangulate_triangle(const mtao::ColVecs2d& V) const;
+        std::tuple<mtao::ColVecs2d,mtao::ColVecs3i> CutFace<3>::triangulate_triangle(const mtao::ColVecs2d& V, bool add_vertices) const;
     template <>
         mtao::ColVecs3i CutFace<3>::triangulate(const std::array<mtao::ColVecs2d,3>& V) const;
     template <>

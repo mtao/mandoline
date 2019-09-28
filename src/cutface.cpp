@@ -23,7 +23,7 @@ namespace mandoline {
             return triangulate(V,false);
         }
     template <>
-        std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> CutFace<3>::triangulate(const std::array<mtao::ColVecs2d,3>& V, bool add_vertices) const {
+        std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> CutFace<3>::triangulate(const std::array<mtao::ColVecs2d,3>& V, bool add_vertices, double axis_val) const {
 
             if(is_mesh_face()) {
                 return {{},triangulate_fan()};
@@ -32,7 +32,7 @@ namespace mandoline {
                 if(indices.size() == 1) {
                     return {{},triangulate_earclipping(V[id])};
                 } else {
-                    return triangulate_triangle(V[id],add_vertices);
+                    return triangulate_triangle(V[id],add_vertices,axis_val);
                 }
             }
         }
@@ -53,7 +53,7 @@ namespace mandoline {
         }
 
     template <>
-        std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> CutFace<3>::triangulate_triangle(const mtao::ColVecs2d& V, bool do_add_vertices) const {
+        std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> CutFace<3>::triangulate_triangle(const mtao::ColVecs2d& V, bool do_add_vertices, double axis_val) const {
 
             //collect the number of edges
             int size = 0;
@@ -102,11 +102,11 @@ namespace mandoline {
             for(int i = 0; i < m.VA.cols(); ++i) {m.VA(i) = i;}
             bool points_added = false;
             mtao::ColVecs2d newV;
-            mtao::ColVecs2d newF;
+            mtao::ColVecs3i newF;
 
             if(do_add_vertices) {
                 static const std::string str ="pcePzQYY";
-                auto nm = mtao::geometry::mesh::triangle::triangle_wrapper(m,std::string_view(str)).F;
+                auto nm = mtao::geometry::mesh::triangle::triangle_wrapper(m,std::string_view(str));
                 newV = nm.V;
                 newF = nm.F;
             } else {

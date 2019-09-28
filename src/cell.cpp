@@ -94,6 +94,7 @@ namespace mandoline {
     }
     std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> CutCell::triangulated_with_additional_vertices(const std::vector<CutFace<3>>& Fs, int vertex_offset) const {
         std::vector<mtao::ColVecs3i> T;
+        std::vector<mtao::ColVecs3i> V;
         for(auto&& [s,b]: *this) {
             auto&& F = Fs[s];
             if(F.triangulation; auto&& t = *F.triangulation) {

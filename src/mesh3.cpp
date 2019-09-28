@@ -256,7 +256,7 @@ namespace mandoline {
             } else {
                 if(is_cut_cell(index)) {
 
-                    F = triangulated_cell(index,show_base,show_flaps);
+                    [V,F] = triangulated_cell(index,show_base,show_flaps);
                 } else {
                     if(show_base) {
                         F = m_adaptive_grid.triangulated(index);
