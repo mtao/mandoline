@@ -256,7 +256,7 @@ namespace mandoline {
             } else {
                 if(is_cut_cell(index)) {
 
-                    [V,F] = triangulated_cell(index,show_base,show_flaps);
+                    auto [V,F] = triangulated_cell(index,show_base,show_flaps);
                 } else {
                     if(show_base) {
                         F = m_adaptive_grid.triangulated(index);
@@ -538,7 +538,7 @@ namespace mandoline {
 #pragma omp parallel for
         for(i = 0; i < m_faces.size(); ++i) {
             auto&& face = m_faces[i];
-            face.cache_triangulation(subVs);
+            face.cache_triangulation(subVs,true);
         }
     }
 
@@ -838,35 +838,55 @@ namespace mandoline {
 
     std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> CutCellMesh<3>::triangulated_cell(int idx, bool use_base, bool use_flap) const {
         if(is_cut_cell(idx)) {
+            std::vector<mtao::ColVecs3d> mVs;
             std::vector<mtao::ColVecs3i> mFs;
             for(auto&& [fidx,b]: m_cells[idx]) {
                 bool is_flap = m_folded_faces.find(fidx) != m_folded_faces.end();
                 bool is_base = !is_flap;
                 if((use_flap && is_flap) || (use_base && !is_flap)) {
                     auto& tri = m_faces[fidx].triangulation;
-                    mtao::ColVecs3i F = tri?(*tri).eval():triangulate_face(fidx);
+                    mtao::ColVecs3d V;
+                    mtao::ColVecs3i F;
+                    if(tri) {
+                        F = *tri;
+                        auto& vert = m_faces[fidx].triangulated_vertices;
+                        if(vert) {
+                            V = *vert;
+                        }
+                    } else {
+                        std::tie(V,F) = triangulate_face(fidx);
+                    }
                     if(!b) {
                         auto tmp = F.row(0).eval();
                         F.row(0) = F.row(1);
                         F.row(1) = tmp;
                     }
+                    mVs.emplace_back(std::move(V));
                     mFs.emplace_back(std::move(F));
                 }
             }
+            return {mtao::eigen::hstack_iter(mVs.begin(),mVs.end()),mtao::eigen::hstack_iter(mFs.begin(),mFs.end())};
+            /*
             if(mFs.size() > 0) {
-                return mtao::eigen::hstack_iter(mFs.begin(),mFs.end());
+                    return {mtao::eigen::hstack_iter(mVs.begin(),mVs.end()),mtao::eigen::hstack_iter(mFs.begin(),mFs.end())};
+                if(mVs.size() > 0) {
+                    return {mtao::eigen::hstack_iter(mVs.begin(),mVs.end()),mtao::eigen::hstack_iter(mFs.begin(),mFs.end())};
+                } else {
+                    return {{},mtao::eigen::hstack_iter(mFs.begin(),mFs.end())};
+                }
             }
+            */
         } else {
             if(use_base) {
-                return m_adaptive_grid.triangulated(idx);
+                return {{},m_adaptive_grid.triangulated(idx)};
             }
         }
         return {};
     }
 
     std::tuple<mtao::ColVecs3d,mtao::ColVecs3i> CutCellMesh<3>::compact_triangulated_cell(int cell_index) const {
-        auto F = triangulated_cell(cell_index,true,true);
-        return mtao::geometry::mesh::compactify(vertices(),F);
+        auto [V,F] = triangulated_cell(cell_index,true,true);
+        return mtao::geometry::mesh::compactify(mtao::eigen::hstack(vertices(),V),F);
     }
     std::tuple<mtao::ColVecs3d,mtao::ColVecs3i> CutCellMesh<3>::compact_triangulated_face(int face_index) const {
         auto& f = m_faces[face_index];
@@ -874,7 +894,11 @@ namespace mandoline {
             mtao::logging::warn() << "Triangulate mesh first!";
             return {};
         } else {
-            return mtao::geometry::mesh::compactify(vertices(),*f.triangulation);
+            if(f.triangulated_vertices) {
+                return mtao::geometry::mesh::compactify(mtao::eigen::hstack(vertices(),vertex_grid().world_coord(*f.triangulated_vertices)),*f.triangulation);
+            } else {
+                return mtao::geometry::mesh::compactify(vertices(),*f.triangulation);
+            }
         }
     }
 }
