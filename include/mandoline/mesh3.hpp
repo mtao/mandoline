@@ -40,6 +40,9 @@ namespace mandoline {
                 bool is_cut_cell(int index) const;
                 bool is_adaptive_cell(int index) const ;
                 std::vector<int> regions(bool boundary_sign_regions=false) const;
+                std::vector<std::array<std::set<int>,2>> face_regions() const;
+                std::vector<std::array<std::set<int>,2>> orig_face_regions() const;
+                mtao::ColVecs3d region_centroids() const;
 
                 //info on faces
                 size_t face_size() const;

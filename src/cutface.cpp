@@ -24,8 +24,16 @@ namespace mandoline {
         }
     template <>
         std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> CutFace<3>::triangulate(const std::array<mtao::ColVecs2d,3>& V, bool add_vertices) const {
+            if(is_mesh_face()) {
+                return {{},triangulate_fan()};
+            } else {
                 int id = as_axial_id()[0];
-                return triangulate(V[id],add_vertices);
+                if(indices.size() == 1) {
+                    return {{},triangulate_earclipping(V[id])};
+                } else {
+                    return triangulate_triangle(V[id],add_vertices);
+                }
+            }
 
         }
     template <>
@@ -112,11 +120,15 @@ namespace mandoline {
             if(do_add_vertices) {
                 //static const std::string str ="zPa.01qepcDQ";
                 static const std::string str ="pcePzQYY";
+                std::cerr << "I bet im about to crash" << std::endl;
                 auto nm = mtao::geometry::mesh::triangle::triangle_wrapper(m,std::string_view(str));
-                newV2 = nm.V;
+                std::cerr << "I lost a bet" << std::endl;
+                if(nm.V.cols() > newV.cols()) {
+                    newV2 = nm.V;
+                    points_added = true;
+                }
 
                 newF = nm.F;
-                points_added = true;
             } else {
                 static const std::string str ="pcePzQYY";
                 auto nm = mtao::geometry::mesh::triangle::triangle_wrapper(m,std::string_view(str));
@@ -160,14 +172,13 @@ namespace mandoline {
                 }
 
             }
-            std::cout << "Interior entries: " << interior.size() << " / " << newF.cols() << std::endl;
             mtao::ColVecs3i FF(3,interior.size());
             for(auto&& [i,b]: mtao::iterator::enumerate(interior)) {
                 FF.col(i) = newF.col(b);
             }
             //std::cout << std::endl;
             if(points_added && !do_add_vertices) {
-                std::cout << "points were added!" << std::endl;
+                std::cout << "points were added when they shouldnt have!" << std::endl;
                 return {};
             }  else {
                 mtao::ColVecs3d newV3;

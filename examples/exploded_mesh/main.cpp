@@ -39,6 +39,7 @@ class MeshViewer: public mtao::opengl::Window3 {
         bool show_wireframes = false;
 
         float scale = 1.1;
+        float region_center_scale = 0.0;
         bool do_slice = false;
         mtao::ColVectors<double,4> colors;
 
@@ -223,6 +224,10 @@ class MeshViewer: public mtao::opengl::Window3 {
                 if(dirty) {
                     update_exploded();
                 }
+            }
+            if(ImGui::SliderFloat("region vs grid center", &region_center_scale, 0,1)) {
+                exploder.setCenters(region_center_scale);
+                update_exploded();
             }
 
 

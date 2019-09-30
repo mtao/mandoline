@@ -9,12 +9,17 @@ namespace mandoline::tools {
         Vs.resize(ccm.cell_size());
         Fs.resize(ccm.cell_size());
         Cs.resize(ccm.cell_size());
+        RCs.resize(ccm.cell_size());
+        GCs.resize(ccm.cell_size());
         regions = ccm.regions();
+        auto region_centroids = ccm.region_centroids();
 
-        for(auto&& [i,c,v,f,C]: mtao::iterator::enumerate(ccm.cells(),Vs,Fs,Cs)) {
+        for(auto&& [i,c,v,f,rc,gc]: mtao::iterator::enumerate(ccm.cells(),Vs,Fs,RCs,GCs)) {
             std::tie(v,f)  = c.get_mesh(V,ccm.faces());
+            rc = region_centroids.col(c.region);
+            gc = ccm.cell_grid().vertex(c.grid_cell);
 
-            C = ccm.cell_grid().vertex(c.grid_cell);
+
         }
 
         auto&& AG = ccm.adaptive_grid();
@@ -22,7 +27,18 @@ namespace mandoline::tools {
         for(auto&& [idx,cell]: AG.cells()) {
             auto F = AG.triangulated(idx);
             std::tie(Vs[idx],Fs[idx]) = mtao::geometry::mesh::compactify(V,F);
-            Cs[idx] = Vs[idx].rowwise().mean();
+            GCs[idx] = Vs[idx].rowwise().mean();
+        }
+        for(auto&& [c,i]: ccm.adaptive_grid_regions()) {
+            RCs[c] = region_centroids.col(i);
+        }
+        setCenters();
+    }
+
+    void MeshExploder::setCenters(double region_scale) { 
+
+        for(auto&& [c,rc,gc]: mtao::iterator::zip(Cs,RCs,GCs)) {
+            c = (1-region_scale) * gc + region_scale * rc;
         }
 
     }

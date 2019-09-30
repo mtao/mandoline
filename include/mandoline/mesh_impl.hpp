@@ -100,11 +100,13 @@ namespace mandoline {
         auto CutCellMeshBase<D,Derived>::cut_vertices_colvecs() const -> ColVecs {
             auto&& g = vertex_grid();
             return g.world_coord(grid_space_cut_vertices_colvecs());
+            /*
             ColVecs V(3,cut_vertex_size());
             for(auto&& [i,v]: mtao::iterator::enumerate(cut_vertices())) {
                 V.col(i) = get_world_vertex(v);
             }
             return V;
+            */
 
         }
     template <int D, typename Derived>
