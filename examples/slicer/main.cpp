@@ -1,6 +1,7 @@
 #include "mtao/geometry/mesh/boundary_facets.h"
 #include "mtao/geometry/mesh/read_obj.hpp"
 #include "mtao/geometry/bounding_box.hpp"
+#include "mtao/geometry/mesh/write_obj.hpp"
 #include <mtao/types.hpp>
 #include <mtao/cmdline_parser.hpp>
 #include "mtao/opengl/Window.h"
@@ -49,10 +50,10 @@ class MeshViewer: public mtao::opengl::Window3 {
 
 
         void update_slice() {
-            auto [VV,FF] = sg.slice(origin.cast<double>(),direction.cast<double>());
-            if(FF.cols() > 0) {
+            std::tie(V,F) = sg.slice(origin.cast<double>(),direction.cast<double>());
+            if(F.cols() > 0) {
 
-                slice_mesh.setTriangleBuffer(VV.cast<float>().eval(), FF.cast<unsigned int>());
+                slice_mesh.setTriangleBuffer(V.cast<float>().eval(), F.cast<unsigned int>());
                 Eigen::SparseMatrix<double> BM = sg.barycentric_map();
                 mtao::ColVecs4d C2 = C * BM.transpose();
                 slice_mesh.setColorBuffer(C2.cast<float>().eval());
@@ -128,6 +129,10 @@ class MeshViewer: public mtao::opengl::Window3 {
                 if(dirty) {
                     update_slice();
                 }
+            }
+            if(ImGui::Button("Save")) {
+                update_slice();
+                mtao::geometry::mesh::write_objD(V,F,"output.obj");
             }
 
 
