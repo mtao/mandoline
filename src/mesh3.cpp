@@ -201,6 +201,7 @@ namespace mandoline {
                 write_obj(prefix,{i},R[i], true, true,false);
                 write_obj(prefix,{i},R[i], true, false,true);
             } else {
+                std::cout << "Writing " << i << std::endl;
                 write_obj(prefix,{i},R[i], true, true,true);
             }
         }
@@ -225,6 +226,10 @@ namespace mandoline {
                 ss <<  "_" ;
                 for(auto&& index: indices) {
                     ss << index << "_" ;
+                    if(is_cut_cell(index)) {
+                        auto c = m_cells.at(index).grid_cell;
+                        ss << "(" << c[0] << "_" << c[1] << "_" << c[2] << ")";
+                    }
                 }
             } else {
                 ss <<  "_" ;
@@ -256,12 +261,16 @@ namespace mandoline {
             } else {
                 if(is_cut_cell(index)) {
 
-                    auto [V,F] = triangulated_cell(index,show_base,show_flaps);
+                    std::tie(V,F) = triangulated_cell(index,show_base,show_flaps);
                 } else {
                     if(show_base) {
                         F = m_adaptive_grid.triangulated(index);
                     }
                 }
+            }
+            if(is_cut_cell(index)) {
+                auto c = m_cells.at(index).grid_cell;
+                std::cout << "Cell: " << c[0] << " " << c[1] << " " << c[2] << std::endl;
             }
         }
 
@@ -275,12 +284,13 @@ namespace mandoline {
                 }
             }
             if(empty) {
-                //std::cout << "Empty cell!" << std::endl;
+                std::cout << "Empty cell!" << std::endl;
                 return;
             }
         }
 
         std::ofstream ofs(ss.str());
+        std::cout << "Output file: " << ss.str() << std::endl;
         //if(normalize_output) {
         //    auto bb = mtao::geometry::bounding_box(V);
 
