@@ -4,6 +4,9 @@ sudo apt install -y git cmake libboost-thread-dev libmpfr-dev libmpfrc++-dev lib
 
 git submodule update --recursive --init
 
+#https://stackoverflow.com/questions/59895/get-the-source-directory-of-a-bash-script-from-within-the-script-itself
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
 
 mkdir mosra; pushd mosra;
 for repo in corrade magnum magnum-integration;
@@ -11,13 +14,14 @@ do git clone https://github.com/mosra/$repo; done
 
 pushd magnum-integration;
 pwd
-patch -b ./package/debian/rules  ../../build-utils/magnum_integration.patch 
+patch -b ./package/debian/rules  ${DIR}/magnum_integration.patch 
 popd #magnum integration
 
 for repo in corrade magnum magnum-integration;
 do pushd $repo;
     ln -s package/debian .
-    dpkg-buildpackage
+    # ignoring the dsc errors taht happen from magnum
+    dpkg-buildpackage || true
     popd
 done
 
