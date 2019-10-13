@@ -12,7 +12,6 @@
 #include <algorithm>
 #include <Magnum/Shaders/Phong.h>
 #include <Magnum/Shaders/MeshVisualizer.h>
-#include <Magnum/Shaders/MeshVisualizer.h>
 #include <mtao/opengl/drawables.h>
 #include <mtao/opengl/objects/mesh.h>
 #include <mtao/opengl/objects/bbox.h>
@@ -73,7 +72,7 @@ class MeshViewer: public mtao::opengl::Window3 {
 
 
 
-        MeshViewer(const Arguments& args): Window3(args), wireframe_shader{Magnum::Shaders::MeshVisualizer::Flag::Wireframe} {
+        MeshViewer(const Arguments& args): Window3(args) {
             Corrade::Utility::Arguments myargs;
             myargs.addArgument("filename").parse(args.argc,args.argv);
             std::string filename = myargs.value("filename");
@@ -147,7 +146,7 @@ class MeshViewer: public mtao::opengl::Window3 {
         Magnum::SceneGraph::DrawableGroup3D wireframe_drawables;
         Magnum::Shaders::Phong phong_shader;
         Magnum::Shaders::Flat3D flat_shader;
-        Magnum::Shaders::MeshVisualizer wireframe_shader;
+        Magnum::Shaders::MeshVisualizer wireframe_shader{supportsGeometryShader()?Magnum::Shaders::MeshVisualizer::Flag::Wireframe:Magnum::Shaders::MeshVisualizer::Flag{}};
         Magnum::Shaders::VertexColor3D vcolor_shader;
 
         //mtao::opengl::objects::BoundingBox<3> slice_object;
