@@ -55,6 +55,11 @@ namespace mandoline {
         return ret;
 
     }
+    bool AdaptiveGrid::Cell::is_inside(const Vec& p) const {
+        Eigen::Map<const mtao::Vec3i> c(corner().data());
+        return (c.array().cast<double>() <= p.array()).all() 
+            && (p.array() < (c.array()+width()).cast<double>()).all();
+    }
     void   AdaptiveGrid::Square::serialize(CutMeshProto::Square& c) const {
         protobuf::serialize(corner(),*c.mutable_corner());
         c.set_radius(width());
@@ -891,5 +896,13 @@ namespace mandoline {
                 return f.dual_edge;
                 });
         return R;
+    }
+    int AdaptiveGrid::get_cell_index(const Vec& p) const {
+        for(auto&& [i,c]: cells()) {
+            if(c.is_inside(p)) {
+                return i;
+            }
+        }
+        return -1;
     }
 }

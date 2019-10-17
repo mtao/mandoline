@@ -12,6 +12,7 @@ namespace mandoline {
             public:
                 friend class construction::CutCellGenerator<3>;
                 using Base = CutCellMeshBase<3,CutCellMesh<3>>;
+                using coord_type = typename Base::coord_type;
                 using ColVecs = typename Base::ColVecs;
                 using VecX = typename Base::VecX;
                 using Faces = mtao::ColVectors<int,3>;
@@ -40,6 +41,9 @@ namespace mandoline {
                 bool is_cut_cell(int index) const;
                 bool is_adaptive_cell(int index) const ;
                 std::vector<int> regions(bool boundary_sign_regions=false) const;
+                std::map<coord_type,std::set<int>> cells_by_grid_cell() const;
+                std::set<int> cells_in_grid_cell(const coord_type& c) const;
+                int get_cell_index(const VecCRef& p) const;
 
                 //info on faces
                 size_t face_size() const;
@@ -51,7 +55,9 @@ namespace mandoline {
                 GridDatab active_cell_mask() const;
                 std::set<coord_type> active_cells() const;
                 size_t active_cell_count() const;
-                int cell_index(const VecCRef&) const;
+                //grid cell 
+                int local_grid_cell_index(const VecCRef&) const;
+                int world_grid_cell_index(const VecCRef&) const;
 
                 //Differential geometry info
                 Eigen::SparseMatrix<double> boundary() const;
