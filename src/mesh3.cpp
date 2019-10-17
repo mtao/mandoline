@@ -109,13 +109,16 @@ namespace mandoline {
     auto CutCellMesh<3>::dual_vertices() const -> ColVecs {
         return cell_centroids();
     }
-    int CutCellMesh<3>::cell_index(const VecCRef& p) const {
+    int CutCellMesh<3>::local_grid_cell_index(const VecCRef& p) const {
         auto [c,q] = StaggeredGrid::coord(p);
         if(!StaggeredGrid::cell_grid().valid_index(c)) {
             return -1;
         }
 
         return -1;
+    }
+    int CutCellMesh<3>::world_grid_cell_index(const VecCRef& p) const {
+        return local_grid_cell_index(vertex_grid().local_coord(p));
     }
     std::vector<std::set<int>> CutCellMesh<3>::cell_faces() const {
         std::vector<std::set<int>> ret(m_cells.size());
@@ -991,5 +994,43 @@ namespace mandoline {
                 return mtao::geometry::mesh::compactify(vertices(),*f.triangulation);
             }
         }
+    }
+
+    auto CutCellMesh<3>::cells_by_grid_cell() const -> std::map<coord_type,std::set<int>> {
+        std::map<coord_type,std::set<int>> R;
+        for(auto&& [i,c]: mtao::iterator::enumerate(cells())) {
+            R[c.grid_cell].insert(i);
+        }
+        return R;
+    }
+    std::set<int> CutCellMesh<3>::cells_in_grid_cell(const coord_type& c) const {
+        std::set<int> R;
+        for(auto&& [i,cell]: mtao::iterator::enumerate(cells())) {
+            if(cell.grid_cell == c) {
+            R.insert(i);
+            }
+        }
+        return R;
+    }
+    int CutCellMesh<3>::get_cell_index(const VecCRef& p) const {
+        auto v = local_coord(p);
+        //check if its  in an adaptive grid cell, tehn we can just use that cell
+        if(int ret = m_adaptive_grid.get_cell_index(v); ret != -1) {
+            return ret;
+        } else {
+
+            auto [c,q] = vertex_grid().coord(p);
+            auto cell_indices = cells_in_grid_cell(c);
+            for(auto&& ci: cell_indices) {
+                auto&& cell = cells()(ci);
+                if(cell.is_inside(p)) {
+                    return ci;
+                }
+            }
+            //TODO
+            //if I haven't returned yet then either this ccm is bad
+            //or i'm too close to an edge. lets not assume that for now
+        }
+        return -1;
     }
 }

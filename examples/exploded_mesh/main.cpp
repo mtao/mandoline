@@ -20,7 +20,6 @@
 #include <Magnum/GL/DefaultFramebuffer.h>
 #include <Magnum/GL/Renderer.h>
 #include <mandoline/tools/exploded_mesh.hpp>
-#include <Magnum/EigenIntegration/Integration.h>
 #include <mandoline/tools/planar_slicer.hpp>
 
 #include <thread>
@@ -98,7 +97,7 @@ class MeshViewer: public mtao::opengl::Window3 {
         }
 
 
-        MeshViewer(const Arguments& args): Window3(args), wireframe_shader{Magnum::Shaders::MeshVisualizer::Flag::Wireframe} {
+        MeshViewer(const Arguments& args): Window3(args) {
             mtao::logging::make_logger().set_level(mtao::logging::Level::Off);
             mtao::logging::make_logger("profiler").set_level(mtao::logging::Level::Off);
             Corrade::Utility::Arguments myargs;
@@ -263,7 +262,7 @@ class MeshViewer: public mtao::opengl::Window3 {
         Magnum::SceneGraph::DrawableGroup3D wireframe_drawables;
         Magnum::Shaders::Phong phong_shader;
         Magnum::Shaders::VertexColor3D vcolor_shader;
-        Magnum::Shaders::MeshVisualizer wireframe_shader;
+        Magnum::Shaders::MeshVisualizer wireframe_shader{supportsGeometryShader()?Magnum::Shaders::MeshVisualizer::Flag::Wireframe:Magnum::Shaders::MeshVisualizer::Flag{}};
         mtao::opengl::objects::Mesh<3> input_mesh;
         std::vector<mtao::opengl::objects::Mesh<3>> exploded_meshes;
         mtao::opengl::Drawable<Magnum::Shaders::Phong>* input_phong = nullptr;

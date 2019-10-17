@@ -69,7 +69,7 @@ class MeshViewer: public mtao::opengl::Window3 {
                 (bbox, std::array<int,3>{{NI,NJ,NK}}, use_cube);
             }
 
-        MeshViewer(const Arguments& args): Window3(args), _wireframe_shader{Magnum::Shaders::MeshVisualizer::Flag::Wireframe}, output_view(output_filename,mtao::types::container_size(output_filename)) {
+        MeshViewer(const Arguments& args): Window3(args), output_view(output_filename,mtao::types::container_size(output_filename)) {
             Corrade::Utility::Arguments myargs;
             myargs.addArgument("filename").parse(args.argc,args.argv);
             std::string filename = myargs.value("filename");
@@ -289,7 +289,7 @@ class MeshViewer: public mtao::opengl::Window3 {
             Magnum::GL::Renderer::enable(Magnum::GL::Renderer::Feature::DepthTest);
         }
     private:
-        Magnum::Shaders::MeshVisualizer _wireframe_shader;
+        Magnum::Shaders::MeshVisualizer _wireframe_shader{supportsGeometryShader()?Magnum::Shaders::MeshVisualizer::Flag::Wireframe:Magnum::Shaders::MeshVisualizer::Flag{}};
         Magnum::Shaders::Flat3D _flat_shader;
         Magnum::SceneGraph::DrawableGroup3D edge_drawables;
         mtao::opengl::objects::Mesh<3> mesh;

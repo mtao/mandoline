@@ -21,7 +21,6 @@
 #include <Magnum/GL/DefaultFramebuffer.h>
 #include <Magnum/GL/Renderer.h>
 #include <mandoline/tools/exploded_mesh.hpp>
-#include <Magnum/EigenIntegration/Integration.h>
 #include <mandoline/tools/planar_slicer.hpp>
 #include "setup.h"
 #include <igl/parula.h>
