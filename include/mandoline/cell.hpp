@@ -34,6 +34,16 @@ namespace mandoline {
         mtao::Vec3d moment(const mtao::ColVecs3d& face_brep_cents) const;
         template <typename Derived>
             std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> get_mesh(const Eigen::MatrixBase<Derived>& V, const mtao::vector<CutFace<3>>& Fs) const;
+
+
+
+        template <typename Derived, typename VecType>
+            bool contains(const Eigen::MatrixBase<Derived>& V, const mtao::vector<CutFace<3>>& Fs, const Eigen::MatrixBase<VecType>& v) const;
+
+        template <typename Derived, typename VecType>
+            double solid_angle(const Eigen::MatrixBase<Derived>& V, const mtao::vector<CutFace<3>>& Fs, const Eigen::MatrixBase<VecType>& v) const;
+
+
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
     };
 
@@ -80,4 +90,17 @@ namespace mandoline {
             auto F = mtao::eigen::hstack_iter(FF.begin(),FF.end());
             return  mtao::geometry::mesh::compactify(V,F);
         }
+
+        template <typename Derived, typename VecType>
+            bool CutCell::contains(const Eigen::MatrixBase<Derived>& V, const mtao::vector<CutFace<3>>& Fs, const Eigen::MatrixBase<VecType>& v) const {
+                return solid_angle(V,Fs,v) > 4 * M_PI;
+            }
+        template <typename Derived, typename VecType>
+            double CutCell::solid_angle(const Eigen::MatrixBase<Derived>& V, const mtao::vector<CutFace<3>>& Fs, const Eigen::MatrixBase<VecType>& v) const {
+                double sa = 0;
+                for(auto&& [fid,sgn]: *this) {
+                    sa += (sgn?1:-1) * Fs[fid].solid_angle(V,v);
+                }
+                return sa;
+            }
 }

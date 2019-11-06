@@ -1,0 +1,6 @@
+IF(USE_OPENGL)
+ADD_EXECUTABLE(point_chaser main.cpp )
+find_package(Magnum REQUIRED GL Shaders GlxContext GlfwApplication SceneGraph MeshTools)
+find_package(MagnumIntegration REQUIRED ImGui)
+TARGET_LINK_LIBRARIES(point_chaser mandoline mtao::visualization)
+ENDIF(USE_OPENGL)

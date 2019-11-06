@@ -1021,9 +1021,10 @@ namespace mandoline {
 
             auto [c,q] = vertex_grid().coord(p);
             auto cell_indices = cells_in_grid_cell(c);
+            auto V = vertices();
             for(auto&& ci: cell_indices) {
-                auto&& cell = cells()(ci);
-                if(cell.is_inside(p)) {
+                auto&& cell = cells().at(ci);
+                if(cell.contains(V,faces(),p)) {
                     return ci;
                 }
             }

@@ -2,6 +2,7 @@
 #include "mandoline/coord_masked_geometry.hpp"
 #include "mandoline/vertex.hpp"
 #include <mtao/geometry/grid/grid.h>
+#include <igl/solid_angle.h>
 
 namespace mandoline {
 
@@ -68,6 +69,8 @@ namespace mandoline {
             template <typename Derived>
                 double brep_volume(const Eigen::MatrixBase<Derived>& V, bool use_triangulation = false) const ;
 
+        template <typename Derived, typename VecType>
+            double solid_angle(const Eigen::MatrixBase<Derived>& V, const Eigen::MatrixBase<VecType>& v) const;
 
             void  serialize(CutMeshProto::CutFace& face) const ;
             static CutFace<D> from_proto(const CutMeshProto::CutFace& face) ;
@@ -118,6 +121,21 @@ namespace mandoline {
 
     template <>
         mtao::ColVecs3i CutMeshFace<3>::triangulate() const;
+
+    template <>
+        template <typename Derived, typename VecType>
+            double CutFace<3>::solid_angle(const Eigen::MatrixBase<Derived>& V, const Eigen::MatrixBase<VecType>& v) const {
+
+                double sa = 0;
+                for(auto&& f: indices) {
+                    //just use triangle fan!
+                    for(int i = 1; i < f.size()-1; ++i)
+                    {
+                        sa += igl::solid_angle(V.col(0),V.col(i),V.col(i+1),v);
+                    }
+                }
+                return sa;
+            }
 
 }
 
