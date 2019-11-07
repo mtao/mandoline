@@ -127,11 +127,35 @@ namespace mandoline {
             double CutFace<3>::solid_angle(const Eigen::MatrixBase<Derived>& V, const Eigen::MatrixBase<VecType>& v) const {
 
                 double sa = 0;
-                for(auto&& f: indices) {
-                    //just use triangle fan!
-                    for(int i = 1; i < f.size()-1; ++i)
-                    {
-                        sa += igl::solid_angle(V.col(0),V.col(i),V.col(i+1),v);
+                if(triangulation) {
+                    auto& F = *triangulation;
+                    if(triangulated_vertices) {
+                        auto& V = *triangulated_vertices;
+                        for(int i = 0; i < F.cols(); ++i) {
+                            auto f = F.col(i);
+
+                            sa += igl::solid_angle(
+                                    V.col(f(0)),V.col(f(1)),V.col(f(2))
+                                    ,v);
+
+                        }
+                    } else {
+                        for(int i = 0; i < F.cols(); ++i) {
+                            auto f = F.col(i);
+
+                            sa += igl::solid_angle(
+                                    V.col(f(0)),V.col(f(1)),V.col(f(2))
+                                    ,v);
+
+                        }
+                    }
+                } else {
+                    for(auto&& f: indices) {
+                        //just use triangle fan!
+                        for(int i = 1; i < f.size()-1; ++i)
+                        {
+                            sa += igl::solid_angle(V.col(0),V.col(i),V.col(i+1),v);
+                        }
                     }
                 }
                 return sa;

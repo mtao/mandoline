@@ -1024,13 +1024,17 @@ namespace mandoline {
             auto V = vertices();
             for(auto&& ci: cell_indices) {
                 auto&& cell = cells().at(ci);
+                std::cout << cell.solid_angle(V,faces(),p)<< " ";
                 if(cell.contains(V,faces(),p)) {
+                    std::cout << std::endl;
                     return ci;
                 }
             }
+            std::cout << std::endl;
             //TODO
             //if I haven't returned yet then either this ccm is bad
             //or i'm too close to an edge. lets not assume that for now
+        mtao::logging::warn() << "There are CCM in this grid cell but I failed to find it!" << c[0] << " " << c[1] << " " << c[2] ;
         }
         return -1;
     }

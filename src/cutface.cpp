@@ -11,12 +11,16 @@ namespace mandoline {
         }
     template <>
         void CutFace<3>::cache_triangulation(const mtao::ColVecs3d& V, const mtao::ColVecs3i& F) {
-            triangulated_vertices = V;
+            if(V.size() > 0) {
+                triangulated_vertices = V;
+            }
             cache_triangulation(F);
         }
     template <>
         void CutFace<3>::cache_triangulation(const mtao::ColVecs3i& F) {
+            if(F.size() > 0) {
             triangulation = F; 
+            }
         }
     template <>
         mtao::ColVecs3i CutFace<3>::triangulate(const std::array<mtao::ColVecs2d,3>& V) const {
