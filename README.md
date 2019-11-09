@@ -39,7 +39,7 @@ In order to handle self-intersections Mandoline requires, on top of libigl,
 - [mpfr](https://www.mpfr.org).
 
 ```bash
-apt install git cmake libboost-thread-dev libmpfr-dev libmpfrc++-dev libcgal-dev libeigen3-dev protobuf-compiler mercurial debhelper libgl-dev libopenal-dev libglfw3-dev libsdl2-dev libbullet-dev libglm-dev
+apt install libboost-thread-dev libmpfr-dev libmpfrc++-dev libcgal-dev 
 libmpfr-dev libmpfrc++-dev libcgal-dev
 ```
 
