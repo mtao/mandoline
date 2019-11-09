@@ -8,7 +8,7 @@ Mandoline depends on a C++17 enabled compiler
 - [gcc](https://gcc.gnu.org) with version >= 8.2.0 should work.
 - [cmake](https://cmake.org) with version >= 3.10.1 .
 ```bash
-apt install git cmake build-essentials gcc
+apt install git cmake build-essential gcc
 ```
 
 as well as a few other annoying things:
