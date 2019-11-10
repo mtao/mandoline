@@ -786,9 +786,10 @@ namespace mandoline::construction {
 
                         for(auto&& [idx, isect]: mtao::iterator::enumerate(m_crossings)) {
                             auto bs = isect.vertex().clamped_indices.as_bitset1();
-                            per_dual_cell_vertex_looper([&](const CoordType& c, std::bitset<D>& b){
+                            CoordType c = isect.coord;
+                            per_dual_cell_vertex_looper([&,idx=idx](const CoordType& c, std::bitset<D>& b){
                                     if((b&bs) == b) {
-                                    crossings[isect.coord].insert(idx);
+                                    crossings[c].insert(idx);
                                     }
                                     },isect.coord);
 

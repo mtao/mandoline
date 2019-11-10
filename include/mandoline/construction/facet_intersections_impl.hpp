@@ -160,6 +160,7 @@ namespace mandoline::construction {
                                 auto& Ei = edges[i];
                                 auto& Eip = edges[i+1];
                                 for(auto&& [c,es]: Eip) {
+                                    auto& cc = c;
                                     for(int k = 0; k < D; ++k) {
                                         if(c[k]) {
                                             coord_mask<D> m = c;
@@ -167,7 +168,7 @@ namespace mandoline::construction {
                                             if(auto it = Ei.find(m); it != Ei.end()) {
                                                 auto& o = it->second;
                                                 std::transform(o.begin(),o.end(),std::inserter(es,es.end()),[&](EdgeIsect isect) -> EdgeIsect {
-                                                        c.clamp(isect);
+                                                        cc.clamp(isect);
                                                         return isect;
                                                         });
                                                 Ei.erase(it);

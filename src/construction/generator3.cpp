@@ -387,7 +387,7 @@ namespace mandoline::construction {
                 for(int i = 0; i < 3; ++i) {
                     if(cs[i]) {
                         if(axial_primal_faces[i].find(smallest_ordered_edge(v)) != axial_primal_faces[i].end()) {
-                            do_it == false;
+                            do_it = false;
                         }
                     }
                 }
