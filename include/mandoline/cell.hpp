@@ -93,13 +93,14 @@ namespace mandoline {
 
         template <typename Derived, typename VecType>
             bool CutCell::contains(const Eigen::MatrixBase<Derived>& V, const mtao::vector<CutFace<3>>& Fs, const Eigen::MatrixBase<VecType>& v) const {
-                return solid_angle(V,Fs,v) > 4 * M_PI;
+                //> 4 * M_PI, but with some slack
+                return solid_angle(V,Fs,v) > .5;
             }
         template <typename Derived, typename VecType>
             double CutCell::solid_angle(const Eigen::MatrixBase<Derived>& V, const mtao::vector<CutFace<3>>& Fs, const Eigen::MatrixBase<VecType>& v) const {
                 double sa = 0;
                 for(auto&& [fid,sgn]: *this) {
-                    sa += (sgn?1:-1) * Fs[fid].solid_angle(V,v);
+                    sa += (sgn?-1:1) * Fs[fid].solid_angle(V,v);
                 }
                 return sa;
             }

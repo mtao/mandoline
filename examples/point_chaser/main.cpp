@@ -12,6 +12,7 @@
 #include <Magnum/Shaders/MeshVisualizer.h>
 #include <mtao/opengl/drawables.h>
 #include <mtao/opengl/objects/mesh.h>
+#include <mtao/geometry/mesh/shapes/sphere.hpp>
 #include <Corrade/Utility/Arguments.h>
 #include <Magnum/GL/DefaultFramebuffer.h>
 #include <Magnum/GL/Renderer.h>
@@ -27,6 +28,7 @@ class MeshViewer: public mtao::opengl::Window3 {
         int current_ccm_cell = 0;
         int current_ccm_face = 0;
         std::optional<std::string> filename;
+        mtao::Vec3d p;
 
         mandoline::CutCellMesh<3> ccm;
 
@@ -83,6 +85,22 @@ class MeshViewer: public mtao::opengl::Window3 {
             if(point_phong) {cell_phong->gui("Point Phong");}
             auto&& io = ImGui::GetIO();
 
+            {
+
+                if(ImGui::Button("Random point"))
+                {
+                    auto bb = ccm.bbox();
+                    p = mtao::Vec3d::Random();
+                    p.array() += 1;
+                    p /= 2;
+                    p = bb.min() + bb.sizes().cwiseProduct(p);
+                    
+                    current_ccm_cell = ccm.get_cell_index(p);
+                    std::cout << p.transpose() << ")) " << current_ccm_cell << std::endl;
+
+                    update_cell();
+                }
+            }
 
             {
                 bool dirty = ImGui::SliderInt("Cell position",&current_ccm_cell,0,ccm.cell_size()-1);
