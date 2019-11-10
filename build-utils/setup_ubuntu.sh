@@ -23,6 +23,6 @@ hg clone http://bitbucket.org/eigen/eigen
 popd
 
 pushd "${BUILD_DIR}"
-cmake .. -DCMAKE_BUILD_TYPE=Release -DMTAO_CUSTOM_EIGEN_PATH=$(MANDOLINE_DIR}/extern/eigen
+cmake .. -DCMAKE_BUILD_TYPE=Release -DMTAO_CUSTOM_EIGEN_PATH=${MANDOLINE_DIR}/extern/eigen
 make -j$( nproc ) make_cutmesh_gui exploded_mesh 
 popd
