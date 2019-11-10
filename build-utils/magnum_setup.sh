@@ -1,6 +1,6 @@
 #!/bin/bash
 
-TMPDIR_DIR="$1"
+TMPDIR="$1"
 
 
 mkdir -p ${TMPDIR}/mosra; pushd ${TMPDIR}/mosra;
