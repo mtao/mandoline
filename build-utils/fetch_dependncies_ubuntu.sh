@@ -29,9 +29,9 @@ do pushd $repo;
     # ignoring the dsc errors taht happen from magnum
     dpkg-buildpackage || true
     popd
+    sudo dpkg -i *.deb
 done
 
-sudo dpkg -i *.deb
 
 popd #mosra
 
