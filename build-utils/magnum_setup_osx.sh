@@ -5,8 +5,10 @@ realpath() {
 }
 
 TMPDIR="$1"
-SCRIPT_DIR=$( realpath "$2" )
+IMGUI_DIR=$( realpath "$2" )
+SCRIPT_DIR=$( realpath "$3" )
 echo "SCRIPT DIR: ${SCRIPT_DIR}"
+echo "TMPDIR DIR: ${SCRIPT_DIR}"
 pushd $TMPDIR
 
 pushd magnum-integration;
