@@ -338,7 +338,7 @@ namespace mandoline::construction {
                 mtao::map<int,CutFace<D>> compute_faces_axis(int idx, int cidx)const;
 
                 void bake_faces() override;
-                void bake_cells();
+                void bake_cells() override;
                 bool adaptive = true;
                 std::optional<int> adaptive_level = 0;
                 std::optional<AdaptiveGrid> adaptive_grid;

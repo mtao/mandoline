@@ -136,7 +136,7 @@ namespace mandoline::construction {
                 };
 
                 int i = 0;
-#pragma omp parllel for
+#pragma omp parallel for
                 for (i=0; i<m_triangle_intersections.size(); i++) {
                     auto&& FI = m_triangle_intersections[i];
                     coord_mask<D> fi_mask = FI.mask();

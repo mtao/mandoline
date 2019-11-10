@@ -123,7 +123,8 @@ namespace mandoline::construction {
             VV[i] = grid_vertex(i);
         }
         std::string timer_str = "Flagging active cells 0";
-        for(auto&& [dim,ahdata,ae,g]: mtao::iterator::enumerate(axis_hem_data, AE,grids)) {
+        for(auto&& [dim,ahdata,ae,g_]: mtao::iterator::enumerate(axis_hem_data, AE,grids)) {
+            auto& g = g_;
             SubGridTransformer subtran(g,*this,dim,0);
             //for(int i = 0; i < 3; ++i) {
             //    auto&& ahdata = axis_hem_data[i];
@@ -161,7 +162,7 @@ namespace mandoline::construction {
 
                     std::set<Edge> bedges;
                     std::tie(ahd.hem,bedges) = g.compute_planar_hem(subVV,mtao::eigen::stl2eigen(ahd.edges), ahd.active_grid_cell_mask, 0);
-                    std::transform(bedges.begin(),bedges.end(), std::inserter(ahd.boundary_edges,ahd.boundary_edges.end()), [&](Edge e) -> Edge {
+                    std::transform(bedges.begin(),bedges.end(), std::inserter(ahd.boundary_edges,ahd.boundary_edges.end()), [&,dim=dim](Edge e) -> Edge {
                             for(auto&& idx: e) {
 
                             auto c = g.vertex_unindex(idx);

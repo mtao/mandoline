@@ -119,7 +119,7 @@ namespace mandoline {
     template <int D, typename Derived>
         auto CutCellMeshBase<D,Derived>::grid_edge(int idx) const -> Edge {
             int et = StaggeredGrid::edge_type(idx);
-            auto coord = StaggeredGrid::staggered_unindex<1>(idx,et);
+            auto coord = StaggeredGrid::template staggered_unindex<1>(idx,et);
             return grid_edge(coord,et);
         }
     template <int D, typename Derived>
