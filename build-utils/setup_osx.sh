@@ -13,10 +13,10 @@ BUILD_DIR="${MANDOLINE_DIR}/build"
 
 mkdir -p "${BUILD_DIR}"
 
-bash ${SCRIPT_DIR}/fetch_dependencies_ubuntu.sh
+bash ${SCRIPT_DIR}/fetch_dependencies_osx.sh
 
 bash ${SCRIPT_DIR}/magnum_setup.sh "${SCRIPT_DIR}" "${SCRIPT_DIR}"
-sudo bash ${SCRIPT_DIR}/magnum_setup_ubuntu.sh "${SCRIPT_DIR}" "${IMGUI_DIR}" "${SCRIPT_DIR}" 
+sudo bash ${SCRIPT_DIR}/magnum_setup_osx.sh "${SCRIPT_DIR}" "${IMGUI_DIR}" "${SCRIPT_DIR}" 
 
 pushd ${MANDOLINE_DIR}/extern
 hg clone http://bitbucket.org/eigen/eigen
