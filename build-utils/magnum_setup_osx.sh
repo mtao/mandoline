@@ -9,10 +9,8 @@ IMGUI_DIR=$( realpath "$2" )
 SCRIPT_DIR=$( realpath "$3" )
 echo "SCRIPT DIR: ${SCRIPT_DIR}"
 echo "TMPDIR DIR: ${SCRIPT_DIR}"
-pushd $TMPDIR
-
+pushd "$TMPDIR/mosra"
 pushd magnum-integration;
-echo
 
 sed "s|IMDIR|${IMGUI_DIR}|g" ${SCRIPT_DIR}/magnum_integration_homebrew.patch > magnum_integration_imgui.patch
 patch -b ./package/homebrew/magnum-integration magnum_integration_imgui.patch
