@@ -154,7 +154,7 @@ namespace mandoline {
                         //just use triangle fan!
                         for(int i = 1; i < f.size()-1; ++i)
                         {
-                            sa += igl::solid_angle(V.col(0),V.col(i),V.col(i+1),v);
+                            sa += igl::solid_angle(V.col(f[0]),V.col(f[i]),V.col(f[i+1]),v);
                         }
                     }
                 }
