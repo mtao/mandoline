@@ -1,4 +1,5 @@
 # Mandoline
+[![CircleCI](https://circleci.com/gh/mtao/mandoline/tree/master.svg?style=svg)](https://circleci.com/gh/mtao/mandoline/tree/master)
 
 A robust cut-cell mesh generator for arbitrary triangle-mesh inputs
 
