@@ -176,6 +176,11 @@ namespace mandoline {
                 }
 
             }
+            if(interior.size() == 0) {
+                for(int i = 0; i < newF.cols(); ++i) {
+                    interior.insert(i);
+                }
+            }
             mtao::ColVecs3i FF(3,interior.size());
             for(auto&& [i,b]: mtao::iterator::enumerate(interior)) {
                 FF.col(i) = newF.col(b);
