@@ -24,12 +24,16 @@ TARGET_LINK_LIBRARIES(cfg_to_cutmesh cutmesh_maker mandoline OpenMP::OpenMP_CXX 
 ENDIF(Corrade_FOUND)
 ENDIF(${USE_OPENGL})
 
-ADD_EXECUTABLE(remove_self_intersections remove_self_intersections.cpp
-    ../include/mandoline/construction/remesh_self_intersections.hpp
-    ../src/construction/remesh_self_intersections.cpp
-    )
-TARGET_LINK_LIBRARIES(remove_self_intersections gmp CGAL mpfr Boost::thread
-    mtao::common igl::core)
+IF(HANDLE_SELF_INTERSECTIONS)
+    ADD_EXECUTABLE(remove_self_intersections remove_self_intersections.cpp
+        ../include/mandoline/construction/remesh_self_intersections.hpp
+        ../src/construction/remesh_self_intersections.cpp
+        )
+    TARGET_LINK_LIBRARIES(remove_self_intersections gmp CGAL mpfr Boost::thread
+        mtao::common igl::core)
+    TARGET_COMPILE_DEFINITIONS(remove_self_intersections
+        PUBLIC -DMANDOLINE_HANDLE_SELF_INTERSECTIONS)
+ENDIF(HANDLE_SELF_INTERSECTIONS)
 
 
 ADD_EXECUTABLE(cutmesh_validation

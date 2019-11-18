@@ -6,6 +6,7 @@ namespace mandoline {
     template <int D, typename Derived>
             auto CutCellMeshBase<D,Derived>::get_world_vertex(const Vertex& p) const -> Vec {
                 auto&& g = vertex_grid();
+                return g.world_coord(p.p());
                 return g.origin() + (p.p().cwiseProduct(g.dx()));
 
             }
@@ -81,15 +82,31 @@ namespace mandoline {
     template <int D, typename Derived>
         auto CutCellMeshBase<D,Derived>::vertices() const -> ColVecs {
             return mtao::eigen::hstack(StaggeredGrid::vertices(),cut_vertices_colvecs());
+        }
+    template <int D, typename Derived>
+        auto CutCellMeshBase<D,Derived>::grid_space_vertices() const -> ColVecs {
+            return mtao::eigen::hstack(StaggeredGrid::local_vertices(),cut_vertices_colvecs());
+        }
+    template <int D, typename Derived>
+        auto CutCellMeshBase<D,Derived>::grid_space_cut_vertices_colvecs() const -> ColVecs {
+            ColVecs V(3,cut_vertex_size());
+            for(auto&& [i,v]: mtao::iterator::enumerate(cut_vertices())) {
+                V.col(i) = v.p();
+            }
+            return V;
 
         }
     template <int D, typename Derived>
         auto CutCellMeshBase<D,Derived>::cut_vertices_colvecs() const -> ColVecs {
+            auto&& g = vertex_grid();
+            return g.world_coord(grid_space_cut_vertices_colvecs());
+            /*
             ColVecs V(3,cut_vertex_size());
             for(auto&& [i,v]: mtao::iterator::enumerate(cut_vertices())) {
                 V.col(i) = get_world_vertex(v);
             }
             return V;
+            */
 
         }
     template <int D, typename Derived>

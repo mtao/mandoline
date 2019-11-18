@@ -18,6 +18,8 @@ namespace mandoline::tools {
             size_t size() const { return Vs.size(); }
             mtao::ColVecs3d V(size_t index, double scale=1.1) const;
             mtao::ColVecs3i F(size_t index) const;
+            //region_scale in [0,1] interpolates the center between 0 (center is the grid center) and 1 (the center is the centroid of the region)
+            void setCenters(double region_scale = 0.0);
 
             static bool valid_region(int region, const std::set<int>& used_regions = {}) {
                 return used_regions.empty() ||  used_regions.find(region) != used_regions.end();
@@ -27,6 +29,8 @@ namespace mandoline::tools {
             std::vector<mtao::ColVecs3i> Fs;
             std::vector<int> regions;
 
+            mtao::vector<mtao::Vec3d> RCs;
+            mtao::vector<mtao::Vec3d> GCs;
             mtao::vector<mtao::Vec3d> Cs;
             mtao::Vec3d O;
 

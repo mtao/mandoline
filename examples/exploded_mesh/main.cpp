@@ -1,5 +1,6 @@
 #include "mtao/geometry/mesh/boundary_facets.h"
 #include "mtao/geometry/mesh/read_obj.hpp"
+#include "mtao/geometry/mesh/write_obj.hpp"
 #include "mtao/geometry/bounding_box.hpp"
 #include <mtao/types.hpp>
 #include <mtao/cmdline_parser.hpp>
@@ -33,13 +34,18 @@ class MeshViewer: public mtao::opengl::Window3 {
 
         mandoline::CutCellMesh<3> ccm;
         mandoline::tools::MeshExploder exploder;
+        bool show_multi = false;
+        int index = 0;
 
 
         bool show_wireframes = false;
 
         float scale = 1.1;
+        float region_center_scale = 0.0;
         bool do_slice = false;
         mtao::ColVectors<double,4> colors;
+        mtao::ColVectors<double,3> cachedV;
+        mtao::ColVectors<int,3> cachedF;
 
         std::map<int,mandoline::tools::SliceGenerator> slicers;
         std::set<int> regions;
@@ -62,7 +68,12 @@ class MeshViewer: public mtao::opengl::Window3 {
                     if(do_slice) {
                         std::tie(VV,FF) = slicer.slice(origin.cast<double>(),direction.cast<double>());
                     }
+                    if(show_multi && index == i) {
+                    cachedV = VV;
+                    cachedF = FF;
+                    }
                     exploded_meshes[i].setTriangleBuffer(VV.cast<float>(), FF.cast<unsigned int>());
+
                 }
             }
             set_region_colors();
@@ -143,8 +154,6 @@ class MeshViewer: public mtao::opengl::Window3 {
 
 
         }
-        bool show_multi = false;
-        int index = 0;
         void gui() override {
 
             if(ImGui::Checkbox("Slice", &do_slice)) {
@@ -153,11 +162,6 @@ class MeshViewer: public mtao::opengl::Window3 {
             if(ImGui::Checkbox("Show Multi", &show_multi)) {
             }
             if(show_multi) {
-                for(auto&& [i,c,w]: mtao::iterator::enumerate(exploded_vcolors, exploded_wireframes)) {
-                    c->set_visibility(true);
-                    w->set_visibility(true);
-                }
-            } else {
                 ImGui::InputInt("Region id", &index);
                 for(auto&& [i,c,w]: mtao::iterator::enumerate(exploded_vcolors, exploded_wireframes)) {
                     if(i == index) {
@@ -167,6 +171,11 @@ class MeshViewer: public mtao::opengl::Window3 {
                         c->set_visibility(false);
                         w->set_visibility(false);
                     }
+                }
+            } else {
+                for(auto&& [i,c,w]: mtao::iterator::enumerate(exploded_vcolors, exploded_wireframes)) {
+                    c->set_visibility(true);
+                    w->set_visibility(true);
                 }
             }
 
@@ -222,6 +231,16 @@ class MeshViewer: public mtao::opengl::Window3 {
                 if(dirty) {
                     update_exploded();
                 }
+            }
+            if(ImGui::SliderFloat("region vs grid center", &region_center_scale, 0,1)) {
+                exploder.setCenters(region_center_scale);
+                update_exploded();
+            }
+
+            if(ImGui::Button("Save")) {
+                update_exploded();
+                std::cout << cachedV.cols() << " " << cachedF.cols() << std::endl;
+                mtao::geometry::mesh::write_objD(cachedV,cachedF,"output.obj");
             }
 
 
