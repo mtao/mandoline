@@ -2,6 +2,7 @@
 #include "mandoline/coord_masked_geometry.hpp"
 #include "mandoline/vertex.hpp"
 #include <mtao/geometry/grid/grid.h>
+#include <igl/solid_angle.h>
 
 namespace mandoline {
 
@@ -68,6 +69,8 @@ namespace mandoline {
             template <typename Derived>
                 double brep_volume(const Eigen::MatrixBase<Derived>& V, bool use_triangulation = false) const ;
 
+        template <typename Derived, typename VecType>
+            double solid_angle(const Eigen::MatrixBase<Derived>& V, const Eigen::MatrixBase<VecType>& v) const;
 
             void  serialize(CutMeshProto::CutFace& face) const ;
             static CutFace<D> from_proto(const CutMeshProto::CutFace& face) ;
@@ -76,10 +79,11 @@ namespace mandoline {
 
             mtao::ColVecs3i triangulate_fan() const;
             mtao::ColVecs3i triangulate_earclipping(const mtao::ColVecs2d& V) const;
-            std::tuple<mtao::ColVecs2d,mtao::ColVecs3i> triangulate_triangle(const mtao::ColVecs2d& V, bool add_vertices = false, double axis_val = 0.0) const;
+            std::tuple<mtao::ColVecs3d,mtao::ColVecs3i> triangulate_triangle(const mtao::ColVecs2d& V, bool add_vertices = false) const;
             mtao::ColVecs3i triangulate(const std::array<mtao::ColVecs2d,D>& V) const;
-            std::tuple<mtao::ColVecs3d,mtao::ColVecs3i> triangulate(const std::array<mtao::ColVecs2d,D>& V, bool add_vertices, double axis_val = 0) const;
-            void cache_triangulation(const std::array<mtao::ColVecs3d,D>& V) ;
+            std::tuple<mtao::ColVecs3d,mtao::ColVecs3i> triangulate(const std::array<mtao::ColVecs2d,D>& V, bool add_vertices) const;
+            std::tuple<mtao::ColVecs3d,mtao::ColVecs3i> triangulate(const mtao::ColVecs2d& V, bool add_vertices) const;
+            void cache_triangulation(const std::array<mtao::ColVecs2d,D>& V, bool add_verts = true) ;
             void cache_triangulation(const mtao::ColVecs3i& F) ;
             void cache_triangulation(const mtao::ColVecs3d& V, const mtao::ColVecs3i& F) ;
 
@@ -101,16 +105,61 @@ namespace mandoline {
     template <>
         mtao::ColVecs3i CutFace<3>::triangulate_earclipping(const mtao::ColVecs2d& V) const;
     template <>
-        std::tuple<mtao::ColVecs2d,mtao::ColVecs3i> CutFace<3>::triangulate_triangle(const mtao::ColVecs2d& V, bool add_vertices) const;
+        std::tuple<mtao::ColVecs3d,mtao::ColVecs3i> CutFace<3>::triangulate_triangle(const mtao::ColVecs2d& V, bool add_vertices) const;
     template <>
         mtao::ColVecs3i CutFace<3>::triangulate(const std::array<mtao::ColVecs2d,3>& V) const;
     template <>
-        void CutFace<3>::cache_triangulation(const std::array<mtao::ColVecs2d,3>& V) ;
+        std::tuple<mtao::ColVecs3d,mtao::ColVecs3i> CutFace<3>::triangulate(const std::array<mtao::ColVecs2d,3>& V, bool) const;
+    template <>
+        std::tuple<mtao::ColVecs3d,mtao::ColVecs3i> CutFace<3>::triangulate(const mtao::ColVecs2d& V, bool) const;
+    template <>
+        void CutFace<3>::cache_triangulation(const std::array<mtao::ColVecs2d,3>& V, bool add_verts) ;
     template <>
         void CutFace<3>::cache_triangulation(const mtao::ColVecs3i& F) ;
+    template <>
+        void CutFace<3>::cache_triangulation(const mtao::ColVecs3d& V, const mtao::ColVecs3i& F) ;
 
     template <>
         mtao::ColVecs3i CutMeshFace<3>::triangulate() const;
+
+    template <>
+        template <typename Derived, typename VecType>
+            double CutFace<3>::solid_angle(const Eigen::MatrixBase<Derived>& V, const Eigen::MatrixBase<VecType>& v) const {
+
+                double sa = 0;
+                if(triangulation) {
+                    auto& F = *triangulation;
+                    if(triangulated_vertices) {
+                        auto& V = *triangulated_vertices;
+                        for(int i = 0; i < F.cols(); ++i) {
+                            auto f = F.col(i);
+
+                            sa += igl::solid_angle(
+                                    V.col(f(0)),V.col(f(1)),V.col(f(2))
+                                    ,v);
+
+                        }
+                    } else {
+                        for(int i = 0; i < F.cols(); ++i) {
+                            auto f = F.col(i);
+
+                            sa += igl::solid_angle(
+                                    V.col(f(0)),V.col(f(1)),V.col(f(2))
+                                    ,v);
+
+                        }
+                    }
+                } else {
+                    for(auto&& f: indices) {
+                        //just use triangle fan!
+                        for(int i = 1; i < f.size()-1; ++i)
+                        {
+                            sa += igl::solid_angle(V.col(f[0]),V.col(f[i]),V.col(f[i+1]),v);
+                        }
+                    }
+                }
+                return sa;
+            }
 
 }
 

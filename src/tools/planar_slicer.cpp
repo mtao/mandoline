@@ -63,9 +63,9 @@ namespace mandoline::tools {
     }
     std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> SliceGenerator::slice(const Eigen::Affine3d& transform) {
 
-        mtao::ColVecs3d VV = transform * V;
+        mtao::ColVecs3d VT = transform * V;
 
-        update_embedding(VV);
+        update_embedding(VT);
         data.clear();
 
 
@@ -93,7 +93,9 @@ namespace mandoline::tools {
                 return plane_verts.find(idx) != plane_verts.end();
             }
         };
+        std::vector<mtao::ColVecs3d> VV;
         std::vector<mtao::ColVecs3i> FF;
+        auto VV2 = newV.topRows<2>();
         {
             std::set<std::array<int,2>> E;
             for(auto&& e: edges) {
@@ -106,19 +108,29 @@ namespace mandoline::tools {
 
 
 
-            auto VV = newV.topRows<2>();
-            auto ehem = mtao::geometry::mesh::EmbeddedHalfEdgeMesh<double,2>::from_edges(VV,mtao::eigen::stl2eigen(E));
+            auto ehem = mtao::geometry::mesh::EmbeddedHalfEdgeMesh<double,2>::from_edges(VV2,mtao::eigen::stl2eigen(E));
             ehem.make_topology();
             ehem.tie_nonsimple_cells();
             auto A = ehem.signed_areas();
             auto mesh_cells = ehem.cells_multi_component_map();
+            int offset = newV.cols();
             for(auto&& [cid,inds]: mesh_cells) {
                 if(A.find(cid) != A.end() && A.at(cid) > 0) {
                     CutFace<3> cf(coord_mask<3>(2,1),inds,{{2,1}});
                     if(inds.size() == 1) {
-                        FF.push_back(cf.triangulate_earclipping(VV));
+                        VV.emplace_back();
+                        FF.emplace_back(cf.triangulate_earclipping(VV2));
                     } else {
-                        FF.push_back(cf.triangulate_triangle(VV));
+                        auto [v,f] = cf.triangulate_triangle(VV2,false);
+                        if(v.cols() == 0) {
+                            VV.emplace_back();
+                            FF.emplace_back(f);
+                        } else {
+                            VV.emplace_back(v);
+                            FF.emplace_back(f.array() + offset);
+                            offset += v.cols();
+                        }
+
                     }
                 }
             }
@@ -137,7 +149,19 @@ namespace mandoline::tools {
                 }
             }
             if(above) {
-                FF.push_back(F.triangulate());
+                auto f = F.triangulate();
+                    FF.push_back(f);
+
+                    /*
+                if(v.cols() > 0) {
+                    VV.push_back(v);
+                    FF.push_back(f.array() + offset);
+                    offset += v.cols();
+                } else {
+                    VV.push_back({});
+                    FF.push_back(f.array());
+                }
+                */
             }
         }
         if(FF.size() == 0) {
@@ -145,13 +169,14 @@ namespace mandoline::tools {
         }
 
         auto T = transform.inverse();
+        auto newVT = mtao::eigen::hstack_iter(VV.begin(),VV.end());
+        auto newVV = mtao::eigen::hstack(newV,newVT);
         for(int i = 0; i < newV.cols(); ++i) {
-            newV.col(i) = T * newV.col(i);
-
+            newVV.col(i) = T * newVV.col(i);
         }
         auto newF = mtao::eigen::hstack_iter(FF.begin(),FF.end());
-        return  {newV,newF};
-        return  mtao::geometry::mesh::compactify(newV,newF);
+
+        return  mtao::geometry::mesh::compactify(newVV,newF);
 
     }
     Eigen::SparseMatrix<double> SliceGenerator::barycentric_map() const {

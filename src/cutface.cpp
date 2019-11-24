@@ -5,26 +5,29 @@
 
 namespace mandoline {
     template <>
-        void CutFace<3>::cache_triangulation(const std::array<mtao::ColVecs2d,3>& V) {
-            auto [VV,F] = triangulate(V,true);
+        void CutFace<3>::cache_triangulation(const std::array<mtao::ColVecs2d,3>& V, bool add_verts) {
+            auto [VV,F] = triangulate(V,add_verts);
             cache_triangulation(VV,F);
         }
     template <>
         void CutFace<3>::cache_triangulation(const mtao::ColVecs3d& V, const mtao::ColVecs3i& F) {
-            triangulated_vertices = V;
+            if(V.size() > 0) {
+                triangulated_vertices = V;
+            }
             cache_triangulation(F);
         }
     template <>
         void CutFace<3>::cache_triangulation(const mtao::ColVecs3i& F) {
+            if(F.size() > 0) {
             triangulation = F; 
+            }
         }
     template <>
         mtao::ColVecs3i CutFace<3>::triangulate(const std::array<mtao::ColVecs2d,3>& V) const {
-            return triangulate(V,false);
+            return std::get<1>(triangulate(V,false));
         }
     template <>
-        std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> CutFace<3>::triangulate(const std::array<mtao::ColVecs2d,3>& V, bool add_vertices, double axis_val) const {
-
+        std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> CutFace<3>::triangulate(const std::array<mtao::ColVecs2d,3>& V, bool add_vertices) const {
             if(is_mesh_face()) {
                 return {{},triangulate_fan()};
             } else {
@@ -32,7 +35,21 @@ namespace mandoline {
                 if(indices.size() == 1) {
                     return {{},triangulate_earclipping(V[id])};
                 } else {
-                    return triangulate_triangle(V[id],add_vertices,axis_val);
+                    return triangulate_triangle(V[id],add_vertices);
+                }
+            }
+
+        }
+    template <>
+        std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> CutFace<3>::triangulate(const mtao::ColVecs2d& V, bool add_vertices) const {
+
+            if(is_mesh_face()) {
+                return {{},triangulate_fan()};
+            } else {
+                if(indices.size() == 1) {
+                    return {{},triangulate_earclipping(V)};
+                } else {
+                    return triangulate_triangle(V,add_vertices);
                 }
             }
         }
@@ -53,7 +70,7 @@ namespace mandoline {
         }
 
     template <>
-        std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> CutFace<3>::triangulate_triangle(const mtao::ColVecs2d& V, bool do_add_vertices, double axis_val) const {
+        std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> CutFace<3>::triangulate_triangle(const mtao::ColVecs2d& V, bool do_add_vertices) const {
 
             //collect the number of edges
             int size = 0;
@@ -101,26 +118,37 @@ namespace mandoline {
             for(int i = 0; i < m.EA.cols(); ++i) {m.EA(i) = i;}
             for(int i = 0; i < m.VA.cols(); ++i) {m.VA(i) = i;}
             bool points_added = false;
-            mtao::ColVecs2d newV;
+            mtao::ColVecs2d newV2;
             mtao::ColVecs3i newF;
 
             if(do_add_vertices) {
+                //static const std::string str ="zPa.01qepcDQ";
                 static const std::string str ="pcePzQYY";
+                std::cerr << "I bet im about to crash" << std::endl;
                 auto nm = mtao::geometry::mesh::triangle::triangle_wrapper(m,std::string_view(str));
-                newV = nm.V;
+                std::cerr << "I lost a bet" << std::endl;
+                if(nm.V.cols() > newV.cols()) {
+                    newV2 = nm.V;
+                    points_added = true;
+                }
+
                 newF = nm.F;
             } else {
                 static const std::string str ="pcePzQYY";
-                auto nm = mtao::geometry::mesh::triangle::triangle_wrapper(m,std::string_view(str)).F;
+                auto nm = mtao::geometry::mesh::triangle::triangle_wrapper(m,std::string_view(str));
                 newF = nm.F;
+            }
+            for(int i = 0; i < newF.size(); ++i) {
+                auto&& f = newF(i);
+                if(unreindexer.find(f) == unreindexer.end()) {
+                    points_added = true;
+                    break;
+                }
+            }
+            if(!points_added) {
                 for(int i = 0; i < newF.size(); ++i) {
                     auto&& f = newF(i);
-                    if(unreindexer.find(f) == unreindexer.end()) {
-                        points_added = true;
-                        break;
-                    } else {
-                        f = unreindexer[f];
-                    }
+                    f = unreindexer[f];
                 }
             }
 
@@ -130,7 +158,11 @@ namespace mandoline {
                 mtao::Vec2d B = mtao::Vec2d::Zero();
                 auto f = newF.col(i);
                 for(int  j = 0; j < 3; ++j) {
-                    B+=V.col(f(j));
+                    if(points_added) {
+                        B+=newV2.col(f(j));
+                    } else {
+                        B+=V.col(f(j));
+                    }
                 }
                 B /= 3;
                 double wn = 0;
@@ -139,23 +171,36 @@ namespace mandoline {
                     wn += mywn;
                 }
                 //std::cout << wn << " ";
-                if(std::abs(wn) > 1) {
+                if(std::abs(wn) > .5) {
                     interior.insert(i);
                 }
 
             }
+            if(interior.size() == 0) {
+                for(int i = 0; i < newF.cols(); ++i) {
+                    interior.insert(i);
+                }
+            }
             mtao::ColVecs3i FF(3,interior.size());
             for(auto&& [i,b]: mtao::iterator::enumerate(interior)) {
-                FF.col(i) = F.col(b);
+                FF.col(i) = newF.col(b);
             }
             //std::cout << std::endl;
             if(points_added && !do_add_vertices) {
-                std::cout << "points were added!" << std::endl;
+                std::cout << "points were added when they shouldnt have!" << std::endl;
                 return {};
             }  else {
+                mtao::ColVecs3d newV3;
+                newV3.resize(3,newV2.cols());
+                int axis = as_axial_axis();
+                int coord = as_axial_coord();
+                newV3.row((axis+1)%3) = newV2.row(0);
+                newV3.row((axis+2)%3) = newV2.row(1);
+                newV3.row(axis).setConstant(double(coord));
 
+                std::cout << "Triangulation with vertex added: " << newV3.cols() << " / " << FF.maxCoeff() <<std::endl;
+                return {newV3,FF};
             }
-            return FF;
         }
 
 }

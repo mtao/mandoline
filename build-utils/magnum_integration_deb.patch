@@ -12,5 +12,5 @@
 +		-DWITH_DART=OFF \
 +		-DWITH_GLM=ON \
 +		-DWITH_IMGUI=ON \
-+		-DIMGUI_DIR=../../extern/core/extern/imgui
++		-DIMGUI_DIR=IMDIR
 +

@@ -109,13 +109,16 @@ namespace mandoline {
     auto CutCellMesh<3>::dual_vertices() const -> ColVecs {
         return cell_centroids();
     }
-    int CutCellMesh<3>::cell_index(const VecCRef& p) const {
+    int CutCellMesh<3>::local_grid_cell_index(const VecCRef& p) const {
         auto [c,q] = StaggeredGrid::coord(p);
         if(!StaggeredGrid::cell_grid().valid_index(c)) {
             return -1;
         }
 
         return -1;
+    }
+    int CutCellMesh<3>::world_grid_cell_index(const VecCRef& p) const {
+        return local_grid_cell_index(vertex_grid().local_coord(p));
     }
     std::vector<std::set<int>> CutCellMesh<3>::cell_faces() const {
         std::vector<std::set<int>> ret(m_cells.size());
@@ -201,6 +204,7 @@ namespace mandoline {
                 write_obj(prefix,{i},R[i], true, true,false);
                 write_obj(prefix,{i},R[i], true, false,true);
             } else {
+                std::cout << "Writing " << i << std::endl;
                 write_obj(prefix,{i},R[i], true, true,true);
             }
         }
@@ -225,6 +229,10 @@ namespace mandoline {
                 ss <<  "_" ;
                 for(auto&& index: indices) {
                     ss << index << "_" ;
+                    if(is_cut_cell(index)) {
+                        auto c = m_cells.at(index).grid_cell;
+                        ss << "(" << c[0] << "_" << c[1] << "_" << c[2] << ")";
+                    }
                 }
             } else {
                 ss <<  "_" ;
@@ -256,12 +264,16 @@ namespace mandoline {
             } else {
                 if(is_cut_cell(index)) {
 
-                    [V,F] = triangulated_cell(index,show_base,show_flaps);
+                    std::tie(V,F) = triangulated_cell(index,show_base,show_flaps);
                 } else {
                     if(show_base) {
                         F = m_adaptive_grid.triangulated(index);
                     }
                 }
+            }
+            if(is_cut_cell(index)) {
+                auto c = m_cells.at(index).grid_cell;
+                std::cout << "Cell: " << c[0] << " " << c[1] << " " << c[2] << std::endl;
             }
         }
 
@@ -275,12 +287,13 @@ namespace mandoline {
                 }
             }
             if(empty) {
-                //std::cout << "Empty cell!" << std::endl;
+                std::cout << "Empty cell!" << std::endl;
                 return;
             }
         }
 
         std::ofstream ofs(ss.str());
+        std::cout << "Output file: " << ss.str() << std::endl;
         //if(normalize_output) {
         //    auto bb = mtao::geometry::bounding_box(V);
 
@@ -361,6 +374,82 @@ namespace mandoline {
         return ret;
 
     }
+
+    std::vector<std::array<std::set<int>,2>> CutCellMesh<3>::face_regions() const {
+        auto R = regions();
+        std::vector<std::array<std::set<int>,2>> ret(R.size());
+        for(auto&& c: cells()) {
+            for(auto&& [fidx,s]: c) {
+                auto& f = faces()[fidx];
+                if(f.is_mesh_face()) {
+                    ret[R[c.index]][s?0:1].insert(fidx);
+                }
+            }
+        }
+        return ret;
+    }
+    std::vector<std::array<std::set<int>,2>> CutCellMesh<3>::orig_face_regions() const {
+        auto R = face_regions();
+        std::vector<std::array<std::set<int>,2>> ret(R.size());
+        for(auto&& [Fsp,OFsp]: mtao::iterator::zip(R,ret)) {
+            for(auto&& [Fs,OFs]: mtao::iterator::zip(Fsp,OFsp)) {
+                for(auto&& f: Fs) {
+                    assert(faces()[f].is_mesh_face());
+                    OFs.insert(faces()[f].as_face_id());
+                }
+            }
+        }
+        return ret;
+    }
+
+    mtao::ColVecs3d CutCellMesh<3>::region_centroids() const {
+        //delay dividing by 3 until the very end...
+        auto R = orig_face_regions();
+        mtao::ColVecs3d Cs(3,origF().cols());
+        mtao::VecXd vols(origF().cols());
+        for(int i = 0; i < Cs.cols(); ++i) {
+            auto f = origF().col(i);
+            auto c = Cs.col(i);
+            mtao::Mat3d A;
+            for(int j = 0; j < 3; ++j) {
+                A.col(j) = origV().col(f(j));
+            }
+            vols(i) = A.determinant();
+            c = vols(i)  * A.rowwise().sum();
+        }
+
+        mtao::ColVecs3d C(3,R.size());
+        mtao::VecXd V(R.size());
+        C.setZero();
+        V.setZero();
+        for(auto&& [rid, rp]: mtao::iterator::enumerate(R)) {
+            auto c = C.col(rid);
+            auto&& v = V(rid);
+            for(auto&& nf: rp[1]) {
+                c -= Cs.col(nf);
+                v -= vols(nf);
+            }
+            for(auto&& pf: rp[0]) {
+                c += Cs.col(pf);
+                v += vols(pf);
+            }
+        }
+
+
+        //TODO: handle outside boundaries of the grid using the adaptive grid!
+        auto bb = bbox();
+        double gv = bb.sizes().prod();
+        mtao::Vec3d gc = 1.5 * (bb.min()+bb.min()) * gv;
+        C.col(0) += gc;
+        V(0) += gv;
+
+        for(int i = 0; i < C.cols(); ++i) {
+            C.col(i) /= 3 * V(i);
+        }
+        return C;
+    }
+
+
     void CutCellMesh<3>::write_mesh_surface_obj(const std::string& prefix) const {
         std::stringstream ss;
         auto CS = StaggeredGrid::cell_shape();
@@ -528,7 +617,12 @@ namespace mandoline {
     std::tuple<mtao::ColVecs3d,mtao::ColVecs3i> CutCellMesh<3>::triangulate_face(int face_index) const {
         mtao::logging::warn() << "Inefficient use of triangulation!  try caching your triangulations";
         std::array<mtao::ColVecs2d,3> subVs = compute_subVs();
-        return m_faces[face_index].triangulate(subVs,true);
+        auto [V,F] = m_faces[face_index].triangulate(subVs,false);
+        if(V.cols() > 0) {
+            return {vertex_grid().world_coord(V),F};
+        } else {
+            return {{},F};
+        }
     }
 
     void CutCellMesh<3>::triangulate_faces() {
@@ -538,7 +632,7 @@ namespace mandoline {
 #pragma omp parallel for
         for(i = 0; i < m_faces.size(); ++i) {
             auto&& face = m_faces[i];
-            face.cache_triangulation(subVs);
+            face.cache_triangulation(subVs,true);
         }
     }
 
@@ -838,35 +932,55 @@ namespace mandoline {
 
     std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> CutCellMesh<3>::triangulated_cell(int idx, bool use_base, bool use_flap) const {
         if(is_cut_cell(idx)) {
+            std::vector<mtao::ColVecs3d> mVs;
             std::vector<mtao::ColVecs3i> mFs;
             for(auto&& [fidx,b]: m_cells[idx]) {
                 bool is_flap = m_folded_faces.find(fidx) != m_folded_faces.end();
                 bool is_base = !is_flap;
                 if((use_flap && is_flap) || (use_base && !is_flap)) {
                     auto& tri = m_faces[fidx].triangulation;
-                    mtao::ColVecs3i F = tri?(*tri).eval():triangulate_face(fidx);
+                    mtao::ColVecs3d V;
+                    mtao::ColVecs3i F;
+                    if(tri) {
+                        F = *tri;
+                        auto& vert = m_faces[fidx].triangulated_vertices;
+                        if(vert) {
+                            V = *vert;
+                        }
+                    } else {
+                        std::tie(V,F) = triangulate_face(fidx);
+                    }
                     if(!b) {
                         auto tmp = F.row(0).eval();
                         F.row(0) = F.row(1);
                         F.row(1) = tmp;
                     }
+                    mVs.emplace_back(std::move(V));
                     mFs.emplace_back(std::move(F));
                 }
             }
+            return {mtao::eigen::hstack_iter(mVs.begin(),mVs.end()),mtao::eigen::hstack_iter(mFs.begin(),mFs.end())};
+            /*
             if(mFs.size() > 0) {
-                return mtao::eigen::hstack_iter(mFs.begin(),mFs.end());
+                    return {mtao::eigen::hstack_iter(mVs.begin(),mVs.end()),mtao::eigen::hstack_iter(mFs.begin(),mFs.end())};
+                if(mVs.size() > 0) {
+                    return {mtao::eigen::hstack_iter(mVs.begin(),mVs.end()),mtao::eigen::hstack_iter(mFs.begin(),mFs.end())};
+                } else {
+                    return {{},mtao::eigen::hstack_iter(mFs.begin(),mFs.end())};
+                }
             }
+            */
         } else {
             if(use_base) {
-                return m_adaptive_grid.triangulated(idx);
+                return {{},m_adaptive_grid.triangulated(idx)};
             }
         }
         return {};
     }
 
     std::tuple<mtao::ColVecs3d,mtao::ColVecs3i> CutCellMesh<3>::compact_triangulated_cell(int cell_index) const {
-        auto F = triangulated_cell(cell_index,true,true);
-        return mtao::geometry::mesh::compactify(vertices(),F);
+        auto [V,F] = triangulated_cell(cell_index,true,true);
+        return mtao::geometry::mesh::compactify(mtao::eigen::hstack(vertices(),V),F);
     }
     std::tuple<mtao::ColVecs3d,mtao::ColVecs3i> CutCellMesh<3>::compact_triangulated_face(int face_index) const {
         auto& f = m_faces[face_index];
@@ -874,7 +988,54 @@ namespace mandoline {
             mtao::logging::warn() << "Triangulate mesh first!";
             return {};
         } else {
-            return mtao::geometry::mesh::compactify(vertices(),*f.triangulation);
+            if(f.triangulated_vertices) {
+                return mtao::geometry::mesh::compactify(mtao::eigen::hstack(vertices(),vertex_grid().world_coord(*f.triangulated_vertices)),*f.triangulation);
+            } else {
+                return mtao::geometry::mesh::compactify(vertices(),*f.triangulation);
+            }
         }
+    }
+
+    auto CutCellMesh<3>::cells_by_grid_cell() const -> std::map<coord_type,std::set<int>> {
+        std::map<coord_type,std::set<int>> R;
+        for(auto&& [i,c]: mtao::iterator::enumerate(cells())) {
+            R[c.grid_cell].insert(i);
+        }
+        return R;
+    }
+    std::set<int> CutCellMesh<3>::cells_in_grid_cell(const coord_type& c) const {
+        std::set<int> R;
+        for(auto&& [i,cell]: mtao::iterator::enumerate(cells())) {
+            if(cell.grid_cell == c) {
+            R.insert(i);
+            }
+        }
+        return R;
+    }
+    int CutCellMesh<3>::get_cell_index(const VecCRef& p) const {
+        auto v = local_coord(p);
+        //check if its  in an adaptive grid cell, tehn we can just use that cell
+        if(int ret = m_adaptive_grid.get_cell_index(v); ret != -1) {
+            return ret;
+        } else {
+
+            auto [c,q] = vertex_grid().coord(p);
+            auto cell_indices = cells_in_grid_cell(c);
+            auto V = vertices();
+            for(auto&& ci: cell_indices) {
+                auto&& cell = cells().at(ci);
+                std::cout << cell.solid_angle(V,faces(),p)<< " ";
+                if(cell.contains(V,faces(),p)) {
+                    std::cout << std::endl;
+                    return ci;
+                }
+            }
+            std::cout << std::endl;
+            //TODO
+            //if I haven't returned yet then either this ccm is bad
+            //or i'm too close to an edge. lets not assume that for now
+        mtao::logging::warn() << "There are CCM in this grid cell but I failed to find it!" << c[0] << " " << c[1] << " " << c[2] ;
+        }
+        return -1;
     }
 }

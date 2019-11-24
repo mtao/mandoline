@@ -6,8 +6,11 @@
 namespace mandoline::construction {
 
     CellCollapser::CellCollapser(const mtao::map<int,CutFace<3>>& faces) {
-        for(auto&& [cid,pr]: mtao::iterator::enumerate(faces)) {
-            auto&& [fid,cutface] = pr;
+        for(auto&& [cid_,pr]: mtao::iterator::enumerate(faces)) {
+            auto&& [fid_,cutface] = pr;
+            //Fix lang/clang issue with braced construction and structured bindings
+            int cid = cid_;
+            int fid = fid_;
             auto&& CS2 = cutface.indices;
             auto&& N = cutface.N;
             CutFace<3> CS = cutface;

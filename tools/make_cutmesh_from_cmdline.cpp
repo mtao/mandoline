@@ -74,7 +74,8 @@ std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> read_mesh_input(const mtao::Command
             std::tie(V,F) = construction::remesh_self_intersections(V,F);
         }
         auto&& dur = mtao::logging::profiler::durations();
-        for(auto&& [pr,times]: dur) {
+        for(auto&& [pr,times_]: dur) {
+            auto& times = times_;
             auto&& [name,level] = pr;
             static const std::string pname = "remesh_profiler"; if(name == pname) {
                 static const std::string rmt = "remesh_time";

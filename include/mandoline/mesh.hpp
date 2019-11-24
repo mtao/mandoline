@@ -64,8 +64,10 @@ namespace mandoline {
             using StaggeredGrid::dx;
 
             ColVecs vertices() const;
+            ColVecs grid_space_vertices() const;
             ColVecs dual_vertices() const;
             ColVecs cut_vertices_colvecs() const;
+            ColVecs grid_space_cut_vertices_colvecs() const;
 
             Vec vertex(int vertex) const;
             Vertex masked_vertex(int vertex) const;//in grid space, with masking

@@ -18,6 +18,7 @@ namespace mandoline {
             using GridData3i = mtao::geometry::grid::GridDataD<int,3>;
             using coord_type = std::array<int,3>;
             using Edge = std::array<int,2>;
+            using Vec = typename Base::Vec;
             struct Cell: public std::tuple<coord_type,int> {
                 using Parent = std::tuple<coord_type,int>;
                 using Parent::Parent;
@@ -31,6 +32,8 @@ namespace mandoline {
 
                 void  serialize(CutMeshProto::Cube&) const;
                 static Cell from_proto(const CutMeshProto::Cube&);
+                //local coordinates
+                bool is_inside(const Vec& p) const;
             };
             struct Square: public std::tuple<coord_type,int,int> {
                 using Parent = std::tuple<coord_type,int,int>;
@@ -99,6 +102,7 @@ namespace mandoline {
             std::vector<Eigen::Triplet<double>> grid_face_projection(int min_edge_index) const;
             std::vector<Eigen::Triplet<double>> grid_cell_projection() const;
 
+            int get_cell_index(const Vec& p) const;
 
             inline bool is_valid_edge(const Edge& e) const {
                 auto [a,b] = e;
