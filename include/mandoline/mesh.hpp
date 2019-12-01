@@ -63,6 +63,8 @@ namespace mandoline {
             }
             using StaggeredGrid::dx;
 
+            bool empty() const; // return if the grid is an empty grid!
+
             ColVecs vertices() const;
             ColVecs grid_space_vertices() const;
             ColVecs dual_vertices() const;

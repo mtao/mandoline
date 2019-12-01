@@ -14,6 +14,8 @@ TARGET_LINK_LIBRARIES(write_to_obj cutmesh_maker mandoline OpenMP::OpenMP_CXX mt
 ADD_EXECUTABLE(obj_to_cutmesh obj_to_cutmesh.cpp)
 TARGET_LINK_LIBRARIES(obj_to_cutmesh cutmesh_maker mandoline OpenMP::OpenMP_CXX mtao::common)
 
+ADD_EXECUTABLE(cutmesh_info cutmesh_info.cpp)
+TARGET_LINK_LIBRARIES(cutmesh_info mandoline_cutmesh3)
 
 IF(${USE_OPENGL})
 find_package(Corrade COMPONENTS Utility)

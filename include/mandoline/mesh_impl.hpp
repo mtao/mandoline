@@ -12,6 +12,13 @@ namespace mandoline {
             }
 
     template <int D, typename Derived>
+            bool CutCellMeshBase<D,Derived>::empty() const { 
+                auto&& g = this->StaggeredGrid::cell_shape();
+                return std::all_of(g.begin(),g.end(),
+                        [](size_t v) -> bool {return v == 0; });
+            }
+
+    template <int D, typename Derived>
         int CutCellMeshBase<D,Derived>::cut_vertex_size() const {
             return m_cut_vertices.size();
         }

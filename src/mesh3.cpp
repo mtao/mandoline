@@ -346,7 +346,6 @@ namespace mandoline {
         std::vector<int> ret(cell_size(),1);
 
         if(boundary_sign_regions) {
-            std::cout << "Using boundary sign regions!" << std::endl;
             for(auto&& [idx,c]: mtao::iterator::enumerate(m_cells)) {
                 Edge counts{{0,0}};// 1 -1 
                 for(auto&& [f,b]: c) {
@@ -363,7 +362,6 @@ namespace mandoline {
                 }
             }
         } else {
-            std::cout << "Baking regions!" << std::endl;
             for(int i = 0; i < m_cells.size(); ++i) {
                 ret[i] = m_cells[i].region;
             }
@@ -537,9 +535,15 @@ namespace mandoline {
     }
     CutCellMesh<3> CutCellMesh<3>::from_proto(const std::string& filename) {
         std::ifstream ifs(filename,std::ios::binary);
-        CutMeshProto cmp;
-        cmp.ParseFromIstream(&ifs);
-        return from_proto(cmp);
+        if(ifs.good())
+        {
+            CutMeshProto cmp;
+            if(cmp.ParseFromIstream(&ifs))
+            {
+                return from_proto(cmp);
+            }
+        }
+        return {};
     }
     CutCellMesh<3> CutCellMesh<3>::from_proto(const CutMeshProto& cmp) {
 
