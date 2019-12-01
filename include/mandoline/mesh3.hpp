@@ -58,8 +58,9 @@ namespace mandoline {
                 GridDatab active_cell_mask() const;
                 std::set<coord_type> active_cells() const;
                 size_t active_cell_count() const;
-                //grid cell 
+                //grid cell index from a local coordinate (grid is on integer coordinates)
                 int local_grid_cell_index(const VecCRef&) const;
+                //grid cell index from a world space coordinate
                 int world_grid_cell_index(const VecCRef&) const;
 
                 //Differential geometry info
