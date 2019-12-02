@@ -154,7 +154,7 @@ namespace mandoline {
         }
         //std::cout << "Output filename: " << ss.str() << std::endl;
         std::ofstream ofs(ss.str(), std::ios::binary);
-        CutMeshProto cmp;
+        protobuf::CutMeshProto cmp;
         serialize(cmp);
         cmp.SerializeToOstream(&ofs);
 
@@ -487,7 +487,7 @@ namespace mandoline {
     }
 
 
-    void  CutCellMesh<3>::serialize(CutMeshProto& cmp) const {
+    void  CutCellMesh<3>::serialize(protobuf::CutMeshProto& cmp) const {
         for(int i = 0; i < cut_vertex_size(); ++i) {
             protobuf::serialize(cut_vertex(i),*cmp.add_vertices());
         }
@@ -537,7 +537,7 @@ namespace mandoline {
         std::ifstream ifs(filename,std::ios::binary);
         if(ifs.good())
         {
-            CutMeshProto cmp;
+            protobuf::CutMeshProto cmp;
             if(cmp.ParseFromIstream(&ifs))
             {
                 return from_proto(cmp);
@@ -545,7 +545,7 @@ namespace mandoline {
         }
         return {};
     }
-    CutCellMesh<3> CutCellMesh<3>::from_proto(const CutMeshProto& cmp) {
+    CutCellMesh<3> CutCellMesh<3>::from_proto(const protobuf::CutMeshProto& cmp) {
 
         mtao::Vec3d o,dx;
         std::array<int,3> s;

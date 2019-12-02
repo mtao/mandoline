@@ -83,7 +83,7 @@ namespace mandoline {
         }
 
     template <int D>
-        void   CutFace<D>::serialize(CutMeshProto::CutFace& face) const {
+        void   CutFace<D>::serialize(protobuf::CutFace& face) const {
             protobuf::serialize(N,*face.mutable_normal());
             if(is_mesh_face()) {
                 face.set_face_id(std::get<int>(id));
@@ -114,10 +114,10 @@ namespace mandoline {
         }
 
     template <int D>
-        CutFace<D>  CutFace<D>::from_proto(const CutMeshProto::CutFace& face) {
+        CutFace<D>  CutFace<D>::from_proto(const protobuf::CutFace& face) {
             CutFace<D> ret;
             ret.N = protobuf::deserialize(face.normal());
-            if(face.id_case() == CutMeshProto::CutFace::IdCase::kFaceId) {
+            if(face.id_case() == protobuf::CutFace::IdCase::kFaceId) {
                 ret.id = face.face_id();
             } else {
                 auto&& pid = face.plane_id();

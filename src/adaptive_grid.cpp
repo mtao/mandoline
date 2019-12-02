@@ -43,12 +43,12 @@ namespace mandoline {
 
         }
 
-    void   AdaptiveGrid::Cell::serialize(CutMeshProto::Cube& c) const {
+    void   AdaptiveGrid::Cell::serialize(protobuf::Cube& c) const {
         protobuf::serialize(corner(),*c.mutable_corner());
         c.set_radius(width());
 
     }
-    AdaptiveGrid::Cell AdaptiveGrid::Cell::from_proto(const CutMeshProto::Cube& c) {
+    AdaptiveGrid::Cell AdaptiveGrid::Cell::from_proto(const protobuf::Cube& c) {
         Cell ret;
         protobuf::deserialize(c.corner(),std::get<0>(ret));
         std::get<1>(ret) = c.radius();
@@ -60,13 +60,13 @@ namespace mandoline {
         return (c.array().cast<double>() <= p.array()).all() 
             && (p.array() < (c.array()+width()).cast<double>()).all();
     }
-    void   AdaptiveGrid::Square::serialize(CutMeshProto::Square& c) const {
+    void   AdaptiveGrid::Square::serialize(protobuf::Square& c) const {
         protobuf::serialize(corner(),*c.mutable_corner());
         c.set_radius(width());
         c.set_axis(axis());
 
     }
-    AdaptiveGrid::Square AdaptiveGrid::Square::from_proto(const CutMeshProto::Square& c) {
+    AdaptiveGrid::Square AdaptiveGrid::Square::from_proto(const protobuf::Square& c) {
         Square ret;
         protobuf::deserialize(c.corner(),std::get<0>(ret));
         std::get<1>(ret) = c.radius();
@@ -74,12 +74,12 @@ namespace mandoline {
         return ret;
 
     }
-    void   AdaptiveGrid::Face::serialize(CutMeshProto::Face& c) const {
+    void   AdaptiveGrid::Face::serialize(protobuf::Face& c) const {
         Square::serialize(*c.mutable_geometry());
         protobuf::serialize(dual_edge, *c.mutable_dual_edge());
 
     }
-    AdaptiveGrid::Face AdaptiveGrid::Face::from_proto(const CutMeshProto::Face& c) {
+    AdaptiveGrid::Face AdaptiveGrid::Face::from_proto(const protobuf::Face& c) {
         Face ret;
         ret.Square::operator=(Square::from_proto(c.geometry()));
         protobuf::deserialize(c.dual_edge(), ret.dual_edge);

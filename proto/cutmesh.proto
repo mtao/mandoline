@@ -1,84 +1,88 @@
 syntax = "proto3";
 
+package mandoline.protobuf;
+
+message Vec3d {
+    double x = 1;
+    double y = 2;
+    double z = 3;
+}
+
+message Vertex {
+    int64 i = 1;
+    int64 j = 2;
+    int64 k = 3;
+    double u = 4;
+    double v = 5;
+    double w = 6;
+    bool ci = 7;
+    bool cj = 8;
+    bool ck = 9;
+}
+
+message Vec2i {
+    int64 x = 1;
+    int64 y = 2;
+}
+message Vec3i {
+    int64 x = 1;
+    int64 y = 2;
+    int64 z = 3;
+}
+
+message AxialPlane {
+    int64 axis = 1;
+    int64 value = 2;
+}
+
+message SimplePolygon {
+    repeated int64 indices = 1;
+}
+
+message FaceBoundary {
+    int64 index = 1;
+    bool sign = 2;
+}
+
+message CutFace {
+    repeated SimplePolygon curves = 1;
+    Vec3d normal = 2;
+    oneof id {
+        int64 face_id = 3;
+        AxialPlane plane_id = 4;
+    }
+    repeated Vec3i triangulation = 5;
+    FaceBoundary face_boundary = 6;
+}
+message Cell {
+    int64 id = 1;
+    int64 region = 2;
+    map<int64,bool> entries = 3;
+    Vec3i grid_cell = 4;
+
+}
+message BarycentricTriangleFace {
+    int64 parent_id = 1;
+    repeated Vec3d barycentric_coordinates = 2;
+}
+
+message Square {
+    Vec3i corner = 1;
+    int64 radius = 2;
+    int64 axis = 3;
+}
+message Face {
+    Square geometry = 1;
+    Vec2i dual_edge = 2;
+}
+
+
+message Cube {
+    Vec3i corner = 1;
+    int64 radius = 2;
+}
+
 message CutMeshProto {
-    message Vec3d {
-        double x = 1;
-        double y = 2;
-        double z = 3;
-    }
-
-    message Vertex {
-        int64 i = 1;
-        int64 j = 2;
-        int64 k = 3;
-        double u = 4;
-        double v = 5;
-        double w = 6;
-        bool ci = 7;
-        bool cj = 8;
-        bool ck = 9;
-    }
-
-    message Vec2i {
-        int64 x = 1;
-        int64 y = 2;
-    }
-    message Vec3i {
-        int64 x = 1;
-        int64 y = 2;
-        int64 z = 3;
-    }
-    message AxialPlane {
-        int64 axis = 1;
-        int64 value = 2;
-    }
-
-    message SimplePolygon {
-        repeated int64 indices = 1;
-    }
-
-    message FaceBoundary {
-        int64 index = 1;
-        bool sign = 2;
-    }
-
-    message CutFace {
-        repeated SimplePolygon curves = 1;
-        Vec3d normal = 2;
-         oneof id {
-            int64 face_id = 3;
-            AxialPlane plane_id = 4;
-        }
-        repeated Vec3i triangulation = 5;
-        FaceBoundary face_boundary = 6;
-    }
-    message Cell {
-        int64 id = 1;
-        int64 region = 2;
-        map<int64,bool> entries = 3;
-        Vec3i grid_cell = 4;
-
-    }
-    message BarycentricTriangleFace {
-        int64 parent_id = 1;
-        repeated Vec3d barycentric_coordinates = 2;
-    }
-
-    message Square {
-        Vec3i corner = 1;
-        int64 radius = 2;
-        int64 axis = 3;
-    }
-    message Face {
-        Square geometry = 1;
-        Vec2i dual_edge = 2;
-    }
-
-
-    message Cube {
-        Vec3i corner = 1;
-        int64 radius = 2;
-    }
 
 
     Vec3d origin = 1;

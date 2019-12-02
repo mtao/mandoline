@@ -72,8 +72,8 @@ namespace mandoline {
         template <typename Derived, typename VecType>
             double solid_angle(const Eigen::MatrixBase<Derived>& V, const Eigen::MatrixBase<VecType>& v) const;
 
-            void  serialize(CutMeshProto::CutFace& face) const ;
-            static CutFace<D> from_proto(const CutMeshProto::CutFace& face) ;
+            void  serialize(protobuf::CutFace& face) const ;
+            static CutFace<D> from_proto(const protobuf::CutFace& face) ;
             template <typename Derived>
             void update_mask(const std::vector<Vertex<D>>& V, const mtao::geometry::grid::indexing::IndexerBase<3,Derived>& indexer);
 

@@ -30,8 +30,8 @@ namespace mandoline {
 
                 mtao::Vec3d center() const { return mtao::eigen::stl2eigen(corner()).array().cast<double>() + width()/2.0; }
 
-                void  serialize(CutMeshProto::Cube&) const;
-                static Cell from_proto(const CutMeshProto::Cube&);
+                void  serialize(protobuf::Cube&) const;
+                static Cell from_proto(const protobuf::Cube&);
                 //local coordinates
                 bool is_inside(const Vec& p) const;
             };
@@ -43,8 +43,8 @@ namespace mandoline {
                 Square(const Square&) = default;
                 Square& operator=(const Square&) = default;
                 using Parent::operator=;
-                void  serialize(CutMeshProto::Square&) const;
-                static Square from_proto(const CutMeshProto::Square&);
+                void  serialize(protobuf::Square&) const;
+                static Square from_proto(const protobuf::Square&);
                 const coord_type& corner() const { return std::get<0>(*this); }
                 coord_type vertex(int a, int b) const;
                 int width() const { return std::get<2>(*this); }
@@ -59,8 +59,8 @@ namespace mandoline {
                 Face(const Face&) = default;
                 Face& operator=(const Face&) = default;
                 const Square& geometry() const { return *this; }
-                void  serialize(CutMeshProto::Face&) const;
-                static Face from_proto(const CutMeshProto::Face&);
+                void  serialize(protobuf::Face&) const;
+                static Face from_proto(const protobuf::Face&);
                 Edge dual_edge = {{-1,-1}};
                 bool has_negative() const { return dual_edge[0] != -1; }
                 bool has_positive() const { return dual_edge[1] != -1; }

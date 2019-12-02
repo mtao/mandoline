@@ -94,8 +94,8 @@ namespace mandoline {
 
                 //serialization
                 void write(const std::string& filename) const;
-                void  serialize(CutMeshProto&) const;
-                static CutCellMesh<3> from_proto(const CutMeshProto&);
+                void  serialize(protobuf::CutMeshProto&) const;
+                static CutCellMesh<3> from_proto(const protobuf::CutMeshProto&);
                 static CutCellMesh<3> from_proto(const std::string& filename);
 
 
