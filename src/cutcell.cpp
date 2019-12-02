@@ -1,4 +1,4 @@
-#include "mandoline/cell.hpp"
+#include "mandoline/cutcell.hpp"
 #include <mtao/logging/logger.hpp>
 #include <mtao/eigen/stack.h>
 

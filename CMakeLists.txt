@@ -87,7 +87,7 @@ SET(CUTMESH2_SRCS
 SET(CUTMESH3_SRCS
     ${PROTO_SRCS} 
     src/mesh3.cpp
-    src/cell.cpp
+    src/cutcell.cpp
     src/proto_util.cpp
     src/barycentric_triangle_face.cpp
     src/cutface.cpp
@@ -123,7 +123,7 @@ SET(CUTMESH3_HDRS
     include/mandoline/cutface_impl.hpp
     include/mandoline/barycentric_triangle_face.hpp
     include/mandoline/mesh3.hpp
-    include/mandoline/cell.hpp
+    include/mandoline/cutcell.hpp
     )
 
 SET(CONSTRUCTION_SRCS

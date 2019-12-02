@@ -1,4 +1,5 @@
 #pragma once
+#include "mandoline/cutcell.hpp"
 #include "mesh.hpp"
 namespace mandoline {
     namespace construction {

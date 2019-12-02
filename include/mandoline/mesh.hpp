@@ -8,7 +8,6 @@
 #include <array>
 #include <map>
 #include <vector>
-#include "mandoline/cell.hpp"
 #include "cutmesh.pb.h"
 #include "mandoline/adaptive_grid.hpp"
 #include <set>
