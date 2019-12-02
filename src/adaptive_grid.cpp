@@ -905,4 +905,10 @@ namespace mandoline {
         }
         return -1;
     }
+    int AdaptiveGrid::num_edges() const {
+        return m_edges.size();
+    }
+    mtao::ColVecs2i AdaptiveGrid::edges() const {
+        return mtao::eigen::stl2eigen(m_edges); 
+    }
 }

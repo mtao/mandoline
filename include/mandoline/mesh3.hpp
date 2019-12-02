@@ -29,6 +29,8 @@ namespace mandoline {
 
                 static CutCellMesh<3> from_file(const std::string& filename);
 
+                //Inherited edges() function doesn't take advantage of the staggered grid
+                Edges edges() const;
                 const auto& faces() const { return m_faces; }
                 const auto& cells() const { return m_cells; }
                 const AdaptiveGrid& adaptive_grid() const { return m_adaptive_grid; }
@@ -65,7 +67,10 @@ namespace mandoline {
                 int world_grid_cell_index(const VecCRef&) const;
 
                 //Differential geometry info
+                //cell -> face boundary operator
                 Eigen::SparseMatrix<double> boundary() const;
+                //face -> edge boundary operator
+                Eigen::SparseMatrix<double> face_boundary() const;
                 VecX cell_volumes() const;
                 mtao::ColVecs3d face_centroids() const;
                 mtao::ColVecs3d cell_centroids() const;

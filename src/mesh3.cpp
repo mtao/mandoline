@@ -910,6 +910,38 @@ namespace mandoline {
         B.setFromTriplets(trips.begin(),trips.end());
         return B;
     }
+    Eigen::SparseMatrix<double> CutCellMesh<3>::face_boundary() const {
+        auto trips = m_adaptive_grid.face_boundary_triplets(m_edges.size());
+        Eigen::SparseMatrix<double> B(edge_size(),face_size());
+
+        auto g = adaptive_grid().grid();
+
+        for(auto&& c: cells()) {
+            int region = c.region;
+            for(auto&& [fidx,s]: c) {
+                auto& f = faces()[fidx];
+                if(f.is_axial_face()) {
+                    int a = cell_shape()[f.as_axial_axis()];
+                    int v = f.as_axial_coord();
+                    if(v > 0 && v < a) {
+                        trips.emplace_back(fidx,c.index, s?1:-1);
+                    }
+                } else {
+                    trips.emplace_back(fidx,c.index, s?1:-1);
+                }
+            }
+        }
+        for(auto&& [fidx,f]: mtao::iterator::enumerate(faces())) {
+            if(f.external_boundary) {
+                auto [c,s] = *f.external_boundary;
+                trips.emplace_back(fidx,g.get(c), s?-1:1);
+            }
+        }
+
+
+        B.setFromTriplets(trips.begin(),trips.end());
+        return B;
+    }
     auto CutCellMesh<3>::active_cell_mask() const -> GridDatab {
         auto mask = GridDatab::Constant(true,StaggeredGrid::cell_shape());
         auto C = cell_centroids();
