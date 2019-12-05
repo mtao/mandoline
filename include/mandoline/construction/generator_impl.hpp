@@ -36,12 +36,19 @@ namespace mandoline::construction {
                 assert(V.size() == m_data.m_V.size());
                 double mythresh = -1;
                 if(threshold) { mythresh =  *threshold; }
-                if(mythresh < 0) { mythresh =  threshold_epsilon; }
+                if(mythresh < 0) { 
+                    int v = *std::max_element(shape().begin(),shape().end());
+                    v = 2 * std::max<int>(1,v);
+                    mythresh =  v * threshold_epsilon; 
+                }
                 std::transform(V.begin(),V.end(),m_data.m_V.begin(), [&](const Vec& v) {
                         auto gv = get_vertex(v);
 
                         if(threshold) {
+                        std::cout << "Thresholding!" << std::endl;
+                        std::cout << std::string(gv) << " => ";
                         gv.apply_thresholding(mythresh);
+                        std::cout << std::string(gv )<< std::endl;
                         }
 
                         return gv;

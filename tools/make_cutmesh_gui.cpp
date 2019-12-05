@@ -215,6 +215,15 @@ class MeshViewer: public mtao::opengl::Window3 {
             if(ImGui::Button("Make CCM")) {
                 constructor->bake();
                 ccm = constructor->emit();
+                
+                {
+                    auto cv = ccm->cut_vertices();
+                    for(auto&& [i,v]: mtao::iterator::enumerate(cv))
+                    {
+                        std::cout << i << ": " << std::string(v) << " => " << ccm->get_world_vertex(v).transpose() << std::endl;
+                    }
+
+                }
                 std::vector<mtao::ColVecs3i> Fs;
                 mtao::ColVecs3f V = ccm->vertices().cast<float>();
                 for(auto&& f: ccm->faces()) {

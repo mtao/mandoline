@@ -24,7 +24,7 @@ namespace mandoline::construction {
     template <int D> 
         class CutCellEdgeGenerator: public mtao::geometry::grid::StaggeredGrid<double,D> {
             public:
-                constexpr static double threshold_epsilon = 1e-8;
+                constexpr static double threshold_epsilon = std::sqrt(std::numeric_limits<double>::epsilon());
                 EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
                 using Vec = mtao::Vector<double,D>;
                 using Veci = mtao::Vector<int,D>;
@@ -244,8 +244,8 @@ namespace mandoline::construction {
                 const mtao::map<Edge, int>& origEMap() const { return m_origEMap; }
                 auto&& grid_vertices() const { return data().V(); }
                 const CutData<D>& data() const { return m_data; }
-                void update_vertices(const ColVecs& V, const std::optional<double>& threshold = {});
-                void update_vertices(const VecVector& V, const std::optional<double>& threshold = {});
+                void update_vertices(const ColVecs& V, const std::optional<double>& threshold = -1);
+                void update_vertices(const VecVector& V, const std::optional<double>& threshold = -1);
                 void update_grid(const StaggeredGrid& indexer);
                 std::set<Edge> edges() const;
                 std::set<Edge> edge_slice(int dim, int slice) const;

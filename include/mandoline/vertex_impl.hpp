@@ -208,7 +208,7 @@ namespace mandoline {
                         q = 0;
                     }
                 } else {
-                    if(q > 1-thresh) {
+                    if(q - 1 > -thresh * (std::abs(q+1))) {
                         clamped_indices[i] = true;
                         q = 0;
                         c++;

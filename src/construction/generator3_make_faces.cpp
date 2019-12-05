@@ -226,6 +226,28 @@ namespace mandoline::construction {
             }
             for(auto&& [fidx,f]: m_faces) {
                 auto&& I = f.indices;
+                //if(f.is_mesh_face())
+                //{
+                //std::cout << "Mesh Face: " << fidx << std::endl;
+                //} else {
+                //std::cout << "Grid Face: " << fidx << std::endl;
+                //}
+                //for(auto&& l: I)
+                //{
+                //    for(auto&& v: l)
+                //    {
+                //        std::cout << v << ":";
+                //    }
+                //    std::cout << std::endl;
+                //    if(l.size() > 4)
+                //    {
+                //        for(auto&& v: l)
+                //        {
+                //            std::cout << grid_info(v) << std::endl;
+                //        }
+                //    }
+                //}
+                //std::cout << std::endl;
                 if(I.size() == 1 && f.mask().count() == 1) {
                     auto&& loop = *I.begin();
                     if(loop.size() == 4) {
@@ -283,8 +305,10 @@ namespace mandoline::construction {
                 }
             }
             void CutCellGenerator<3>::compute_faces_axis(int idx) {
+                //axial half edge mesh data
                 auto& ahdata = axis_hem_data[idx];
 
+                //active axial indices
                 std::vector<int> aiinds(ahdata.size());
                 std::transform(ahdata.begin(),ahdata.end(),aiinds.begin(),[](auto&& pr) {
                         return pr.first;
@@ -367,6 +391,25 @@ namespace mandoline::construction {
                         F.coord_mask<D>::operator=(face_mask(F.indices));
                         faces[i] = std::move(F);
                     }
+                }
+
+                bool bad = false;
+                for(auto&& [fidx,f]: faces) 
+                {
+                    if(f.indices.begin()->size() > 4)
+                    {
+                        bad = true;
+                    }
+                }
+                if(bad)
+                {
+                    std::cout << "Edges on " << idx << "," << cidx << std::endl;
+                    std::cout << mtao::eigen::stl2eigen(ahd.edges) << std::endl;
+                    for(auto&& [a,b]: ahd.edges)
+                    {
+                        std::cout << grid_info(a) << " => " << grid_info(b) << std::endl;
+                    }
+                    std::cout << std::endl;
                 }
                 return faces;
             }

@@ -12,6 +12,8 @@ namespace mandoline::construction {
             auto& gvstart = *vptr_edge[0];
             auto& gvend = *vptr_edge[1];
 
+            std::cout << "Edge intersections " ;
+            std::cout << std::string(gvstart) << " => " << std::string(gvend) << std::endl;
 
             mtao::eigen::stl2eigen(tangent) = gvend.p() - gvstart.p();
 
@@ -118,13 +120,13 @@ namespace mandoline::construction {
                     //sect.apply_thresholding();
                     {
                         auto M = mask();
-                    for(int i = 0; i < D; ++i) {
-                        if(!M[i]) {
-                            if(gvstart.coord[i] == gvend.coord[i]) {
-                                np.clamped_indices[i] = {};
+                        for(int i = 0; i < D; ++i) {
+                            if(!M[i]) {
+                                if(gvstart.coord[i] == gvend.coord[i]) {
+                                    np.clamped_indices[i] = {};
+                                }
                             }
                         }
-                    }
                     }
                     auto mask = sect.mask();
                     if(grid) {
@@ -190,18 +192,54 @@ namespace mandoline::construction {
                                     eptr = &e;
                                 }
                                 lc /= es.size();
-                                auto&& v = mm[lc] = *eptr;
-                                v.edge_coord = lc;
+                                auto& v = mm[lc];
+                                if(v.edge_index = -1)
+                                {
+                                    v = *eptr;
+                                    v.edge_coord = lc;
+                                } else {
+                                    v.clamped_indices |= eptr->clamped_indices ;
+                                    v.repair();
+                                }
                             }
                         }
 
                         intersections.clear();
+                        double mythresh = 1;
+                        if(grid) {
+                            int v = *std::max_element(grid->shape().begin(),grid->shape().end());
+                            v = 2 * std::max<int>(1,v);
+                            mythresh =  v * VType::threshold_epsilon; 
+                        }
                         std::transform(mm.begin(),mm.end(),std::back_inserter(intersections), [&](auto&& pr) {
                                 EdgeIsect e = pr.second;
                                 this->mask().clamp(e);
+                                e.VType::apply_thresholding(mythresh);
                                 return e;
                                 });
+                        std::map<coord_mask<D>,EdgeIsect> cem;
+                        for(auto&& v: intersections)
+                        {
+                            cem[v.mask()] = v;
+                        }
+                        intersections.clear();
+                        std::transform(cem.begin(),cem.end(),std::back_inserter(intersections),[](auto&& pr)
+                                {
+                                return std::get<1>(pr);
+                                });
 
+
+                        std::sort(intersections.begin(),intersections.end(),[](auto&& ei, auto&& ei2)
+                                {
+                                return ei.edge_coord < ei2.edge_coord;
+                                });
+
+                        std::cout << intersections.size() << " found" << std::endl;
+                        for(auto&& i: intersections)
+                        {
+                            std::cout << std::string(i) << " ";
+                        }
+                        std::cout << std::endl;
                     }
                     template <int D>
                         void TriangleIntersections<D>::bake(const std::optional<SGType>& grid) {
@@ -227,22 +265,29 @@ namespace mandoline::construction {
                                 }
                             }
                             std::set<const VType*> vertex_ptrs;
+                            std::cout << "Face intersections" ;
                             for(auto&& [i,gv]: mtao::iterator::enumerate(vptr_tri)) {
+                                std::cout << std::string(*gv) << ",";
                                 bin_gv(*gv,-i - 1);//negative to avoid clashing with edges
                                 std::array<double,3> coord;
                                 mtao::eigen::stl2eigen(coord) = mtao::Vec3d::Unit(i);
                                 coords[gv] = coord;
                                 vertex_ptrs.insert(gv);
                             }
+                            std::cout << std::endl;
                             int count = 0;
                             for(auto&& [dim,bin]: mtao::iterator::enumerate(bins)) {
+                                std::cout << "Dim " << dim << std::endl;
                                 for(auto&& [coord, gvs]: bin) {
+                                    std::cout << "Coord " << coord <<  ": ";
                                     int vertex_count = 0;
                                     for(auto&& [v,i]: gvs) {
+                                        std::cout << std::string(*v) << ", ";
                                         if(i < 0) {
                                             vertex_count++;
                                         }
                                     }
+                                    std::cout << std::endl;
                                     if(vertex_count == 2) {
                                         continue;
                                     }
@@ -260,6 +305,7 @@ namespace mandoline::construction {
 
                                     }
                                 }
+                                std::cout << std::endl;
                             }
 
                             intersections.clear();

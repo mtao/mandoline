@@ -911,9 +911,10 @@ namespace mandoline {
         return B;
     }
     Eigen::SparseMatrix<double> CutCellMesh<3>::face_boundary() const {
-        auto trips = m_adaptive_grid.face_boundary_triplets(m_edges.size());
         Eigen::SparseMatrix<double> B(edge_size(),face_size());
 
+        /*
+        auto trips = m_adaptive_grid.face_boundary_triplets(m_edges.size());
         auto g = adaptive_grid().grid();
 
         for(auto&& c: cells()) {
@@ -940,6 +941,7 @@ namespace mandoline {
 
 
         B.setFromTriplets(trips.begin(),trips.end());
+        */
         return B;
     }
     auto CutCellMesh<3>::active_cell_mask() const -> GridDatab {
@@ -1072,4 +1074,8 @@ namespace mandoline {
         }
         return -1;
     }
+
+        auto CutCellMesh<3>::edges() const -> Edges {
+            return Base::edges();
+        }
 }

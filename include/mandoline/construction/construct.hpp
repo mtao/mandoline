@@ -11,9 +11,9 @@ namespace mandoline::construction {
         class CutCellGenerator;
     class DeformingGeometryConstructor {
         public:
-            DeformingGeometryConstructor(const mtao::ColVecs3d& V, const mtao::ColVecs3i& F, const mtao::geometry::grid::StaggeredGrid3d& grid, int adaptive_level = 0, std::optional<double> threshold = 1e-9);
+            DeformingGeometryConstructor(const mtao::ColVecs3d& V, const mtao::ColVecs3i& F, const mtao::geometry::grid::StaggeredGrid3d& grid, int adaptive_level = 0, std::optional<double> threshold = -1);
             ~DeformingGeometryConstructor();
-            void update_vertices(const mtao::ColVecs3d& V, const std::optional<double>& threshold = {});
+            void update_vertices(const mtao::ColVecs3d& V, const std::optional<double>& threshold = -1);
             void update_grid(const mtao::geometry::grid::StaggeredGrid3d&& g);
             void set_adaptivity(int res = 0);
             void bake();

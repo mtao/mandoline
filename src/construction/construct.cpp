@@ -62,13 +62,16 @@ namespace mandoline::construction {
 
             auto&& C = _ccg->crossings();
             for(auto&& c: C) {
-                if(c.vertex().coord[1] == 0) {
-                    if(c.vertex().quot(1) < 1e-5) {
-                    std::cout << "Low quot" << std::string(c) << std::endl;
+                for(int d = 0; d < 3; ++d)
+                {
+                if(c.vertex().coord[d] == 0) {
+                    if(c.vertex().quot(d) < 1e-5) {
+                    std::cout << "Low quot " << std::string(c) << std::endl;
                     }
-                } else if(c.vertex().coord[1] < 0) {
+                } else if(c.vertex().coord[d] < 0) {
                     std::cout << "WTF <0 ?" << std::string(c) << std::endl;
                 }
+            }
             }
         return _ccg->generate();
     }
