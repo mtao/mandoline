@@ -157,7 +157,15 @@ namespace mandoline::construction {
                     CoordType coord;
                     coord[dim] = cidx;
                     auto& ahd = ahdata[cidx];
-                    ahd.edges.insert(E.begin(),E.end());
+                    std::transform(E.begin(),E.end(),std::inserter(ahd.edges,ahd.edges.end()),[](auto s)
+                            {
+                            if(s[0] > s[1])
+                            {
+                            std::swap(s[0],s[1]);
+                            }
+                            return s;
+                            });
+                    //ahd.edges.insert(E.begin(),E.end());
                     std::cout << "AHD size: " << ahd.edges.size() << std::endl;
 
                     std::set<Edge> bedges;
@@ -205,7 +213,12 @@ namespace mandoline::construction {
                 int a = F[i];
                 int b = F[(i+1)%F.size()];
                 if(a != b) {
+                    if(a < b)
+                    {
                     Eset.emplace(std::array<int,2>{{a,b}});
+                    } else {
+                    Eset.emplace(std::array<int,2>{{b,a}});
+                    }
                 }
             }
             return mtao::eigen::stl2eigen(Eset);
@@ -403,6 +416,8 @@ namespace mandoline::construction {
                 }
                 if(bad)
                 {
+                    std::cout << "A bunch of edges weren't used due to some failure. " << std::endl;
+                    std::cout << " we only got " << faces.size() << "things" << std::endl;
                     std::cout << "Edges on " << idx << "," << cidx << std::endl;
                     std::cout << mtao::eigen::stl2eigen(ahd.edges) << std::endl;
                     for(auto&& [a,b]: ahd.edges)
