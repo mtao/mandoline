@@ -98,7 +98,7 @@ namespace mandoline::construction {
                 template <typename Derived>
                     VType get_vertex(const Eigen::MatrixBase<Derived>& p) const {
                         auto&& g = vertex_grid();
-                        Vec local = (p - g.origin()).cwiseQuotient(g.dx());
+                        Vec local = p.cwiseQuotient(g.dx()) - g.origin().cwiseQuotient(g.dx());
                         return VType::from_vertex(local);
                     }
                 Vec get_world_vertex(const VType& p) const {

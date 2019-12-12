@@ -395,7 +395,9 @@ namespace mandoline::construction {
                                 }
                             }
                         } else {
-                            add_loop(v);
+                            if(vols.at(i) >= 0) {
+                                add_loop(v);
+                            }
                         }
                     }
                     if(!F.indices.empty()) {

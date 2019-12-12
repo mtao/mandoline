@@ -60,6 +60,7 @@ namespace mandoline::construction {
     }
     CutCellMesh<3> DeformingGeometryConstructor::emit() const {
 
+        /*
             auto&& C = _ccg->crossings();
             for(auto&& c: C) {
                 for(int d = 0; d < 3; ++d)
@@ -73,6 +74,7 @@ namespace mandoline::construction {
                 }
             }
             }
+            */
         return _ccg->generate();
     }
 

@@ -45,10 +45,10 @@ namespace mandoline::construction {
                         auto gv = get_vertex(v);
 
                         if(threshold) {
-                        std::cout << "Thresholding!" << std::endl;
-                        std::cout << std::string(gv) << " => ";
+                        //std::cout << "Thresholding!" << std::endl;
+                        //std::cout << std::string(gv) << " => ";
                         gv.apply_thresholding(mythresh);
-                        std::cout << std::string(gv )<< std::endl;
+                        //std::cout << std::string(gv )<< std::endl;
                         }
 
                         return gv;
