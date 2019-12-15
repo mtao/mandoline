@@ -359,10 +359,10 @@ namespace mandoline::construction {
 
                 mtao::Vec3d N = mtao::Vec3d::Unit((idx+1)%3).cross(mtao::Vec3d::Unit((idx+2)%3));
 
-                auto mesh_cells = ahd.hem.cells_multi_component_map();
+                auto mesh_faces = ahd.hem.cells_multi_component_map();
 
                 auto vols = ahd.hem.signed_areas(VV);
-                for(auto&& [i,v]: mesh_cells) {
+                for(auto&& [i,v]: mesh_faces) {
                     CutFace<D> F;
                     F.id = Edge{{idx,cidx}};
                     auto add_loop = [&](const std::vector<int>& v) {

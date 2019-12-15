@@ -100,6 +100,11 @@ namespace mandoline::construction {
                 }
                 {
                     //auto t = mtao::logging::timer("generator bake edges");
+                    auto t = mtao::logging::profiler("grid active grid cells",false,"profiler");
+                    bake_active_grid_cell_mask();
+                }
+                {
+                    //auto t = mtao::logging::timer("generator bake edges");
                     auto t = mtao::logging::profiler("grid bake edges",false,"profiler");
                     bake_edges();
                     mtao::logging::debug() << "Number of edges: " << m_edges.size();
@@ -232,6 +237,26 @@ namespace mandoline::construction {
                 auto add_cells = [&](const CoordType& c, const Vec& quot) {
                     std::set<CoordType> mycells;
                     mycells.insert(c);
+
+                    CoordType myc = c;
+                    std::function<void(bool,int)> mac;
+                    mac = [&](bool sign, int dim) {
+                        myc[dim] = c[dim] - sign;
+                        if(dim == D-1) {
+                            mycells.insert(myc);
+                        } else {
+                            if(quot(dim+1) == 0) {
+                                mac(0,dim+1);
+                                mac(1,dim+1);
+                            } else {
+                                mac(0,dim+1);
+                            }
+                        }
+                    };
+
+
+
+                    /*
                     for(int i = 0; i < D; ++i) {
                         if(quot(i) == 0) {
                             std::set<CoordType> newcoords;
@@ -241,6 +266,13 @@ namespace mandoline::construction {
                                     });
                             mycells.insert(newcoords.begin(),newcoords.end());
                         }
+                    }
+                    */
+                    if(quot(0) == 0) {
+                        mac(0,0);
+                        mac(1,0);
+                    } else {
+                        mac(0,0);
                     }
                     cells.insert(mycells.begin(),mycells.end());
                 };
@@ -607,7 +639,7 @@ namespace mandoline::construction {
            */
 
         template <int D>
-            void CutCellEdgeGenerator<D>::bake_edges() {
+            void CutCellEdgeGenerator<D>::bake_active_grid_cell_mask() {
 
                 m_active_grid_cell_mask = GridDatab::Constant(true,StaggeredGrid::cell_shape());
 
@@ -648,6 +680,9 @@ namespace mandoline::construction {
                     }
 
                 }
+            }
+        template <int D>
+            void CutCellEdgeGenerator<D>::bake_edges() {
                 {
                     auto t = mtao::logging::timer("Adding data edges");
                     cut_edges = data().edges();

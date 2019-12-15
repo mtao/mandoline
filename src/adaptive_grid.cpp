@@ -389,6 +389,7 @@ namespace mandoline {
 
 
     AdaptiveGridFactory::AdaptiveGridFactory(const GridData3& mask): original(!mask) {
+        //print_gridb(original);
         std::array<int,3> shape = mask.shape();
         int size = *std::max_element(shape.begin(),shape.end());
         int level_count = int(std::ceil(std::log2(size)));

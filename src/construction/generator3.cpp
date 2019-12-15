@@ -162,8 +162,65 @@ namespace mandoline::construction {
         CCEG::bake();
 
 
+        //In order to catch odd things like vertices touching stencils we have to relearn the stencil with the faces
+
+        update_active_grid_cell_mask();
+
+
         auto t = mtao::logging::profiler("grid bake cells",false,"profiler");
         bake_cells();
+    }
+    void CutCellGenerator<3>::update_active_grid_cell_mask() {
+        return;
+        GridDatab mask = GridDatab::Constant(true,StaggeredGrid::cell_shape());
+        auto& old_mask = m_active_grid_cell_mask;
+
+        for(auto&& [fidx,face]: faces()) {
+            auto pc= possible_cells(face.indices);
+            if(face.is_axial_face()) {
+                //dont only remove things from the mask, don't add
+                //therefore, if we had an external boundary before it should sitll be one
+                assert(pc.size() == 2);
+                if(pc.size() != 2) {
+                    warn() << "Axial faces should have two possible cells!: face " << fidx;
+                }
+                if(face.external_boundary) {
+                    std::array<CoordType,2> pca;
+                    std::copy(pc.begin(),pc.end(),pca.begin());
+                    int idx;
+                    for(idx=0; idx < 3; ++idx) {
+                        if(pca[0][idx] != pca[1][idx]) {
+                            break;
+                        }
+                    }
+                    if(pca[0][idx]+1 != pca[1][idx]) {
+                        std::cout << "SET WASNT LEXICOGRAPHICAL ORDER SOMEHOW?" << std::endl;
+                    }
+                    bool below = std::get<1>(*face.external_boundary);
+                    auto choice = below?pca[0]:pca[1];
+                    if(mask.valid_index(choice)) {
+                        mask(choice);
+                    }
+                } else {
+                    for(auto&& c: pc) {
+                        if(mask.valid_index(c)) {
+
+                            mask(c) = false;
+                        }
+                    }
+
+                }
+            } else {
+                for(auto&& c: pc) {
+                    if(mask.valid_index_(c)) {
+
+                        mask(c) = false;
+                    }
+                }
+            }
+
+        }
+        old_mask = mask;
     }
     void CutCellGenerator<3>::bake_cells() {
         {

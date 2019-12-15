@@ -73,6 +73,7 @@ namespace mandoline::construction {
 
                 virtual void bake();
                 virtual void bake_vertices();
+                void bake_active_grid_cell_mask();
                 virtual void bake_edges();
                 virtual void bake_faces() {}
                 virtual void bake_cells() {}
@@ -339,6 +340,7 @@ namespace mandoline::construction {
 
                 void bake_faces() override;
                 void bake_cells() override;
+                void update_active_grid_cell_mask();
                 bool adaptive = true;
                 std::optional<int> adaptive_level = 0;
                 std::optional<AdaptiveGrid> adaptive_grid;

@@ -50,6 +50,13 @@ namespace mandoline {
             CutFace& operator=(const CutFace&) = default;
             CutFace& operator=(CutFace&&) = default;
 
+            //a tuple where the first entry is the cell-grid index of hte external cell, and the bool is whether it is below it or not 
+            //  i.e given two cells cm cp bounded by f, 
+            //  [cm] f [cp], if [cm] is not part of the staggered grid then we store
+            //  cm,1
+            //  otherwise we store 
+            //  cp,0
+            // this sign is with respect to "the boundary operator of hte cell is of positive sign", which may be backwards
             std::optional<std::tuple<int,bool>> external_boundary = {};
             std::optional<mtao::ColVecs3d> triangulated_vertices;
             std::optional<mtao::ColVecs3i> triangulation;
