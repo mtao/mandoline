@@ -38,6 +38,9 @@ namespace mandoline::construction {
             const auto& face(int idx) const { return m_faces.at(idx); }
 
             const auto& cell_boundaries() const { return m_cell_boundaries; }
+            void remove_boundary_cells();
+            void remove_grid_boundary_cells(const std::array<int,3>& shape);
+            void remove_boundary_cells_by_volume(const std::map<int,double>& face_vols);
             void remove_boundary_cells_from_vertices(const std::set<int>& boundary_vertices);
             void remove_boundary_cells_from_faces(const std::set<int>& boundary_faces);
             std::set<int> folded_faces() const; //faces that have their duals as well

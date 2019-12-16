@@ -667,14 +667,13 @@ namespace mandoline::construction {
 #pragma omp for
                     for(int i = 0; i < D; ++i) {
                         for(auto&& c: AC) {
-                            if(!m_active_grid_cell_mask.valid_index(c)) {
-                                continue;
-                            }
-                            m_active_grid_cell_mask(c) = false;
+                            if(m_active_grid_cell_mask.valid_index(c)) {
+                                m_active_grid_cell_mask(c) = false;
 
-                            per_boundary_cell_vertex_looper(i,[&](const CoordType& a, const std::bitset<D>& bs) {
-                                    add_grid(i,a);
-                                    }, c);
+                                per_boundary_cell_vertex_looper(i,[&](const CoordType& a, const std::bitset<D>& bs) {
+                                        add_grid(i,a);
+                                        }, c);
+                            }
 
                         }
                     }

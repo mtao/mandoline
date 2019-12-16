@@ -19,3 +19,6 @@ TARGET_LINK_LIBRARIES(igl_boolean_performance_test mtao::headers igl::core gmp
 
 ADD_EXECUTABLE(mandoline_construction_performance_test mandoline_construction_performance_test.cpp)
 TARGET_LINK_LIBRARIES(mandoline_construction_performance_test cutmesh_maker mandoline OpenMP::OpenMP_CXX mtao::common)
+
+ADD_EXECUTABLE(single_cube_test single_cube_test.cpp)
+TARGET_LINK_LIBRARIES(single_cube_test mandoline)

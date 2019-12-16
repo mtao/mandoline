@@ -29,16 +29,22 @@ namespace mandoline::construction {
 
     CutCellMesh<3> CutCellGenerator<3>::generate() const {
 
+
         CutCellMesh<3> ccm = CCEG::generate();
-        ccm.m_cut_edges = mtao::eigen::hstack(ccm.m_cut_edges,mtao::eigen::stl2eigen(adaptive_edges));
+        //ccm.m_cut_edges = mtao::eigen::hstack(ccm.m_cut_edges,mtao::eigen::stl2eigen(adaptive_edges));
         ccm.m_folded_faces = folded_faces;
         //extra_metadata(ccm);
         ccm.m_faces.clear();
         ccm.m_faces.resize(faces().size());
         if(adaptive) {
-            ccm.m_adaptive_grid = *adaptive_grid;
-            if(adaptive_grid_regions) {
-                ccm.m_adaptive_grid_regions = *adaptive_grid_regions;
+            if(!adaptive_grid)
+            {
+                warn() << "Adaptive grid doesn't exist, is there no room for it?";
+            } else {
+                ccm.m_adaptive_grid = *adaptive_grid;
+                if(adaptive_grid_regions) {
+                    ccm.m_adaptive_grid_regions = *adaptive_grid_regions;
+                }
             }
         }
 
@@ -240,11 +246,23 @@ namespace mandoline::construction {
             folded_faces = cc.folded_faces();
             //m_normal_faces = cc.m_faces;
             boundary_vertices.clear();
-            for(int i = 0; i < StaggeredGrid::vertex_size(); ++i) {
-                boundary_vertices.insert(i);
-            }
+            //for(int i = 0; i < StaggeredGrid::vertex_size(); ++i) {
+            //    boundary_vertices.insert(i);
+            //}
 
-            cc.remove_boundary_cells_from_vertices(boundary_vertices);
+            //cc.remove_boundary_cells_from_vertices(boundary_vertices);
+            cc.remove_boundary_cells();
+            //even though max index value could be vertex_shape in size, the max value is cell_Shape
+            cc.remove_grid_boundary_cells(StaggeredGrid::cell_shape());
+
+            if constexpr(false){
+                auto Vs = vertices();
+                std::map<int,double> vol;
+                for(auto&& [i,f]: m_faces) {
+                    vol[i] = f.brep_volume(Vs);
+                }
+                cc.remove_boundary_cells_by_volume(vol);
+            }
             auto cb = cc.cell_boundaries();
 
             cell_boundaries.resize(cb.size());
@@ -296,7 +314,9 @@ namespace mandoline::construction {
                     for(auto&& [id,f]: faces()) {
                         if(f.external_boundary) {
                             auto& [cid,s] = *f.external_boundary;
+                            if(cid >= 0) {
                             cell_ds.join(max_cell_id + id,grid.get(cid));
+                            }
                         }
                     }
                 }

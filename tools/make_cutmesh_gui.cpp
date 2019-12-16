@@ -216,7 +216,7 @@ class MeshViewer: public mtao::opengl::Window3 {
                 constructor->bake();
                 ccm = constructor->emit();
                 
-                {
+                if constexpr(false) {
                     auto cv = ccm->cut_vertices();
                     for(auto&& [i,v]: mtao::iterator::enumerate(cv))
                     {

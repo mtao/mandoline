@@ -280,11 +280,10 @@ namespace mandoline::construction {
                         if(pca[0][idx]+1 != pca[1][idx]) {
                             std::cout << "SET WASNT LEXICOGRAPHICAL ORDER SOMEHOW?" << std::endl;
                         }
-                        if(pca[0][idx] < 0 || pca[1][idx] >= cell_shape()[idx]) {
-                            //std::cout << "Skip happening!" << std::endl;
-                            //std::cout << mtao::eigen::stl2eigen(pca[0]).transpose() << " = "
-                            //<< mtao::eigen::stl2eigen(pca[1]).transpose() << " = " << std::endl;
-                            continue;
+                        if(pca[0][idx] < 0) {
+                            f.external_boundary = {-1,1};
+                        } else if(pca[1][idx] >= cell_shape()[idx]) {
+                            f.external_boundary = {-1,0};
                         } else {
                             int pi = cell_index(pca[0]);
                             int ni = cell_index(pca[1]);
@@ -408,6 +407,8 @@ namespace mandoline::construction {
                     }
                 }
 
+                /*
+                //debug when i was only generating quads
                 bool bad = false;
                 for(auto&& [fidx,f]: faces) 
                 {
@@ -428,6 +429,7 @@ namespace mandoline::construction {
                     }
                     std::cout << std::endl;
                 }
+                */
                 return faces;
             }
 

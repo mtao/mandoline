@@ -12,8 +12,8 @@ namespace mandoline::construction {
             auto& gvstart = *vptr_edge[0];
             auto& gvend = *vptr_edge[1];
 
-            std::cout << "Edge intersections " ;
-            std::cout << std::string(gvstart) << " => " << std::string(gvend) << std::endl;
+            //std::cout << "Edge intersections " ;
+            //std::cout << std::string(gvstart) << " => " << std::string(gvend) << std::endl;
 
             mtao::eigen::stl2eigen(tangent) = gvend.p() - gvstart.p();
 
@@ -234,12 +234,12 @@ namespace mandoline::construction {
                                 return ei.edge_coord < ei2.edge_coord;
                                 });
 
-                        std::cout << intersections.size() << " found" << std::endl;
-                        for(auto&& i: intersections)
-                        {
-                            std::cout << std::string(i) << " ";
-                        }
-                        std::cout << std::endl;
+                        //std::cout << intersections.size() << " found" << std::endl;
+                        //for(auto&& i: intersections)
+                        //{
+                        //    std::cout << std::string(i) << " ";
+                        //}
+                        //std::cout << std::endl;
                     }
                     template <int D>
                         void TriangleIntersections<D>::bake(const std::optional<SGType>& grid) {
@@ -265,29 +265,29 @@ namespace mandoline::construction {
                                 }
                             }
                             std::set<const VType*> vertex_ptrs;
-                            std::cout << "Face intersections" ;
+                            //std::cout << "Face intersections" ;
                             for(auto&& [i,gv]: mtao::iterator::enumerate(vptr_tri)) {
-                                std::cout << std::string(*gv) << ",";
+                            //    std::cout << std::string(*gv) << ",";
                                 bin_gv(*gv,-i - 1);//negative to avoid clashing with edges
                                 std::array<double,3> coord;
                                 mtao::eigen::stl2eigen(coord) = mtao::Vec3d::Unit(i);
                                 coords[gv] = coord;
                                 vertex_ptrs.insert(gv);
                             }
-                            std::cout << std::endl;
+                            //std::cout << std::endl;
                             int count = 0;
                             for(auto&& [dim,bin]: mtao::iterator::enumerate(bins)) {
-                                std::cout << "Dim " << dim << std::endl;
+                                //std::cout << "Dim " << dim << std::endl;
                                 for(auto&& [coord, gvs]: bin) {
-                                    std::cout << "Coord " << coord <<  ": ";
+                                    //std::cout << "Coord " << coord <<  ": ";
                                     int vertex_count = 0;
                                     for(auto&& [v,i]: gvs) {
-                                        std::cout << std::string(*v) << ", ";
+                                        //std::cout << std::string(*v) << ", ";
                                         if(i < 0) {
                                             vertex_count++;
                                         }
                                     }
-                                    std::cout << std::endl;
+                                    //std::cout << std::endl;
                                     if(vertex_count == 2) {
                                         continue;
                                     }
@@ -305,7 +305,7 @@ namespace mandoline::construction {
 
                                     }
                                 }
-                                std::cout << std::endl;
+                                //std::cout << std::endl;
                             }
 
                             intersections.clear();

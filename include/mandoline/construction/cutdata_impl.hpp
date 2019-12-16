@@ -379,6 +379,7 @@ namespace mandoline::construction {
         }
     template <int D, typename Indexer>
         auto CutData<D,Indexer>::vertex_crossings() const -> std::vector<Crossing<D>> {
+            std::cout << "vertex crossings: " << m_V.size() << std::endl;
             std::vector<Crossing<D>> ret;
             auto e = mtao::iterator::enumerate(m_V);
             int grid_size = this->grid_size();

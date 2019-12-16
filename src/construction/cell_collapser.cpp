@@ -202,20 +202,73 @@ namespace mandoline::construction {
             bool is_boundary = true;
             for(auto&& F: Fs) {
                 for(auto&& v: F) {
-                if(boundary_vertices.find(v) == boundary_vertices.end()) {
-                    is_boundary = false;
+                    if(boundary_vertices.find(v) == boundary_vertices.end()) {
+                        is_boundary = false;
+                        break;
+                    }
+                }
+                if(!is_boundary) {
                     break;
                 }
             }
-            if(!is_boundary) {
-                break;
+            if(is_boundary) {
+                boundary_faces.insert(i);
             }
+
         }
-        if(is_boundary) {
-            boundary_faces.insert(i);
-        }
+        remove_boundary_cells_from_faces(boundary_faces);
+    }
+    void CellCollapser::remove_boundary_cells() {
+        m_cell_boundaries.erase(std::remove_if(m_cell_boundaries.begin(),m_cell_boundaries.end(),[&](auto&& m) -> bool {
+                    for(auto&& [fidx,sgn]: m) 
+                    {
+                    auto&& face = m_faces.at(fidx);
+                    if(face.external_boundary) {
+                    auto [cid,ebside] = *face.external_boundary;
+                    if(ebside == sgn) {
+                    return false;
+                    }
+                    } else {
+                    return false;
+                    }
+                    }
+                    return true;
+                    }), m_cell_boundaries.end());
+
 
     }
-    remove_boundary_cells_from_faces(boundary_faces);
-}
+    void CellCollapser::remove_grid_boundary_cells(const std::array<int,3>& shape) {
+        m_cell_boundaries.erase(std::remove_if(m_cell_boundaries.begin(),m_cell_boundaries.end(),[&](auto&& m) -> bool {
+                    for(auto&& [fidx,sgn]: m) 
+                    {
+                    auto&& face = m_faces.at(fidx);
+                    if(face.count() == 1) {
+                    int ba = face.bound_axis();
+                    int bv = *face[ba];
+                    if(bv == 0 || bv == shape[ba]) {
+                    continue;
+                    } else {
+                    return false;
+                    }
+                    } else {
+                    return false;
+                    }
+                    }
+                    return true;
+                    }), m_cell_boundaries.end());
+    }
+
+    void CellCollapser::remove_boundary_cells_by_volume(const std::map<int,double>& face_brep_vols) {
+        m_cell_boundaries.erase(std::remove_if(m_cell_boundaries.begin(),m_cell_boundaries.end(),[&](auto&& m) -> bool {
+                    double vol = 0;
+
+                    for(auto&& [f,b]: m) {
+                    double sign = b?1:-1;
+                    vol += sign * face_brep_vols.at(f);
+
+                    }
+                    return vol < 0;
+                    }), m_cell_boundaries.end());
+    }
+
 }
