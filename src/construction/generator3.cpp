@@ -108,7 +108,25 @@ namespace mandoline::construction {
                 inds.insert(fidx);
 
             }
-            b.grid_cell = *possible_cells_cell(inds,ccm.faces()).begin();
+            auto pos_cells = possible_cells_cell(inds,ccm.faces());
+            if(pos_cells.size() == 0) {
+                std::cout << "ONo possible cells!?!?!" << std::endl;
+                for(auto&& ind: inds) {
+                    std::cout << "Face " << ind << ": ";
+                    if(ccm.faces()[ind].external_boundary) {
+                        std::cout << "[yes: " << std::get<0>(*ccm.faces()[ind].external_boundary) << "]" << std::endl;
+                    }
+                    std::cout << std::string(ccm.faces()[ind]) << ":::";
+                    for(auto&& c: possible_cells(ccm.faces()[ind].indices)) {
+                        std::cout << c[0] << ":";
+                        std::cout << c[1] << ":";
+                        std::cout << c[2] << " ";
+                    }
+
+                    std::cout << std::endl;
+                }
+            }
+            b.grid_cell = *pos_cells.begin();
         }
         ccm.m_origV.resize(3,origV().size());
         for(int i = 0; i < origV().size(); ++i) {

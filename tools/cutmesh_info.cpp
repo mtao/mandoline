@@ -64,6 +64,19 @@ void print_file_info(const std::string& filename)
             std::cout << ">>Region " << id << " has " << count << " cells" << std::endl;
         }
     }
+
+    for(auto&& c: ccm.cells()) {
+        auto g = c.grid_cell;
+        for(auto&& [i,m]: mtao::iterator::zip(g,ccm.cell_shape())) {
+            if(i < 0 || i >= m) {
+                std::cout << i << "/" << m << std::endl;
+                for(auto&& [fidx,b]: c) {
+                    std::cout << fidx << ":" << b << " ";
+                }
+                std::cout << std::endl;
+            }
+        }
+    }
 }
 
 int main(int argc, char * argv[]) {

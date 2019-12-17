@@ -261,10 +261,11 @@ namespace mandoline::construction {
                 //    }
                 //}
                 //std::cout << std::endl;
-                if(I.size() == 1 && f.mask().count() == 1) {
-                    auto&& loop = *I.begin();
-                    if(loop.size() == 4) {
-                        auto pc = possible_cells(loop);
+                if(f.mask().count() == 1) {
+                    //auto&& loop = *I.begin();
+                    auto pc = possible_cells(I);
+                    {
+//                    if(loop.size() == 4) {
                         if(pc.size() != 2) {
                             continue;
                         }
@@ -284,7 +285,7 @@ namespace mandoline::construction {
                             f.external_boundary = {-1,1};
                         } else if(pca[1][idx] >= cell_shape()[idx]) {
                             f.external_boundary = {-1,0};
-                        } else {
+                        } else if(I.size() == 1 && I.begin()->size() == 4) {//should always be a grid cell!
                             int pi = cell_index(pca[0]);
                             int ni = cell_index(pca[1]);
                             bool pa = m_active_grid_cell_mask.get(pi);
