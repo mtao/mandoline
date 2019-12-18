@@ -48,8 +48,24 @@ namespace mandoline::construction {
                         //std::cout << "Thresholding!" << std::endl;
                         //std::cout << std::string(gv) << " => ";
                         gv.apply_thresholding(mythresh);
+                        /*
+                        for(int i = 0; i < D; ++i) {
+                            bool higher = gv.quot(i) > .5;
+                            double p = (gv.coord[i] + (higher ? 1 : 0)) * vertex_grid().dx()(i) + vertex_grid().origin()(i);
+                            if(std::abs(v(i) - p) < threshold_epsilon)
+                            {
+                                gv.quot(i) = 0;
+                                gv.clamped_indices[i] = true;
+                                if(higher) {
+                                gv.coord[i]++;
+                                }
+
+                            }
+                        }
+                        */
                         //std::cout << std::string(gv )<< std::endl;
                         }
+
 
                         return gv;
                         });

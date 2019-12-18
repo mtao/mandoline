@@ -115,6 +115,13 @@ namespace mandoline::construction {
                     std::cout << "Face " << ind << ": ";
                     if(ccm.faces()[ind].external_boundary) {
                         std::cout << "[yes: " << std::get<0>(*ccm.faces()[ind].external_boundary) << "]" << std::endl;
+                    } else {
+                        std::cout <<"=================" << std::endl;
+                        std::cout <<"=================" << std::endl;
+                        std::cout <<"=================" << std::endl;
+                        std::cout <<"=================" << std::endl;
+                        std::cout <<"=================" << std::endl;
+
                     }
                     std::cout << std::string(ccm.faces()[ind]) << ":::";
                     for(auto&& c: possible_cells(ccm.faces()[ind].indices)) {
@@ -282,6 +289,7 @@ namespace mandoline::construction {
                 cc.remove_boundary_cells_by_volume(vol);
             }
             auto cb = cc.cell_boundaries();
+            cell_boundaries.clear();
 
             cell_boundaries.resize(cb.size());
             for(auto&& [a,b]: mtao::iterator::zip(cell_boundaries,cb)) {

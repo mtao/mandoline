@@ -433,6 +433,7 @@ namespace mandoline {
             }
         }
 
+        V = (V.array().abs() > 1e-8).select(V,1);
 
         //TODO: handle outside boundaries of the grid using the adaptive grid!
         auto bb = bbox();

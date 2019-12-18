@@ -222,15 +222,12 @@ namespace mandoline::construction {
         m_cell_boundaries.erase(std::remove_if(m_cell_boundaries.begin(),m_cell_boundaries.end(),[&](auto&& m) -> bool {
                     for(auto&& [fidx,sgn]: m) 
                     {
-                    auto&& face = m_faces.at(fidx);
-                    if(face.external_boundary) {
-                    auto [cid,ebside] = *face.external_boundary;
-                    if(ebside == sgn) {
-                    return false;
-                    }
-                    } else {
-                    return false;
-                    }
+                        auto&& face = m_faces.at(fidx);
+                        if(face.external_boundary) {
+                            //auto [cid,ebside] = *face.external_boundary;
+                        } else {
+                            return false;
+                        }
                     }
                     return true;
                     }), m_cell_boundaries.end());
