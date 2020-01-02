@@ -51,7 +51,7 @@ namespace mandoline {
        return possibles;
        }
        */
-    void  CutCell::serialize(protobuf::Cell& cell) const {
+    void  CutCell::serialize(protobuf::CutCell& cell) const {
         cell.set_id(index);
         cell.set_region(region);
         protobuf::serialize(grid_cell,*cell.mutable_grid_cell());
@@ -60,7 +60,7 @@ namespace mandoline {
             pmap[a] = b;
         }
     }
-    CutCell CutCell::from_proto(const protobuf::Cell& cell) {
+    CutCell CutCell::from_proto(const protobuf::CutCell& cell) {
         CutCell c;
         auto&& entries = cell.entries();
         //c = std::map<int,bool>(entries.begin(),entries.end());
