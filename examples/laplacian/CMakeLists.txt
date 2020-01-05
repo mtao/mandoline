@@ -1,7 +1,5 @@
 IF(USE_OPENGL)
 ADD_EXECUTABLE(laplacian main.cpp setup.cpp)
-find_package(Magnum REQUIRED GL Shaders GlxContext GlfwApplication SceneGraph MeshTools)
-find_package(MagnumIntegration REQUIRED ImGui)
 TARGET_LINK_LIBRARIES(laplacian mandoline mtao::visualization)
 ENDIF(USE_OPENGL)
 ADD_EXECUTABLE(laplacian_nogl main_nogl.cpp setup.cpp)
