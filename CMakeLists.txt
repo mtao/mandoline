@@ -46,7 +46,7 @@ else()
 endif()
 
 
-FIND_PACKAGE(Eigen3 3.3.9 REQUIRED)
+FIND_PACKAGE(Eigen3 3.3.9)
 
 if(NOT Eigen3_FOUND)
     FetchContent_Declare(
