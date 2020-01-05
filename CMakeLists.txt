@@ -1,4 +1,7 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 3.11.1)
+project(Mandoline
+    DESCRIPTION "A robust cut-cell mesh generator"
+    LANGUAGES CXX)
 SET(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -31,7 +34,7 @@ else()
     FetchContent_Declare(
         mtao
         GIT_REPOSITORY https://github.com/mtao/core.git
-        GIT_TAG cf39d25fc5e3dce85e287f63f981a5b6fa328f9a
+        GIT_TAG b7e8cd417fe52b18b8c984998863d1b87a95a9e6 
         )
     if(${CMAKE_VERSION} VERSION_LESS 3.14)
         FetchContent_Populate(mtao)
