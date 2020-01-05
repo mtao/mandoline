@@ -14,7 +14,7 @@
 namespace mandoline::construction {
     template <int D>
         class CutCellEdgeGenerator;
-    template <int D, typename Indexer_  = typename EdgeIntersections<D>::SGType::Indexer>
+    template <int D, typename Indexer_  = typename EdgeIntersections<D>::SGType::GridType::Indexer>
         struct CutData: public Indexer_ {
             friend class CutCellEdgeGenerator<D>;
             using Edge = std::array<int,2>;
@@ -28,6 +28,7 @@ namespace mandoline::construction {
             using EdgeIsects = EdgeIntersections<D>;
             using TriIsects = TriangleIntersections<D>;
             using SGType = typename EdgeIntersections<D>::SGType;
+            using GType = typename SGType::GridType;
             using VType = Vertex<D>;
             using VPtrEdge = std::array<const VType*,2>;
 
@@ -61,8 +62,8 @@ namespace mandoline::construction {
 
             void update_vertices(const mtao::vector<VType>& V);
             void update_grid(const Indexer& indexer);
-            template <typename S, bool UVG>
-            void update_grid(const mtao::geometry::grid::StaggeredGrid<S,D,UVG>& sg) { update_grid(sg.vertex_grid()); }
+            template <typename S>
+            void update_grid(const mtao::geometry::grid::StaggeredGrid<S,D>& sg) { update_grid(sg.vertex_grid()); }
 
 
             void set_vertices(const mtao::vector<VType>& V) { m_V = V; }

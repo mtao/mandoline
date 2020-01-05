@@ -27,7 +27,7 @@ namespace mandoline::construction {
     }
     CutCellMesh<3> from_grid_unnormalized(const mtao::ColVecs3d& V, const mtao::ColVecs3i& F, const std::array<int,3>& cell_shape, int level, std::optional<double> threshold) {
         using Vec = mtao::Vec3d;
-        auto sg = CutCellMesh<3>::StaggeredGrid(cell_shape, Vec::Ones());
+        auto sg = CutCellMesh<3>::GridType(cell_shape, Vec::Ones());
         return from_grid(V,F,sg,level,threshold);
     }
 

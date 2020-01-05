@@ -42,7 +42,6 @@ namespace mandoline::construction {
                 using StaggeredGrid::cell_grid;
                 using StaggeredGrid::origin;
                 using StaggeredGrid::dx;
-                using StaggeredGrid::shape;
                 using StaggeredGrid::vertex_index;
                 using StaggeredGrid::cell_index;
                 using StaggeredGrid::cell_size;
@@ -324,7 +323,7 @@ namespace mandoline::construction {
                 CutCellGenerator() = default;
                 CutCellGenerator(CutCellGenerator&&) = default;
                 CutCellGenerator& operator=(CutCellGenerator&&) = default;
-                using CCEG::shape;
+                using CCEG::vertex_shape;
 
                 size_t Vsize() const {
                     return CCEG::Vsize();

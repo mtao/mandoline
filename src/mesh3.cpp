@@ -503,7 +503,7 @@ namespace mandoline {
         }
         protobuf::serialize(origin(),*cmp.mutable_origin());
         protobuf::serialize(dx(),*cmp.mutable_dx());
-        protobuf::serialize(shape(),*cmp.mutable_shape());
+        protobuf::serialize(vertex_shape(),*cmp.mutable_shape());
         for(auto&& f: m_faces) {
             f.serialize(*cmp.add_faces());
         }
@@ -553,7 +553,7 @@ namespace mandoline {
         o = protobuf::deserialize(cmp.origin());
         dx = protobuf::deserialize(cmp.dx());
         protobuf::deserialize(cmp.shape(),s);
-        CutCellMesh<3> ret = CutCellMesh<3>::StaggeredGrid(s,dx,o);
+        CutCellMesh<3> ret = CutCellMesh<3>::StaggeredGrid(GridType(s,dx,o));
         //ret.m_face_volumes.resize(20);
 
         ret.m_cut_vertices.resize(cmp.vertices().size());
@@ -1056,7 +1056,7 @@ namespace mandoline {
         return R;
     }
     int CutCellMesh<3>::get_cell_index(const VecCRef& p) const {
-        auto v = local_coord(p);
+        auto v = vertex_grid().local_coord(p);
         //check if its  in an adaptive grid cell, tehn we can just use that cell
         if(int ret = m_adaptive_grid.get_cell_index(v); ret != -1) {
             return ret;

@@ -37,7 +37,7 @@ namespace mandoline::construction {
                 double mythresh = -1;
                 if(threshold) { mythresh =  *threshold; }
                 if(mythresh < 0) { 
-                    int v = *std::max_element(shape().begin(),shape().end());
+                    int v = *std::max_element(vertex_shape().begin(),vertex_shape().end());
                     v = 2 * std::max<int>(1,v);
                     mythresh =  v * threshold_epsilon; 
                 }
@@ -81,7 +81,7 @@ namespace mandoline::construction {
                 update_vertices(colvecs_to_vecvector(V), threshold);
             }
         template <int D>
-            CutCellEdgeGenerator<D>::CutCellEdgeGenerator(const StaggeredGrid& g ): CutCellEdgeGenerator(VecVector{},g.shape()) {
+            CutCellEdgeGenerator<D>::CutCellEdgeGenerator(const StaggeredGrid& g ): CutCellEdgeGenerator(VecVector{},g.vertex_shape()) {
             }
         /*
            template <int D> 
@@ -106,7 +106,7 @@ namespace mandoline::construction {
 
 
                 {
-                    m_data.bake(*this);
+                    m_data.bake(vertex_grid());
                 }
                 {
                     //auto t = mtao::logging::timer("generator bake vertices");

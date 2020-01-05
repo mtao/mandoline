@@ -1,6 +1,0 @@
-[submodule "extern/core"]
-	path = extern/core
-	url = https://github.com/mtao/core.git
-[submodule "extern/libigl"]
-	path = extern/libigl
-	url = https://github.com/libigl/libigl.git

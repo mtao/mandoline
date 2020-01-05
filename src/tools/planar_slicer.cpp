@@ -88,7 +88,7 @@ namespace mandoline::tools {
         auto edges = data.stl_edges();
         auto is_boundary = [&](int idx) -> bool {
             if(idx < vertex_size()) {
-                return unindex(idx)[2] == 1;
+                return vertex_unindex(idx)[2] == 1;
             } else {
                 return plane_verts.find(idx) != plane_verts.end();
             }

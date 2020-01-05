@@ -11,9 +11,6 @@ jobs:
                 name: Installing git
                 command: 'apt-get update && apt-get install -y git'
             - run:
-                name: Fetching submodules
-                command: 'git submodule update --recursive --init'
-            - run:
                 name: Installing cmake
                 command: 'apt-get install -y cmake'
             - run:
@@ -23,18 +20,18 @@ jobs:
                 name: Installing mpfr
                 command: 'apt-get install -y libmpfr-dev libmpfrc++-dev'
             - run:
-                name: Installing CGAL
-                command: 'apt-get install -y libcgal-dev'
+                name: Installing numerical libs
+                command: 'apt-get install -y libeigen3-dev libblas-dev liblapack-dev libcgal-dev'
             - run:
-                name: Installing Eigen
-                command: 'apt-get install -y libeigen3-dev'
+                name: Installing graphics libs
+                command: 'apt-get install -y libglfw3-dev libgl-dev libpng++-dev'
             - run:
                 name: Installing protobuf
                 command: 'apt-get install -y protobuf-compiler'
             - run:
                 name: Making CMake build files
-                command: 'cmake -H. -Bbuild -DUSE_OPENGL=OFF -DCMAKE_BUILD_TYPE="Release"'
+                command: 'cmake -H. -Bbuild -DCMAKE_BUILD_TYPE="Release"'
             - run:
                 name: Building Mandoline
-                command: 'cmake --build build'
+                command: 'cmake --build build -j 2'
 

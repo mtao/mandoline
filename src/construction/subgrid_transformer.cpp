@@ -21,13 +21,13 @@ namespace mandoline::construction {
     auto SubGridTransformer::upgrade(const std::bitset<2>& c2, bool value) const -> std::bitset<3> {return _upgrade<std::bitset<2>,std::bitset<3>>(c2,value);}
 
     int  SubGridTransformer::downgrade(int idx3) const {
-        return g2.index(_downgrade<Coord2,Coord3>(g3.unindex(idx3)));
+        return g2.vertex_index(_downgrade<Coord2,Coord3>(g3.vertex_unindex(idx3)));
     }
     int  SubGridTransformer::upgrade(int idx2) const {
         return upgrade(idx2,c);
     }
     int  SubGridTransformer::upgrade(int idx2, int value) const {
-        return g3.index(_upgrade<Coord2,Coord3>(g2.unindex(idx2),value));
+        return g3.vertex_index(_upgrade<Coord2,Coord3>(g2.vertex_unindex(idx2),value));
     }
     EdgeIntersection<2>  SubGridTransformer::downgrade(const EdgeIntersection<3>& p) const {
         auto gv = downgrade(static_cast<const Vertex<3>&>(p));

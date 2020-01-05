@@ -35,6 +35,7 @@ namespace mandoline {
             using StaggeredGrid = mtao::geometry::grid::StaggeredGrid<double,D>;
             using StaggeredGrid::vertex_grid;
             using coord_type = typename StaggeredGrid::coord_type;
+            using GridType = typename StaggeredGrid::GridType;
             using GridData = mtao::geometry::grid::GridDataD<double,D>;
             using GridDatab = mtao::geometry::grid::GridDataD<bool,D>;
             using ColVecs = mtao::ColVectors<double,D>;

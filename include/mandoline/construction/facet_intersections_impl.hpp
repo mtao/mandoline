@@ -207,7 +207,7 @@ namespace mandoline::construction {
                         intersections.clear();
                         double mythresh = 1;
                         if(grid) {
-                            int v = *std::max_element(grid->shape().begin(),grid->shape().end());
+                            int v = *std::max_element(grid->vertex_shape().begin(),grid->vertex_shape().end());
                             v = 2 * std::max<int>(1,v);
                             mythresh =  v * VType::threshold_epsilon; 
                         }

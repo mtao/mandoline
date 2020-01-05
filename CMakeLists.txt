@@ -1,10 +1,10 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 3.10.1)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.11.1)
 SET(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 
-SET(MTAO_PATH "${CMAKE_CURRENT_SOURCE_DIR}/extern/core" CACHE STRING "location of mtao core libs" )
-SET(LIBIGL_PATH "${CMAKE_CURRENT_SOURCE_DIR}/extern/libigl" CACHE STRING "location of libigl libs" )
+SET(MTAO_PATH "" CACHE STRING "location of mtao core libs" )
+SET(LIBIGL_PATH "" CACHE STRING "location of libigl libs" )
 OPTION(USE_OPENGL "Build opengl stuff" ON)
 IF(APPLE)
     SET(USE_OPENMP_PRE OFF)
@@ -14,14 +14,8 @@ ENDIF(APPLE)
 OPTION(USE_OPENMP "Use OpenMP stuff" ${USE_OPENMP_PRE})
 OPTION(HANDLE_SELF_INTERSECTIONS "Handle Self-Intersections" ON)
 
+include(FetchContent REQUIRED)
 MESSAGE(STATUS "MTAO Path: ${MTAO_PATH}")
-MESSAGE(STATUS "LIBIGL Path: ${LIBIGL_PATH}")
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${MTAO_PATH}/cmake")
-#set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${LIBIGL_PATH}/cmake")
-#INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/include
-#    ${CMAKE_CURRENT_SOURCE_DIR}/extern/core/extern/imgui
-#    ${CMAKE_CURRENT_SOURCE_DIR}/extern/libigl/include
-#    ${CMAKE_CURRENT_SOURCE_DIR}/extern/core/include)
 
 
 OPTION(MTAO_USE_ELTOPO "Should we build the el topo submodule" OFF)
@@ -29,13 +23,41 @@ OPTION(MTAO_USE_LOSTOPOS "Should we build the LOS Topos submodule" OFF)
 OPTION(MTAO_USE_OPENGL "Build opengl stuff" ${USE_OPENGL})
 OPTION(MTAO_USE_PNGPP "Use PNG++ for screenshots" OFF)
 
-#NOTE: MTAO library can potentially infest a custom Eigen path to everyone
-# this eigen path can be chosen by the MTAO_CUSTOM_EIGEN_PATH variable
-ADD_SUBDIRECTORY("${MTAO_PATH}" ${CMAKE_BINARY_DIR}/mtao EXCLUDE_FROM_ALL)
+if(MTAO_PATH)
+    ADD_SUBDIRECTORY("${MTAO_PATH}" ${CMAKE_BINARY_DIR}/mtao EXCLUDE_FROM_ALL)
+    set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${MTAO_PATH}/cmake")
+else()
+
+    FetchContent_Declare(
+        mtao
+        GIT_REPOSITORY https://github.com/mtao/core.git
+        GIT_TAG cf39d25fc5e3dce85e287f63f981a5b6fa328f9a
+        )
+    if(${CMAKE_VERSION} VERSION_LESS 3.14)
+        FetchContent_Populate(mtao)
+        add_subdirectory(${mtao_SOURCE_DIR} ${mtao_BINARY_DIR} EXCLUDE_FROM_ALL)
+    else()
+        FetchContent_MakeAvailable(mtao)
+    endif()
+    set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${mtao_SOURCE_DIR}/cmake")
+endif()
 
 
-if(NOT TARGET Eigen3::Eigen)
-FIND_PACKAGE(Eigen3 REQUIRED)
+FIND_PACKAGE(Eigen3 3.3.9 REQUIRED)
+
+if(NOT Eigen3_FOUND)
+    FetchContent_Declare(
+        eigen
+        GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
+        GIT_TAG bcbaad6d874d451817457ae0603f953cda3c0c06 
+        )
+    if(${CMAKE_VERSION} VERSION_LESS 3.14)
+        FetchContent_Populate(eigen)
+        add_subdirectory(${eigen_SOURCE_DIR} ${eigen_BINARY_DIR} EXCLUDE_FROM_ALL)
+    else()
+        FetchContent_MakeAvailable(eigen)
+    endif()
+
 ENDIF()
 
 
@@ -48,6 +70,7 @@ MESSAGE(STATUS "MODULE PATH:${CMAKE_MODULE_PATH}")
 FIND_PACKAGE(Boost COMPONENTS thread REQUIRED)
 
 
+MESSAGE(STATUS "LIBIGL Path: ${LIBIGL_PATH}")
 option(LIBIGL_USE_STATIC_LIBRARY "Use libigl as static library" OFF)
 option(LIBIGL_WITH_COMISO            "Use CoMiso"                   OFF)
 option(LIBIGL_WITH_EMBREE            "Use Embree"                   OFF)
@@ -61,8 +84,23 @@ option(LIBIGL_WITH_PREDICATES        "Use exact predicates"         OFF)
 option(LIBIGL_WITH_XML               "Use XML"                      OFF)
 option(LIBIGL_WITH_PYTHOFF            "Use Python"                  OFF)
 option(LIBIGL_SKIP_DOWNLOAD "Skip downloading external libraries" ON)
-ADD_SUBDIRECTORY("${LIBIGL_PATH}" ${CMAKE_BINARY_DIR}/libigl EXCLUDE_FROM_ALL)
+if(LIBIGL_PATH)
+    ADD_SUBDIRECTORY("${LIBIGL_PATH}" ${CMAKE_BINARY_DIR}/libigl EXCLUDE_FROM_ALL)
+else()
+    FetchContent_Declare(
+        libigl
+        GIT_REPOSITORY https://github.com/libigl/libigl.git
+        #GIT_TAG f6b406427400ed7ddb56cfc2577b6af571827c8c
+        GIT_TAG v2.1.0
+        )
 
+    if(${CMAKE_VERSION} VERSION_LESS 3.14)
+        FetchContent_Populate(libigl)
+        add_subdirectory(${libigl_SOURCE_DIR} ${libigl_BINARY_DIR} EXCLUDE_FROM_ALL)
+    else()
+        FetchContent_MakeAvailable(libigl)
+    endif()
+endif()
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/include)
 INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIR} ${EIGEN3_INCLUDE_DIR}/unsupported)
 
@@ -176,10 +214,12 @@ SET(MANDOLINE_CUTMESH_SRCS
 
 
 SET(TOOLS_SRCS
+    ${PROTO_SRCS}
     src/tools/planar_slicer.cpp
     src/tools/exploded_mesh.cpp
     )
 SET(TOOLS_HDRS
+    ${PROTO_HDRS}
     include/mandoline/tools/planar_slicer.hpp
     include/mandoline/tools/exploded_mesh.hpp
     )
@@ -190,7 +230,6 @@ ADD_LIBRARY(construction_obj OBJECT ${CONSTRUCTION_SRCS} ${CONSTRUCTION_HDRS})
 ADD_LIBRARY(tools_obj OBJECT ${TOOLS_SRCS} ${TOOLS_HDRS})
 
 
-message(STATUS "CMAKE CURRENT BINARY DIR FROM MANDO: ${CMAKE_CURRENT_BINARY_DIR}")
 TARGET_INCLUDE_DIRECTORIES(cutmesh2_obj PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 TARGET_INCLUDE_DIRECTORIES(cutmesh3_obj PUBLIC  ${CMAKE_CURRENT_BINARY_DIR})
 TARGET_INCLUDE_DIRECTORIES(construction_obj PUBLIC  ${CMAKE_CURRENT_BINARY_DIR})
