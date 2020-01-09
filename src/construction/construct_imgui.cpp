@@ -55,9 +55,15 @@ namespace mandoline::construction {
         return dirty;
     }
 
-    void 
-        CutmeshGenerator_Imgui::update_grid() { 
-            update_grid(staggered_grid());
+    void CutmeshGenerator_Imgui::update_grid() { 
+        auto sg = staggered_grid();
+        std::cout << "DX: ";
+        std::cout << sg.dx().transpose() << std::endl;
+        auto n = sg.vertex_shape();
+        std::cout << "N: ";
+        std::copy(n.begin(),n.end(),std::ostream_iterator<int>(std::cout," "));
+        std::cout << std::endl;
+        update_grid(sg);
         }
 
     mtao::geometry::grid::StaggeredGrid3d

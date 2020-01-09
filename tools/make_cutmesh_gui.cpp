@@ -20,7 +20,7 @@
 #include <mtao/geometry/grid/grid.h>
 #include <mtao/geometry/grid/staggered_grid.hpp>
 #include <mtao/geometry/prune_vertices.hpp>
-#include <mandoline/construction/construct.hpp>
+#include <mandoline/construction/construct_imgui.hpp>
 #include <mandoline/construction/remesh_self_intersections.hpp>
 #include <mandoline/mesh3.hpp>
 
@@ -57,17 +57,9 @@ class MeshViewer: public mtao::opengl::Window3 {
         std::map<std::array<int,2>,std::vector<std::array<int,2>>> mapped_edges;
         std::optional<std::array<int,2>> edge_choice = {};
 
-        std::array<int,3> N{{5,5,5}};
-        int& NI=N[0];
-        int& NJ=N[1];
-        int& NK=N[2];
-        std::optional<mandoline::construction::DeformingGeometryConstructor> constructor;
+        std::optional<mandoline::construction::CutmeshGenerator_Imgui> constructor;
         std::optional<mandoline::CutCellMesh<3>> ccm;
 
-            auto staggered_grid() const { 
-                return mtao::geometry::grid::StaggeredGrid3f::from_bbox
-                (bbox, std::array<int,3>{{NI,NJ,NK}}, use_cube);
-            }
 
         MeshViewer(const Arguments& args): Window3(args), output_view(output_filename,mtao::types::container_size(output_filename)) {
             Corrade::Utility::Arguments myargs;
@@ -86,10 +78,10 @@ class MeshViewer: public mtao::opengl::Window3 {
             mtao::Vec3f trans_e= -((bbox.min() + bbox.max()) / 2).cast<float>();
             Magnum::Math::Vector3<float> trans(trans_e.x(),trans_e.y(),trans_e.z());
 
-            //std::tie(V,F) = mtao::geometry::prune(V,F,0);
-            //std::tie(V,F) = mandoline::construction::remesh_self_intersections(V,F);
+            std::tie(V,F) = mtao::geometry::prune(V,F,0);
+            std::tie(V,F) = mandoline::construction::remesh_self_intersections(V,F);
 
-            constructor.emplace(V,F,staggered_grid());
+            constructor = mandoline::construction::CutmeshGenerator_Imgui::create(V,F);
 
 
 
@@ -129,13 +121,14 @@ class MeshViewer: public mtao::opengl::Window3 {
             update();
         }
         void update() {
-            auto sg = staggered_grid();
-            //mtao::geometry::grid::Grid3f g(std::array<int,3>{{NI,NJ,NK}});
-            constructor->update_grid(sg);
-            constructor->update_vertices(V);
-            auto g = sg.vertex_grid();
-
-            grid.set(g);
+            if(constructor) {
+                //mtao::geometry::grid::Grid3f g(std::array<int,3>{{NI,NJ,NK}});
+                constructor->update_grid();
+                constructor->update_vertices(V);
+                auto sg = constructor->staggered_grid();
+                mtao::geometry::grid::Grid3d g = sg.vertex_grid();
+                grid.set(g);
+            }
 
 
         }
@@ -174,25 +167,6 @@ class MeshViewer: public mtao::opengl::Window3 {
             edge_boundary_drawable->set_visibility(false);
         }
         void gui() override {
-            if(ImGui::InputInt3("N", &NI))  {
-                update();
-            }
-            if(ImGui::InputFloat3("min", bbox.min().data()))  {
-                bbox.min() = (bbox.min().array() < bbox.max().array()).select(bbox.min(),bbox.max());
-                update();
-            }
-            if(ImGui::InputFloat3("max", bbox.max().data()))  {
-                bbox.max() = (bbox.min().array() > bbox.max().array()).select(bbox.min(),bbox.max());
-                update();
-            }
-            if(ImGui::Checkbox("Cubes", &use_cube)) {
-                update();
-            }
-            if(ImGui::InputInt("Adaptive level", &adaptive_level))  {
-
-                constructor->set_adaptivity(adaptive_level);
-                update();
-            }
 
             if(mv_drawable) {
                 mv_drawable->gui();
@@ -212,51 +186,54 @@ class MeshViewer: public mtao::opengl::Window3 {
                 bbox = orig_bbox;
                 update();
             }
-            if(ImGui::Button("Make CCM")) {
-                constructor->bake();
-                ccm = constructor->emit();
-                
-                if constexpr(false) {
-                    auto cv = ccm->cut_vertices();
-                    for(auto&& [i,v]: mtao::iterator::enumerate(cv))
+            if(ImGui::CollapsingHeader("Cutmesh Generation")) {
+                if(constructor) {
+                    if(constructor->gui()) {
+                        update();
+                    }
+                }
+                if(ImGui::Button("Make CCM")) {
+                    ccm = constructor->generate();
                     {
-                        std::cout << i << ": " << std::string(v) << " => " << ccm->get_world_vertex(v).transpose() << std::endl;
+                        auto g = ccm->Base::vertex_grid();
+                        auto s = g.shape();
+                        std::cout << s[0] << ":" << s[1] << ":" << s[2] << std::endl;
                     }
 
-                }
-                std::vector<mtao::ColVecs3i> Fs;
-                mtao::ColVecs3f V = ccm->vertices().cast<float>();
-                for(auto&& f: ccm->faces()) {
-                    if(f.is_mesh_face()) {
-                        Fs.push_back(f.triangulate_fan());
+                    std::vector<mtao::ColVecs3i> Fs;
+                    mtao::ColVecs3f V = ccm->vertices().cast<float>();
+                    for(auto&& f: ccm->faces()) {
+                        if(f.is_mesh_face()) {
+                            Fs.push_back(f.triangulate_fan());
+                        }
                     }
-                }
-                if(Fs.size() > 0) {
-                    auto F = mtao::eigen::hstack_iter(Fs.begin(),Fs.end()).cast<unsigned int>().eval();
-                    mesh.setTriangleBuffer(V,F);
-                    edge_mesh.setVertexBuffer(V);
+                    if(Fs.size() > 0) {
+                        auto F = mtao::eigen::hstack_iter(Fs.begin(),Fs.end()).cast<unsigned int>().eval();
+                        mesh.setTriangleBuffer(V,F);
+                        edge_mesh.setVertexBuffer(V);
 
 
-                    using E = std::array<int,2>;
-                    edges.clear();
-                    mapped_edges.clear();
-                    for(int i = 0; i < ccm->cut_edge_size(); ++i) {
-                        auto e = ccm->cut_edge(i);
-                        auto va = ccm->masked_vertex(e(0));
-                        auto vb = ccm->masked_vertex(e(1));
-                        auto mask = va.mask() & vb.mask();
-                        if(mask.active()) {
-                            edges.emplace_back(E{{e(0),e(1)}});
-                            for(int i = 0; i < 3; ++i) {
-                                if(mask[i]) {
-                                    mapped_edges[E{{i,*mask[i]}}].emplace_back(edges.back());
+                        using E = std::array<int,2>;
+                        edges.clear();
+                        mapped_edges.clear();
+                        for(int i = 0; i < ccm->cut_edge_size(); ++i) {
+                            auto e = ccm->cut_edge(i);
+                            auto va = ccm->masked_vertex(e(0));
+                            auto vb = ccm->masked_vertex(e(1));
+                            auto mask = va.mask() & vb.mask();
+                            if(mask.active()) {
+                                edges.emplace_back(E{{e(0),e(1)}});
+                                for(int i = 0; i < 3; ++i) {
+                                    if(mask[i]) {
+                                        mapped_edges[E{{i,*mask[i]}}].emplace_back(edges.back());
+                                    }
                                 }
                             }
                         }
+                        update_edges();
                     }
-                    update_edges();
-                }
 
+                }
             }
             {
                 bool active = bool(edge_choice);

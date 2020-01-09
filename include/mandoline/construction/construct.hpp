@@ -12,13 +12,17 @@ namespace mandoline::construction {
     class DeformingGeometryConstructor {
         public:
             DeformingGeometryConstructor(const mtao::ColVecs3d& V, const mtao::ColVecs3i& F, const mtao::geometry::grid::StaggeredGrid3d& grid, int adaptive_level = 0, std::optional<double> threshold = -1);
+            DeformingGeometryConstructor(DeformingGeometryConstructor&& o);
+            DeformingGeometryConstructor& operator=(DeformingGeometryConstructor&& o);
+
             ~DeformingGeometryConstructor();
             void update_vertices(const mtao::ColVecs3d& V, const std::optional<double>& threshold = -1);
-            void update_grid(const mtao::geometry::grid::StaggeredGrid3d&& g);
+            void update_grid(const mtao::geometry::grid::StaggeredGrid3d& g);
             void set_adaptivity(int res = 0);
             void bake();
             CutCellMesh<3> emit() const;
         private:
-            CutCellGenerator<3>* _ccg;
+            CutCellGenerator<3>* _ccg = nullptr;
+            bool _dirty = true;
     };
 }
