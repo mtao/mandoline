@@ -15,8 +15,8 @@ namespace mandoline {
         int region = -1;
         coord_type grid_cell;
 
-        void  serialize(protobuf::Cell&) const;
-        static CutCell from_proto(const protobuf::Cell&);
+        void  serialize(protobuf::CutCell&) const;
+        static CutCell from_proto(const protobuf::CutCell&);
 
         std::vector<Eigen::Triplet<double>> boundary_triplets() const;
         mtao::ColVecs3i triangulated(const std::vector<CutFace<3>>& Fs) const;
