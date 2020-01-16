@@ -13,6 +13,7 @@
 #include "mtao/geometry/mesh/eltopo.h"
 #include "mtao/geometry/mesh/lostopos.hpp"
 
+#include <mtao/opengl/objects/grid.h>
 #include <Corrade/Utility/Arguments.h>
 #include "mtao/opengl/objects/mesh.h"
 #include <mandoline/construction/construct_imgui.hpp>
@@ -43,7 +44,7 @@ class MeshViewer: public mtao::opengl::Window3 {
         int adaptive_level=0;
 
         //Construction helper
-        std::optional<mandoline::construction::DeformingGeometryConstructor> constructor;
+        std::optional<mandoline::construction::CutmeshGenerator_Imgui> constructor;
         //the mesh we're using
         std::optional<mandoline::CutCellMesh<3>> ccm;
 
@@ -53,16 +54,21 @@ class MeshViewer: public mtao::opengl::Window3 {
             Corrade::Utility::Arguments myargs;
             std::tie(V,F) = mtao::geometry::mesh::sphere<double>(4);
             mesh.setTriangleBuffer(V.cast<float>(),F.cast<unsigned int>());
+
+            constructor = mandoline::construction::CutmeshGenerator_Imgui::create(V,F);
             auto E = mtao::geometry::mesh::boundary_facets(F);
 
             tracker = std::make_unique<TrackerType>(V,F);
 
+            edge_drawable = new mtao::opengl::Drawable<Magnum::Shaders::Flat3D>{grid,_flat_shader, drawables()};
+            grid.setParent(&root());
 
 
             phong_drawable = new mtao::opengl::Drawable<Magnum::Shaders::Phong>{mesh,_shader, drawables()};
             mv_drawable = new mtao::opengl::Drawable<Magnum::Shaders::MeshVisualizer>{mesh,_wireframe_shader, drawables()};
 
             mesh.setParent(&root());
+            update();
 
         }
         void gui() override {
@@ -76,6 +82,19 @@ class MeshViewer: public mtao::opengl::Window3 {
             if(mv_drawable) {
                 mv_drawable->gui();
             }
+
+        }
+
+        void update() {
+            if(constructor) {
+                //mtao::geometry::grid::Grid3f g(std::array<int,3>{{NI,NJ,NK}});
+                constructor->update_grid();
+                constructor->update_vertices(V);
+                auto sg = constructor->staggered_grid();
+                mtao::geometry::grid::Grid3d g = sg.vertex_grid();
+                grid.set(g);
+            }
+
 
         }
 
@@ -98,6 +117,8 @@ class MeshViewer: public mtao::opengl::Window3 {
                 ColVectors3d Vnew = V + (subdt) * 2 * enright_velocities(V, fine_t);
 
                 subdt = tracker->integrate(Vnew,subdt);
+
+
                 V = Vnew;
 
                 curt = curt + subdt;
@@ -106,6 +127,9 @@ class MeshViewer: public mtao::opengl::Window3 {
                 }
             }
             auto [V,F] = tracker->get_mesh();
+            if(constructor) {
+                constructor->update_mesh_and_bbox(V,F);
+            }
             mesh.setTriangleBuffer(V.cast<float>(),F.cast<unsigned int>());
             t += dt;
             while(t > 1)  {
@@ -124,6 +148,8 @@ class MeshViewer: public mtao::opengl::Window3 {
         mtao::opengl::objects::Mesh<3> mesh;
         mtao::opengl::Drawable<Magnum::Shaders::Phong>* phong_drawable = nullptr;
         mtao::opengl::Drawable<Magnum::Shaders::MeshVisualizer>* mv_drawable = nullptr;
+        mtao::opengl::objects::Grid<3> grid;
+        mtao::opengl::Drawable<Magnum::Shaders::Flat3D>* edge_drawable = nullptr;
 
 
 };

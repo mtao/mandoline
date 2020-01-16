@@ -15,6 +15,14 @@ namespace mandoline::construction {
     {
             auto bbox = mtao::geometry::bounding_box(V);
             bbox = mtao::geometry::expand_bbox(bbox,bbox_scale);
+            auto s = bbox.sizes().eval();
+
+            for(int i = 0; i < 3; ++i) {
+                if(s(i)< 1e-5) {
+                    bbox.min()(i) -= 1e-2;
+                    bbox.max()(i) += 1e-2;
+                }
+            }
             auto g = mtao::geometry::grid::StaggeredGrid3d::from_bbox(bbox,N);
             return CutmeshGenerator_Imgui(V,F,g,adaptive_level,threshold);
 
@@ -75,5 +83,26 @@ namespace mandoline::construction {
     mandoline::CutCellMesh<3> CutmeshGenerator_Imgui::generate() {
         bake();
         return emit();
+    }
+    void CutmeshGenerator_Imgui::update_vertices_and_bbox(const mtao::ColVecs3d& V, double bbox_scale, const std::optional<double>& threshold) {
+        update_vertices(V, threshold);
+
+        bbox = mtao::geometry::bounding_box(V).cast<float>();
+        bbox = mtao::geometry::expand_bbox(bbox,float(bbox_scale));
+        auto s = bbox.sizes().eval();
+
+        for(int i = 0; i < 3; ++i) {
+            if(s(i)< 1e-5) {
+                bbox.min()(i) -= 1e-2;
+                bbox.max()(i) += 1e-2;
+            }
+        }
+        auto g = mtao::geometry::grid::StaggeredGrid3d::from_bbox(bbox.cast<double>(),N);
+        update_grid();
+    }
+    void CutmeshGenerator_Imgui::update_mesh_and_bbox(const mtao::ColVecs3d& V, const mtao::ColVecs3i& F, double scale, const std::optional<double>& threshold) {
+
+        update_vertices_and_bbox(V,scale,threshold);
+        update_topology(F);
     }
 }

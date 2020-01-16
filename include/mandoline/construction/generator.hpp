@@ -123,6 +123,7 @@ namespace mandoline::construction {
                 void reset(const mtao::vector<VType>& grid_vertices);
 
                 void add_boundary_elements(const BoundaryElements& E);
+                void set_boundary_elements(const BoundaryElements& E);
                 void add_edges(const Edges& E);
                 static std::set<EdgeIntersectionType> cell_edge_intersections(const std::set<CoordType>& cells) ;
                 template <typename Func>

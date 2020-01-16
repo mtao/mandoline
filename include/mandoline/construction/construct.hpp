@@ -17,6 +17,9 @@ namespace mandoline::construction {
 
             ~DeformingGeometryConstructor();
             void update_vertices(const mtao::ColVecs3d& V, const std::optional<double>& threshold = -1);
+            void update_topology(const mtao::ColVecs3i& F);
+            void update_mesh(const mtao::ColVecs3d& V, const mtao::ColVecs3i& F, const std::optional<double>& threshold = -1);
+            void update_mesh(const mtao::ColVecs3i& F);
             void update_grid(const mtao::geometry::grid::StaggeredGrid3d& g);
             void set_adaptivity(int res = 0);
             void bake();

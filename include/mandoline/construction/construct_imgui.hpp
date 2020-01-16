@@ -17,6 +17,9 @@ namespace mandoline::construction {
         using DeformingGeometryConstructor::update_vertices;
         using DeformingGeometryConstructor::bake;
         using DeformingGeometryConstructor::emit;
+
+        void update_vertices_and_bbox(const mtao::ColVecs3d& V, double scale = 1.1, const std::optional<double>& threshold = -1);
+        void update_mesh_and_bbox(const mtao::ColVecs3d& V, const mtao::ColVecs3i& F, double scale = 1.1, const std::optional<double>& threshold = -1);
         //Cutcell mesh parameters. all floats but will be cast to double
         Eigen::AlignedBox<float,3> bbox;
         std::array<int,3> N{{5,5,5}};
@@ -26,7 +29,7 @@ namespace mandoline::construction {
 
 
         bool gui() ;
-        void set_bbox(const Eigen::AlignedBox<float,3>& bbox, float scale = 1.0);
+        void set_bbox(const Eigen::AlignedBox<float,3>& bbox, float scale = 1.1);
         void update_grid();
         mandoline::CutCellMesh<3> generate() ;
         mtao::geometry::grid::StaggeredGrid3d staggered_grid() const ;

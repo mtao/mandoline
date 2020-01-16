@@ -1,5 +1,6 @@
 #include "mandoline/construction/generator.hpp"
 #include "mandoline/construction/construct.hpp"
+#include <mtao/geometry/bounding_box.hpp>
 
 namespace mandoline::construction {
 
@@ -52,6 +53,15 @@ namespace mandoline::construction {
     }
     void DeformingGeometryConstructor::update_vertices(const mtao::ColVecs3d& V, const std::optional<double>& threshold) {
         _ccg->update_vertices(V, threshold);
+        _dirty = true;
+    }
+    void DeformingGeometryConstructor::update_topology(const mtao::ColVecs3i& F) {
+        _ccg->set_boundary_elements(F);
+    }
+    void DeformingGeometryConstructor::update_mesh(const mtao::ColVecs3d& V, const mtao::ColVecs3i& F, const std::optional<double>& threshold) {
+
+        update_vertices(V,threshold);
+        update_topology(F);
         _dirty = true;
     }
     void DeformingGeometryConstructor::update_grid(const mtao::geometry::grid::StaggeredGrid3d& g) {
