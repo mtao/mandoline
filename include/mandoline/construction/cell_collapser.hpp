@@ -76,6 +76,7 @@ namespace mandoline::construction {
                 auto vb = V.col(b);
                 auto vba = va - vb;
 
+#ifdef MANDOLINE_USE_FLOP_FREE_ANGLE_COMPUTATION
                 int maxcoeff;
                 if(vba.norm() < 1e-8) {
                     mtao::Mat3d A = mtao::Mat3d::Zero();
@@ -101,6 +102,19 @@ namespace mandoline::construction {
                 }
                 int ui = (maxcoeff+1)%3;
                 int uj = (maxcoeff+2)%3;
+#else//MANDOLINE_USE_FLOP_FREE_ANGLE_COMPUTATION
+                mtao::Vec3d t = (vba).normalized();
+                mtao::Matrix<double,3,2> uv;
+                auto u = uv.col(0);
+                auto v = uv.col(1);
+                for(int i = 0; i < 3; ++i) {
+                    if(t((i+1)%3) != 0) {
+                        u = t.cross(mtao::Vec3d::Unit(i));
+                        break;
+                    }
+                }
+                v = u.cross(t);
+#endif//MANDOLINE_USE_FLOP_FREE_ANGLE_COMPUTATION
                 mtao::map<double,HalfFace> index_map;
                 for(auto&& hfp: hfs) {
                     auto [fidx,e] = *hfp;
@@ -109,7 +123,11 @@ namespace mandoline::construction {
                     bool sign = std::get<1>(m_halfface_to_cell.at(*hfp));
                     auto N = (sign?1:-1) * F.N;
 
+#ifdef MANDOLINE_USE_FLOP_FREE_ANGLE_COMPUTATION
                     mtao::Vec2d p(N(ui),N(uj));
+#else//MANDOLINE_USE_FLOP_FREE_ANGLE_COMPUTATION
+                    mtao::Vec2d p = uv.transpose() * N;
+#endif//MANDOLINE_USE_FLOP_FREE_ANGLE_COMPUTATION
 
                     double ang = mtao::geometry::trigonometry::angle(p)(0);
                     index_map[ang] = *hfp;
@@ -123,7 +141,9 @@ namespace mandoline::construction {
                     }
                     const HalfFace& hf = it->second;
                     const HalfFace& hf1 = it1->second;
-                    if(std::get<0>(hf) >= 0 && std::get<0>(hf1) >= 0) {
+			int idx = std::get<0>(m_halfface_to_cell[hf]);
+			int idx1 = std::get<0>(m_halfface_to_cell[hf1]);
+                    if(idx >= 0 && idx1 >= 0) {
                         cell_ds.join(cell(hf),dual_cell(hf1));
                     }
                 }

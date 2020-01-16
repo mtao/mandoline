@@ -117,6 +117,10 @@ TARGET_INCLUDE_DIRECTORIES(cutmesh_proto PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 
 find_package(CGAL)
 
+IF(HANDLE_SELF_INTERSECTIONS)
+    SET(SELF_INTERSECTION_LIBS
+        gmp CGAL::CGAL mpfr
+        )
 
 
 
@@ -230,6 +234,7 @@ SET(TOOLS_HDRS
     include/mandoline/tools/planar_slicer.hpp
     include/mandoline/tools/exploded_mesh.hpp
     )
+ENDIF(HANDLE_SELF_INTERSECTIONS)
 
 ADD_LIBRARY(cutmesh2_obj OBJECT ${CUTMESH2_SRCS} ${CUTMESH2_HDRS})
 ADD_LIBRARY(cutmesh3_obj OBJECT ${CUTMESH3_SRCS} ${CUTMESH3_HDRS})
@@ -244,7 +249,8 @@ TARGET_INCLUDE_DIRECTORIES(tools_obj PUBLIC  ${CMAKE_CURRENT_BINARY_DIR})
 
 TARGET_LINK_LIBRARIES(cutmesh2_obj PUBLIC mtao::headers mtao::geometry igl::core )
 TARGET_LINK_LIBRARIES(cutmesh3_obj PUBLIC mtao::headers mtao::geometry igl::core )
-TARGET_LINK_LIBRARIES(construction_obj PUBLIC mtao::headers mtao::geometry igl::core )
+TARGET_LINK_LIBRARIES(construction_obj PUBLIC mtao::headers mtao::geometry igl::core)
+
 if(USE_OPENGL)
     find_package(ImGui REQUIRED)
     find_package(MagnumIntegration COMPONENTS ImGui)
@@ -257,11 +263,6 @@ IF(OpenMP_Found)
     ADD_DEFINITIONS(-DMTAO_OPENMP)
 ENDIF(OpenMP_Found)
 
-IF(HANDLE_SELF_INTERSECTIONS)
-    SET(SELF_INTERSECTION_LIB
-        gmp CGAL::CGAL mpfr
-        )
-ENDIF(HANDLE_SELF_INTERSECTIONS)
 
 ADD_DEFINITIONS(-DUSE_FLOP_FREE_ANGLE_COMPUTATION)
 ADD_LIBRARY(mandoline
@@ -323,7 +324,7 @@ TARGET_INCLUDE_DIRECTORIES(mandoline_cutmesh3 PUBLIC ${CMAKE_CURRENT_BINARY_DIR}
 
 
 IF(HANDLE_SELF_INTERSECTIONS)
-    FOREACH(TARG mandoline mandoline2 mandoline3)
+    FOREACH(TARG mandoline mandoline2 mandoline3 construction_obj)
         TARGET_COMPILE_DEFINITIONS(${TARG}
             PUBLIC -DMANDOLINE_HANDLE_SELF_INTERSECTIONS)
     ENDFOREACH()

@@ -105,7 +105,10 @@ namespace mandoline::construction {
             for(auto&& [i,j]: a) {
                 int fidx = reindexer.at(i);
                 b[fidx] = j;
-                inds.insert(fidx);
+                // pos_cells currently fails with folded faces. lets give up on them for now
+                if(!ccm.is_folded_face(fidx)) {
+                    inds.insert(fidx);
+                }
 
             }
             auto pos_cells = possible_cells_cell(inds,ccm.faces());
@@ -113,7 +116,12 @@ namespace mandoline::construction {
                 std::cout << "CELL: " << a.index << std::endl;
                 std::cout << "No possible cells!?!?!" << std::endl;
                 for(auto&& ind: inds) {
-                    std::cout << "Face " << ind << ": " << std::endl;
+                    std::cout << "Face " << ind << ": ";
+                    if(ccm.is_folded_face(ind)) {
+                        std::cout <<"Folded" << std::endl;
+                    } else {
+                        std::cout << std::endl;
+                    }
                     auto& face = ccm.faces()[ind];
                     auto pc= possible_cells(face.indices);
                     std::cout << std::string(ccm.faces()[ind]) << ":::";
