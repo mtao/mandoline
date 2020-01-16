@@ -140,6 +140,6 @@ namespace mandoline {
         }
     template <int D, typename Derived>
         auto CutCellMeshBase<D,Derived>::edges() const -> Edges {
-            return mtao::eigen::hstack(mtao::geometry::grid::GridTriangulator<StaggeredGrid>(vertex_grid()).edges(),cut_edges());
+            return mtao::eigen::hstack(mtao::geometry::grid::GridTriangulator<GridType>(vertex_grid()).edges(),cut_edges());
         }
 }

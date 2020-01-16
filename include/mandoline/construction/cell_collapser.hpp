@@ -139,7 +139,13 @@ namespace mandoline::construction {
                     if(it1 == index_map.end()) {
                         it1 = index_map.begin();
                     }
-                    cell_ds.join(cell(it->second),dual_cell(it1->second));
+                    const HalfFace& hf = it->second;
+                    const HalfFace& hf1 = it1->second;
+			int idx = std::get<0>(m_halfface_to_cell[hf]);
+			int idx1 = std::get<0>(m_halfface_to_cell[hf1]);
+                    if(idx >= 0 && idx1 >= 0) {
+                        cell_ds.join(cell(hf),dual_cell(hf1));
+                    }
                 }
 
             }
@@ -151,10 +157,12 @@ namespace mandoline::construction {
             m_cell_boundaries.resize(reindexer.size());
             for(auto&& [hf,cb]: m_halfface_to_cell) {
                 auto& [c,b] = cb;
-                int root = cell_ds.get_root(c).data;
-                int cell = reindexer[root];
-                c = cell;
-                m_cell_boundaries[cell][std::get<0>(hf)] = b;
+                if(c >= 0) {
+                    int root = cell_ds.get_root(c).data;
+                    int cell = reindexer[root];
+                    c = cell;
+                    m_cell_boundaries[cell][std::get<0>(hf)] = b;
+                }
             }
 
             if(!face_cell_possibilities.empty()) { 

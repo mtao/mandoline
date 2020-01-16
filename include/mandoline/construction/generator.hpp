@@ -42,7 +42,6 @@ namespace mandoline::construction {
                 using StaggeredGrid::cell_grid;
                 using StaggeredGrid::origin;
                 using StaggeredGrid::dx;
-                using StaggeredGrid::shape;
                 using StaggeredGrid::vertex_index;
                 using StaggeredGrid::cell_index;
                 using StaggeredGrid::cell_size;
@@ -124,6 +123,7 @@ namespace mandoline::construction {
                 void reset(const mtao::vector<VType>& grid_vertices);
 
                 void add_boundary_elements(const BoundaryElements& E);
+                void set_boundary_elements(const BoundaryElements& E);
                 void add_edges(const Edges& E);
                 static std::set<EdgeIntersectionType> cell_edge_intersections(const std::set<CoordType>& cells) ;
                 template <typename Func>
@@ -209,12 +209,12 @@ namespace mandoline::construction {
 
                 size_t Vsize() const { return newV().size(); }
                 Vec V(int i) const;
-                VType GV(int i) const;
+                VType GV(int i) const;//vertices with grid masks
                 mtao::map<int,int> vertex_reindexer() const;
                 Vec vertex(int i) const;
                 size_t num_vertices() const;
 
-                Vertex<D> grid_vertex(int idx) const {
+                Vertex<D> grid_vertex(int idx) const {//vertices with grid mask
                     if(idx < grid_vertex_size()) {
                         return vertex_unindex(idx);
                     } else {
@@ -324,7 +324,7 @@ namespace mandoline::construction {
                 CutCellGenerator() = default;
                 CutCellGenerator(CutCellGenerator&&) = default;
                 CutCellGenerator& operator=(CutCellGenerator&&) = default;
-                using CCEG::shape;
+                using CCEG::vertex_shape;
 
                 size_t Vsize() const {
                     return CCEG::Vsize();

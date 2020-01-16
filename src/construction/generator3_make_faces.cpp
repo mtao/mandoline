@@ -67,11 +67,11 @@ namespace mandoline::construction {
 
 
 
-        using Grid2 = mtao::geometry::grid::StaggeredGrid<double,2, StaggeredGrid::UseVertexGrid>;
+        using Grid2 = mtao::geometry::grid::StaggeredGrid<double,2>;
         auto subgrid = [this](auto&& g, int d) {
             int n0 = (d+1)%3;
             int n1 = (d+2)%3;
-            auto s = shape();
+            auto s = vertex_shape();
             std::array<int,2> shape{{s[n0],s[n1]}};
             mtao::Vec2d dx(g.dx()(n0),g.dx()(n1));
             mtao::Vec2d origin(g.origin()(n0),g.origin()(n1));
@@ -99,7 +99,7 @@ namespace mandoline::construction {
                 }
                 auto flag = [&](int idx) {
                     if(auto it = ahdata.find(idx); it  == ahdata.end()) {
-                        ahdata[idx].active_grid_cell_mask = AxisHEMData::GridDatab::Constant(true,grids[i].shape());
+                        ahdata[idx].active_grid_cell_mask = AxisHEMData::GridDatab::Constant(true,grids[i].cell_shape());
                     }
                     auto& ahd = ahdata[idx];
                     ahd.active_grid_cell_mask(c2) = false;

@@ -24,6 +24,8 @@ namespace mandoline::construction {
         CutCellEdgeGenerator<D>::CutCellEdgeGenerator(const ColVecs& V, const StaggeredGrid& g, std::optional<double> threshold): CutCellEdgeGenerator(colvecs_to_vecvector(V),g,threshold) {}
     template <int D>
         CutCellEdgeGenerator<D>::CutCellEdgeGenerator(const VecVector& V, const StaggeredGrid& g, std::optional<double> threshold): StaggeredGrid(g), m_data(g.vertex_grid()), m_origV(V) {
+            assert(g.vertex_grid().valid());
+
             //CutCellEdgeGenerator<D>::CutCellEdgeGenerator(const VecVector& V, const StaggeredGrid& g, std::optional<double> threshold): StaggeredGrid(g), m_origV(V) {
             m_data.m_V.resize(V.size());
 
@@ -37,7 +39,7 @@ namespace mandoline::construction {
                 double mythresh = -1;
                 if(threshold) { mythresh =  *threshold; }
                 if(mythresh < 0) { 
-                    int v = *std::max_element(shape().begin(),shape().end());
+                    int v = *std::max_element(vertex_shape().begin(),vertex_shape().end());
                     v = 2 * std::max<int>(1,v);
                     mythresh =  v * threshold_epsilon; 
                 }
@@ -81,7 +83,7 @@ namespace mandoline::construction {
                 update_vertices(colvecs_to_vecvector(V), threshold);
             }
         template <int D>
-            CutCellEdgeGenerator<D>::CutCellEdgeGenerator(const StaggeredGrid& g ): CutCellEdgeGenerator(VecVector{},g.shape()) {
+            CutCellEdgeGenerator<D>::CutCellEdgeGenerator(const StaggeredGrid& g ): CutCellEdgeGenerator(VecVector{},g.vertex_shape()) {
             }
         /*
            template <int D> 
@@ -106,7 +108,7 @@ namespace mandoline::construction {
 
 
                 {
-                    m_data.bake(*this);
+                    m_data.bake(vertex_grid());
                 }
                 {
                     //auto t = mtao::logging::timer("generator bake vertices");
@@ -165,6 +167,12 @@ namespace mandoline::construction {
         template <int D>
             void CutCellEdgeGenerator<D>::add_boundary_elements(const BoundaryElements& F) {
                 auto t = mtao::logging::profiler("creating facets",false,"profiler");
+                m_data.set_topology(F);
+            }
+        template <int D>
+            void CutCellEdgeGenerator<D>::set_boundary_elements(const BoundaryElements& F) {
+                auto t = mtao::logging::profiler("creating facets",false,"profiler");
+                m_data.reset_topology();
                 m_data.set_topology(F);
             }
         template <int D>
