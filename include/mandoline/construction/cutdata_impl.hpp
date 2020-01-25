@@ -231,6 +231,8 @@ namespace mandoline::construction {
         }
     template <int D, typename Indexer>
         void CutData<D,Indexer>::set_topology(const Edges& E,const Faces& F,  const Faces& FEA) {
+            assert(m_V.size() > 0);
+            assert(m_F.maxCoeff() >= m_V.size());
             m_E = E;
             m_F = F;
             m_FE = FEA;
@@ -269,6 +271,18 @@ namespace mandoline::construction {
             m_cut_faces.clear();
             clean_edges();
             clean_triangles();
+        }
+    template <int D, typename Indexer>
+        void CutData<D,Indexer>::reset() {
+
+            *this = CutData(static_cast<Indexer>(*this));// copy in case something weird happens with Indexer
+        }
+    template <int D, typename Indexer>
+        void CutData<D,Indexer>::reset_topology() {
+            std::cout << m_V.size() << std::endl;
+            mtao::vector<Vertex<D>> V = std::move(m_V);;
+            reset();
+            set_vertices(V);
         }
     template <int D, typename Indexer>
         void CutData<D,Indexer>::reset_intersections() {

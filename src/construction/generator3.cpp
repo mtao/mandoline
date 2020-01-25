@@ -105,33 +105,41 @@ namespace mandoline::construction {
             for(auto&& [i,j]: a) {
                 int fidx = reindexer.at(i);
                 b[fidx] = j;
-                inds.insert(fidx);
+                // pos_cells currently fails with folded faces. lets give up on them for now
+                if(!ccm.is_folded_face(fidx)) {
+                    inds.insert(fidx);
+                }
 
             }
             auto pos_cells = possible_cells_cell(inds,ccm.faces());
             if(pos_cells.size() == 0) {
-                std::cout << "ONo possible cells!?!?!" << std::endl;
+                std::cout << "CELL: " << a.index << std::endl;
+                std::cout << "No possible cells!?!?!" << std::endl;
                 for(auto&& ind: inds) {
                     std::cout << "Face " << ind << ": ";
-                    if(ccm.faces()[ind].external_boundary) {
-                        std::cout << "[yes: " << std::get<0>(*ccm.faces()[ind].external_boundary) << "]" << std::endl;
+                    if(ccm.is_folded_face(ind)) {
+                        std::cout <<"Folded" << std::endl;
                     } else {
-                        std::cout <<"=================" << std::endl;
-                        std::cout <<"=================" << std::endl;
-                        std::cout <<"=================" << std::endl;
-                        std::cout <<"=================" << std::endl;
-                        std::cout <<"=================" << std::endl;
-
+                        std::cout << std::endl;
                     }
+                    auto& face = ccm.faces()[ind];
+                    auto pc= possible_cells(face.indices);
                     std::cout << std::string(ccm.faces()[ind]) << ":::";
                     for(auto&& c: possible_cells(ccm.faces()[ind].indices)) {
                         std::cout << c[0] << ":";
                         std::cout << c[1] << ":";
                         std::cout << c[2] << " ";
                     }
+                    std::cout << std::endl;
+                    for(auto&& c: ccm.faces()[ind].indices) {
+                        for(auto&& vi: c) {
+                            std::cout << std::string(grid_vertex(vi)) << " ";
+                        }
+                    }
 
                     std::cout << std::endl;
                 }
+                std::cout << std::endl;
             }
             b.grid_cell = *pos_cells.begin();
         }

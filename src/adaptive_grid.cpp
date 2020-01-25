@@ -645,7 +645,10 @@ namespace mandoline {
     }
 
     AdaptiveGrid AdaptiveGridFactory::create() const {
-        return AdaptiveGrid(original.shape(),cells);
+        //original is cell shape, staggered grid wants vertex shape
+        coord_type a = original.shape();
+        for(auto& v: a) { v++; }
+        return AdaptiveGrid(a,cells);
 
     }
     auto AdaptiveGrid::boundary_triplets(int offset) const -> std::vector<Eigen::Triplet<double>> {

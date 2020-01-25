@@ -46,7 +46,9 @@ namespace mandoline::construction {
             void update_topology_masks();
 
             void bake(const std::optional<SGType>& grid= {}, bool fuse=true);
-            void clear();
+            void clear();// clear intersections, useful if vertices changed position
+            void reset();// reset internal data
+            void reset_topology();// reset internal data
             void reset_intersections() ;
 
 
@@ -67,6 +69,7 @@ namespace mandoline::construction {
 
 
             void set_vertices(const mtao::vector<VType>& V) { m_V = V; }
+            void set_vertices(mtao::vector<VType>&& V) { m_V = std::move(V); }
 
 
 

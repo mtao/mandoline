@@ -32,15 +32,17 @@ namespace mandoline::construction {
                 cell_ds.add_node(2*cid);
                 cell_ds.add_node(2*cid+1);
 
-                auto add_halfface = [&](Edge e) {
+                auto add_halfface = [&](Edge e, bool flap = false) {
+                    int base = flap?(-2):(2*cid); //flap -> (-2 so the neg can have -1). wel'l just ignore negative entries
+                    base = 2*cid;
                     {
                         HalfFace hf{fid,e};
-                        m_halfface_to_cell[hf] = std::make_tuple(2*cid,true);
+                        m_halfface_to_cell[hf] = std::make_tuple(base,true);
                     }
                     std::swap(e[0],e[1]);
                     {
                         HalfFace hf{fid,e};
-                        m_halfface_to_cell[hf] = std::make_tuple(2*cid+1,false);
+                        m_halfface_to_cell[hf] = std::make_tuple(base+1,false);
                     }
                 };
                 for(auto&& C: CSS.indices) {
@@ -49,10 +51,9 @@ namespace mandoline::construction {
                     }
                 }
                 if(!my_flap_edges.empty()) {
-                    continue;
                     for(auto&& e: my_flap_edges) {
                         auto [a,b] = e;
-                        add_halfface(e);
+                        add_halfface(e,true);
                     }
                 }
             }

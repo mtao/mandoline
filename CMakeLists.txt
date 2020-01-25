@@ -34,7 +34,7 @@ else()
     FetchContent_Declare(
         mtao
         GIT_REPOSITORY https://github.com/mtao/core.git
-        GIT_TAG b7e8cd417fe52b18b8c984998863d1b87a95a9e6 
+        GIT_TAG 5cd1e17a409d89de68afe34b4c45eecc6f1fcc00
         )
     if(${CMAKE_VERSION} VERSION_LESS 3.14)
         FetchContent_Populate(mtao)
@@ -111,9 +111,16 @@ find_package(Protobuf REQUIRED)
 protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS proto/cutmesh.proto)
 protobuf_generate_python(PROTO_PY proto/cutmesh.proto)
 
+ADD_LIBRARY(cutmesh_proto OBJECT ${PROTO_SRCS} ${PROTO_HDRS})
+TARGET_LINK_LIBRARIES(cutmesh_proto protobuf::libprotobuf)
+TARGET_INCLUDE_DIRECTORIES(cutmesh_proto PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 
 find_package(CGAL)
 
+IF(HANDLE_SELF_INTERSECTIONS)
+    SET(SELF_INTERSECTION_LIBS
+        gmp CGAL::CGAL mpfr
+        )
 
 
 
@@ -126,7 +133,6 @@ SET(CUTMESH2_SRCS
     src/mesh2.cpp
     )
 SET(CUTMESH3_SRCS
-    ${PROTO_SRCS} 
     src/mesh3.cpp
     src/cutcell.cpp
     src/proto_util.cpp
@@ -146,16 +152,15 @@ SET(CUTMESH_HDRS
     #include/mandoline/diffgeo_utils.hpp
     include/mandoline/coord_mask.hpp
     include/mandoline/adaptive_grid.hpp
+    $<TARGET_OBJECTS:cutmesh_proto>
     )
 
 SET(CUTMESH2_HDRS
     ${CUTMESH_HDRS}
-    ${PROTO_HDRS}
     include/mandoline/mesh2.hpp
     )
 SET(CUTMESH3_HDRS
     ${CUTMESH_HDRS}
-    ${PROTO_HDRS}
     include/mandoline/construction/cell_collapser.hpp
     include/mandoline/construction/face_collapser.hpp
     include/mandoline/construction/remesh_self_intersections.hpp
@@ -195,6 +200,11 @@ SET(CONSTRUCTION_HDRS
     include/mandoline/construction/construct.hpp
     )
 
+if(USE_OPENGL)
+    set(CONSTRUCTION_SRCS ${CONSTRUCTION_SRCS} src/construction/construct_imgui.cpp)
+    set(CONSTRUCTION_HDRS ${CONSTRUCTION_HDRS} src/construction/construct_imgui.cpp)
+endif()
+
 SET(MANDOLINE2_SRCS
     ${CUTMESH2_SRCS}
     ${CUTMESH2_HDRS}
@@ -217,15 +227,14 @@ SET(MANDOLINE_CUTMESH_SRCS
 
 
 SET(TOOLS_SRCS
-    ${PROTO_SRCS}
     src/tools/planar_slicer.cpp
     src/tools/exploded_mesh.cpp
     )
 SET(TOOLS_HDRS
-    ${PROTO_HDRS}
     include/mandoline/tools/planar_slicer.hpp
     include/mandoline/tools/exploded_mesh.hpp
     )
+ENDIF(HANDLE_SELF_INTERSECTIONS)
 
 ADD_LIBRARY(cutmesh2_obj OBJECT ${CUTMESH2_SRCS} ${CUTMESH2_HDRS})
 ADD_LIBRARY(cutmesh3_obj OBJECT ${CUTMESH3_SRCS} ${CUTMESH3_HDRS})
@@ -238,24 +247,26 @@ TARGET_INCLUDE_DIRECTORIES(cutmesh3_obj PUBLIC  ${CMAKE_CURRENT_BINARY_DIR})
 TARGET_INCLUDE_DIRECTORIES(construction_obj PUBLIC  ${CMAKE_CURRENT_BINARY_DIR})
 TARGET_INCLUDE_DIRECTORIES(tools_obj PUBLIC  ${CMAKE_CURRENT_BINARY_DIR})
 
-TARGET_LINK_LIBRARIES(cutmesh2_obj PUBLIC mtao::headers mtao::geometry igl::core)
-TARGET_LINK_LIBRARIES(cutmesh3_obj PUBLIC mtao::headers mtao::geometry igl::core)
+TARGET_LINK_LIBRARIES(cutmesh2_obj PUBLIC mtao::headers mtao::geometry igl::core )
+TARGET_LINK_LIBRARIES(cutmesh3_obj PUBLIC mtao::headers mtao::geometry igl::core )
 TARGET_LINK_LIBRARIES(construction_obj PUBLIC mtao::headers mtao::geometry igl::core)
-TARGET_LINK_LIBRARIES(tools_obj PUBLIC mtao::headers mtao::geometry igl::core)
+
+if(USE_OPENGL)
+    find_package(ImGui REQUIRED)
+    find_package(MagnumIntegration COMPONENTS ImGui)
+    TARGET_LINK_LIBRARIES(construction_obj PUBLIC ImGui::ImGui MagnumIntegration::ImGui)
+endif()
+TARGET_LINK_LIBRARIES(tools_obj PUBLIC mtao::headers mtao::geometry igl::core )
 
 ADD_DEFINITIONS(-g)
 IF(OpenMP_Found)
     ADD_DEFINITIONS(-DMTAO_OPENMP)
 ENDIF(OpenMP_Found)
 
-IF(HANDLE_SELF_INTERSECTIONS)
-    SET(SELF_INTERSECTION_LIB
-        gmp CGAL::CGAL mpfr
-        )
-ENDIF(HANDLE_SELF_INTERSECTIONS)
 
 ADD_DEFINITIONS(-DUSE_FLOP_FREE_ANGLE_COMPUTATION)
 ADD_LIBRARY(mandoline
+    $<TARGET_OBJECTS:cutmesh_proto>
     $<TARGET_OBJECTS:cutmesh2_obj>
     $<TARGET_OBJECTS:cutmesh3_obj>
     $<TARGET_OBJECTS:construction_obj>
@@ -269,6 +280,7 @@ TARGET_LINK_LIBRARIES(mandoline
     )
 
 ADD_LIBRARY(mandoline2 EXCLUDE_FROM_ALL
+    $<TARGET_OBJECTS:cutmesh_proto>
     $<TARGET_OBJECTS:cutmesh2_obj>
     $<TARGET_OBJECTS:construction_obj>
     )
@@ -281,6 +293,7 @@ TARGET_LINK_LIBRARIES(mandoline2
 
 
 ADD_LIBRARY(mandoline3 EXCLUDE_FROM_ALL
+    $<TARGET_OBJECTS:cutmesh_proto>
     $<TARGET_OBJECTS:cutmesh3_obj>
     $<TARGET_OBJECTS:construction_obj>
     $<TARGET_OBJECTS:tools_obj>
@@ -289,18 +302,21 @@ TARGET_LINK_LIBRARIES(mandoline3
     mtao::geometry OpenMP::OpenMP_CXX
     ${SELF_INTERSECTION_LIBS} Boost::thread
     igl::core
-    ${Protobuf_LIBRARIES}
+protobuf::libprotobuf
     )
 
 ADD_LIBRARY(mandoline_cutmesh3
+    $<TARGET_OBJECTS:cutmesh_proto>
     $<TARGET_OBJECTS:cutmesh3_obj>
     )
 TARGET_LINK_LIBRARIES(mandoline_cutmesh3
     mtao::geometry OpenMP::OpenMP_CXX
     ${SELF_INTERSECTION_LIBS} Boost::thread
     igl::core
-    ${Protobuf_LIBRARIES}
+    protobuf::libprotobuf
     )
+message(STATUS "BINARY DIR: ${CMAKE_CURRENT_BINARY_DIR}")
+
 TARGET_INCLUDE_DIRECTORIES(mandoline PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 TARGET_INCLUDE_DIRECTORIES(mandoline2 PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 TARGET_INCLUDE_DIRECTORIES(mandoline3 PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
@@ -308,7 +324,7 @@ TARGET_INCLUDE_DIRECTORIES(mandoline_cutmesh3 PUBLIC ${CMAKE_CURRENT_BINARY_DIR}
 
 
 IF(HANDLE_SELF_INTERSECTIONS)
-    FOREACH(TARG mandoline mandoline2 mandoline3)
+    FOREACH(TARG mandoline mandoline2 mandoline3 construction_obj)
         TARGET_COMPILE_DEFINITIONS(${TARG}
             PUBLIC -DMANDOLINE_HANDLE_SELF_INTERSECTIONS)
     ENDFOREACH()

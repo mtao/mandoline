@@ -24,6 +24,8 @@ namespace mandoline::construction {
         CutCellEdgeGenerator<D>::CutCellEdgeGenerator(const ColVecs& V, const StaggeredGrid& g, std::optional<double> threshold): CutCellEdgeGenerator(colvecs_to_vecvector(V),g,threshold) {}
     template <int D>
         CutCellEdgeGenerator<D>::CutCellEdgeGenerator(const VecVector& V, const StaggeredGrid& g, std::optional<double> threshold): StaggeredGrid(g), m_data(g.vertex_grid()), m_origV(V) {
+            assert(g.vertex_grid().valid());
+
             //CutCellEdgeGenerator<D>::CutCellEdgeGenerator(const VecVector& V, const StaggeredGrid& g, std::optional<double> threshold): StaggeredGrid(g), m_origV(V) {
             m_data.m_V.resize(V.size());
 
@@ -165,6 +167,12 @@ namespace mandoline::construction {
         template <int D>
             void CutCellEdgeGenerator<D>::add_boundary_elements(const BoundaryElements& F) {
                 auto t = mtao::logging::profiler("creating facets",false,"profiler");
+                m_data.set_topology(F);
+            }
+        template <int D>
+            void CutCellEdgeGenerator<D>::set_boundary_elements(const BoundaryElements& F) {
+                auto t = mtao::logging::profiler("creating facets",false,"profiler");
+                m_data.reset_topology();
                 m_data.set_topology(F);
             }
         template <int D>

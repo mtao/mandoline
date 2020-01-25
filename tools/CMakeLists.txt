@@ -17,13 +17,11 @@ TARGET_LINK_LIBRARIES(obj_to_cutmesh cutmesh_maker mandoline OpenMP::OpenMP_CXX 
 ADD_EXECUTABLE(cutmesh_info cutmesh_info.cpp)
 TARGET_LINK_LIBRARIES(cutmesh_info mandoline_cutmesh3)
 
-IF(USE_OPENGL)
-
 IF(Corrade_FOUND)
 ADD_EXECUTABLE(cfg_to_cutmesh cfg_to_cutmesh.cpp)
 TARGET_LINK_LIBRARIES(cfg_to_cutmesh cutmesh_maker mandoline OpenMP::OpenMP_CXX mtao::common  Corrade::Utility)
 ENDIF(Corrade_FOUND)
-ENDIF(USE_OPENGL)
+
 
 IF(HANDLE_SELF_INTERSECTIONS)
     ADD_EXECUTABLE(remove_self_intersections remove_self_intersections.cpp
