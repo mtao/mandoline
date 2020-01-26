@@ -5,9 +5,11 @@ project(Mandoline
 SET(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 SET(MTAO_PATH "" CACHE STRING "location of mtao core libs" )
 SET(LIBIGL_PATH "" CACHE STRING "location of libigl libs" )
+
 OPTION(USE_OPENGL "Build opengl stuff" ON)
 IF(APPLE)
     SET(USE_OPENMP_PRE OFF)
@@ -17,105 +19,20 @@ ENDIF(APPLE)
 OPTION(USE_OPENMP "Use OpenMP stuff" ${USE_OPENMP_PRE})
 OPTION(HANDLE_SELF_INTERSECTIONS "Handle Self-Intersections" ON)
 
-include(FetchContent REQUIRED)
-MESSAGE(STATUS "MTAO Path: ${MTAO_PATH}")
+
+include(mandoline_fetch_dependencies)
 
 
-OPTION(MTAO_USE_ELTOPO "Should we build the el topo submodule" OFF)
-OPTION(MTAO_USE_LOSTOPOS "Should we build the LOS Topos submodule" OFF)
-OPTION(MTAO_USE_OPENGL "Build opengl stuff" ${USE_OPENGL})
-OPTION(MTAO_USE_PNGPP "Use PNG++ for screenshots" OFF)
-
-if(MTAO_PATH)
-    ADD_SUBDIRECTORY("${MTAO_PATH}" ${CMAKE_BINARY_DIR}/mtao EXCLUDE_FROM_ALL)
-    set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${MTAO_PATH}/cmake")
-else()
-
-    FetchContent_Declare(
-        mtao
-        GIT_REPOSITORY https://github.com/mtao/core.git
-        GIT_TAG 5cd1e17a409d89de68afe34b4c45eecc6f1fcc00
-        )
-    if(${CMAKE_VERSION} VERSION_LESS 3.14)
-        FetchContent_Populate(mtao)
-        add_subdirectory(${mtao_SOURCE_DIR} ${mtao_BINARY_DIR} EXCLUDE_FROM_ALL)
-    else()
-        FetchContent_MakeAvailable(mtao)
-    endif()
-    set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${mtao_SOURCE_DIR}/cmake")
-endif()
-
-
-FIND_PACKAGE(Eigen3 3.3.9)
-
-if(NOT Eigen3_FOUND)
-    FetchContent_Declare(
-        eigen
-        GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
-        GIT_TAG bcbaad6d874d451817457ae0603f953cda3c0c06 
-        )
-    if(${CMAKE_VERSION} VERSION_LESS 3.14)
-        FetchContent_Populate(eigen)
-        add_subdirectory(${eigen_SOURCE_DIR} ${eigen_BINARY_DIR} EXCLUDE_FROM_ALL)
-    else()
-        FetchContent_MakeAvailable(eigen)
-    endif()
-
-ENDIF()
-
-
-IF(USE_OPENMP)
-    FIND_PACKAGE(OpenMP REQUIRED)
-ENDIF(USE_OPENMP)
-
-MESSAGE(STATUS "MODULE PATH:${CMAKE_MODULE_PATH}")
-#FIND_PACKAGE(libigl REQUIRED)
-FIND_PACKAGE(Boost COMPONENTS thread REQUIRED)
-
-
-MESSAGE(STATUS "LIBIGL Path: ${LIBIGL_PATH}")
-option(LIBIGL_USE_STATIC_LIBRARY "Use libigl as static library" OFF)
-option(LIBIGL_WITH_COMISO            "Use CoMiso"                   OFF)
-option(LIBIGL_WITH_EMBREE            "Use Embree"                   OFF)
-option(LIBIGL_WITH_OPENGL            "Use OpenGL"                   OFF)
-option(LIBIGL_WITH_OPENGL_GLFW       "Use GLFW"                     OFF)
-option(LIBIGL_WITH_OPENGL_GLFW_IMGUI "Use ImGui"                    OFF)
-option(LIBIGL_WITH_PNG               "Use PNG"                      OFF)
-option(LIBIGL_WITH_TETGEN            "Use Tetgen"                   OFF)
-option(LIBIGL_WITH_TRIANGLE          "Use Triangle"                 OFF)
-option(LIBIGL_WITH_PREDICATES        "Use exact predicates"         OFF)
-option(LIBIGL_WITH_XML               "Use XML"                      OFF)
-option(LIBIGL_WITH_PYTHOFF            "Use Python"                  OFF)
-option(LIBIGL_SKIP_DOWNLOAD "Skip downloading external libraries" ON)
-if(LIBIGL_PATH)
-    ADD_SUBDIRECTORY("${LIBIGL_PATH}" ${CMAKE_BINARY_DIR}/libigl EXCLUDE_FROM_ALL)
-else()
-    FetchContent_Declare(
-        libigl
-        GIT_REPOSITORY https://github.com/libigl/libigl.git
-        #GIT_TAG f6b406427400ed7ddb56cfc2577b6af571827c8c
-        GIT_TAG v2.1.0
-        )
-
-    if(${CMAKE_VERSION} VERSION_LESS 3.14)
-        FetchContent_Populate(libigl)
-        add_subdirectory(${libigl_SOURCE_DIR} ${libigl_BINARY_DIR} EXCLUDE_FROM_ALL)
-    else()
-        FetchContent_MakeAvailable(libigl)
-    endif()
-endif()
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/include)
 INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIR} ${EIGEN3_INCLUDE_DIR}/unsupported)
 
-find_package(Protobuf REQUIRED)
+
 protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS proto/cutmesh.proto)
 protobuf_generate_python(PROTO_PY proto/cutmesh.proto)
 
 ADD_LIBRARY(cutmesh_proto OBJECT ${PROTO_SRCS} ${PROTO_HDRS})
 TARGET_LINK_LIBRARIES(cutmesh_proto protobuf::libprotobuf)
 TARGET_INCLUDE_DIRECTORIES(cutmesh_proto PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
-
-find_package(CGAL)
 
 IF(HANDLE_SELF_INTERSECTIONS)
     SET(SELF_INTERSECTION_LIBS
@@ -251,11 +168,6 @@ TARGET_LINK_LIBRARIES(cutmesh2_obj PUBLIC mtao::headers mtao::geometry igl::core
 TARGET_LINK_LIBRARIES(cutmesh3_obj PUBLIC mtao::headers mtao::geometry igl::core )
 TARGET_LINK_LIBRARIES(construction_obj PUBLIC mtao::headers mtao::geometry igl::core)
 
-if(USE_OPENGL)
-    find_package(ImGui REQUIRED)
-    find_package(MagnumIntegration COMPONENTS ImGui)
-    TARGET_LINK_LIBRARIES(construction_obj PUBLIC ImGui::ImGui MagnumIntegration::ImGui)
-endif()
 TARGET_LINK_LIBRARIES(tools_obj PUBLIC mtao::headers mtao::geometry igl::core )
 
 ADD_DEFINITIONS(-g)
@@ -322,6 +234,9 @@ TARGET_INCLUDE_DIRECTORIES(mandoline2 PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 TARGET_INCLUDE_DIRECTORIES(mandoline3 PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 TARGET_INCLUDE_DIRECTORIES(mandoline_cutmesh3 PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 
+if(USE_OPENGL)
+    TARGET_LINK_LIBRARIES(construction_obj PUBLIC ImGui::ImGui MagnumIntegration::ImGui)
+endif()
 
 IF(HANDLE_SELF_INTERSECTIONS)
     FOREACH(TARG mandoline mandoline2 mandoline3 construction_obj)

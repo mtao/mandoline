@@ -37,7 +37,7 @@ Mandoline depends on a few libraries that it will fetch on its own:
 - A relatively new verison of [Eigen3](https://eigen.tuxfamily.org) is required (3.3.7 or the development branch?). The version provided by libigl will not suffice. MAndoline might fetch its own if your Eigen is not new enough.
 - [Boost](https://boost.org) is required for threads.
 - [Google Protobuf](https://developers.google.com/protocol-buffers/) is required for the default cutmesh serialization format.
-- [Eigen](https://eigen.tuxfamily.org) is required for almost every bit of linear algebra. With visualization it currently needs the dev branch (requires [mercurial](https://www.mercurial-scm.org) and check ```build-utils/setup_ubuntu.sh``` for more details on how to build)
+- [Eigen](https://eigen.tuxfamily.org) is required for almost every bit of linear algebra. If the currently available version is insufficeintly high mandoline's build will fetch a sufficiently new version
 
 ```bash
 apt install libboost-thread-dev  libeigen3-dev protobuf-compiler 
@@ -59,7 +59,7 @@ libmpfr-dev libmpfrc++-dev libcgal-dev
 - [OpenMP](https://www.openmp.org) is a really good idea.
 - [Magnum](https://github.com/mosra/magnum) and [Corrade](https://github.com/mosra/corrade) (version >= 2019.10) for visualization.
 - [imgui](https://github.com/ocornut/imgui) for visualizing things as well.
-Targets that depend on visualization can be enabled by ```-DUSE_OPENGL ON``` when running cmake.
+Targets that depend on visualization can be enabled by ```-DUSE_OPENGL ON``` when running cmake. They will be automatically fetched
 
 OpenGL stuff probably requiers the following:
 ```bash
