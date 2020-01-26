@@ -23,8 +23,7 @@ OPTION(HANDLE_SELF_INTERSECTIONS "Handle Self-Intersections" ON)
 include(mandoline_fetch_dependencies)
 
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/include)
-INCLUDE_DIRECTORIES(${EIGEN3_INCLUDE_DIR} ${EIGEN3_INCLUDE_DIR}/unsupported)
+
 
 
 protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS proto/cutmesh.proto)
@@ -39,6 +38,12 @@ IF(HANDLE_SELF_INTERSECTIONS)
         gmp CGAL::CGAL mpfr
         )
 
+add_library(mandoline_headers INTERFACE)
+target_include_directories(mandoline_headers INTERFACE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>
+)
+TARGET_LINK_LIBRARIES(mandoline_headers PUBLIC INTERFACE Eigen3::Eigen)
 
 
 SET(COMMON_SRCS
@@ -164,11 +169,11 @@ TARGET_INCLUDE_DIRECTORIES(cutmesh3_obj PUBLIC  ${CMAKE_CURRENT_BINARY_DIR})
 TARGET_INCLUDE_DIRECTORIES(construction_obj PUBLIC  ${CMAKE_CURRENT_BINARY_DIR})
 TARGET_INCLUDE_DIRECTORIES(tools_obj PUBLIC  ${CMAKE_CURRENT_BINARY_DIR})
 
-TARGET_LINK_LIBRARIES(cutmesh2_obj PUBLIC mtao::headers mtao::geometry igl::core )
-TARGET_LINK_LIBRARIES(cutmesh3_obj PUBLIC mtao::headers mtao::geometry igl::core )
-TARGET_LINK_LIBRARIES(construction_obj PUBLIC mtao::headers mtao::geometry igl::core)
+TARGET_LINK_LIBRARIES(cutmesh2_obj PUBLIC mtao::headers mtao::geometry igl::core mandoline_headers)
+TARGET_LINK_LIBRARIES(cutmesh3_obj PUBLIC mtao::headers mtao::geometry igl::core mandoline_headers)
+TARGET_LINK_LIBRARIES(construction_obj PUBLIC mtao::headers mtao::geometry igl::core mandoline_headers)
 
-TARGET_LINK_LIBRARIES(tools_obj PUBLIC mtao::headers mtao::geometry igl::core )
+TARGET_LINK_LIBRARIES(tools_obj PUBLIC mtao::headers mtao::geometry igl::core mandoline_headers)
 
 ADD_DEFINITIONS(-g)
 IF(OpenMP_Found)
@@ -189,6 +194,7 @@ TARGET_LINK_LIBRARIES(mandoline
     ${SELF_INTERSECTION_LIBS} Boost::thread
     igl::core
     protobuf::libprotobuf
+    mandoline_headers
     )
 
 ADD_LIBRARY(mandoline2 EXCLUDE_FROM_ALL
@@ -201,6 +207,7 @@ TARGET_LINK_LIBRARIES(mandoline2
     ${SELF_INTERSECTION_LIBS} Boost::thread
     igl::core
     protobuf::libprotobuf
+    mandoline_headers
     )
 
 
@@ -215,6 +222,7 @@ TARGET_LINK_LIBRARIES(mandoline3
     ${SELF_INTERSECTION_LIBS} Boost::thread
     igl::core
 protobuf::libprotobuf
+    mandoline_headers
     )
 
 ADD_LIBRARY(mandoline_cutmesh3
@@ -226,6 +234,7 @@ TARGET_LINK_LIBRARIES(mandoline_cutmesh3
     ${SELF_INTERSECTION_LIBS} Boost::thread
     igl::core
     protobuf::libprotobuf
+    mandoline_headers
     )
 message(STATUS "BINARY DIR: ${CMAKE_CURRENT_BINARY_DIR}")
 
