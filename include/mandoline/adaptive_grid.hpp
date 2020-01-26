@@ -98,7 +98,7 @@ namespace mandoline {
             int num_cells() const;
             mtao::ColVecs2i edges() const;
             std::vector<Face> faces(const GridData3i& grid) const;
-            std::vector<Face> faces() const { return m_faces; }
+            const std::vector<Face>& faces() const { return m_faces; }
             void make_faces();
             static GridData3i grid_from_cells(const coord_type& shape, const std::map<int,Cell>& cells);
             std::vector<Eigen::Triplet<double>> grid_face_projection(int min_edge_index) const;
