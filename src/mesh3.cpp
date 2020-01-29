@@ -503,7 +503,7 @@ namespace mandoline {
         }
         protobuf::serialize(origin(),*cmp.mutable_origin());
         protobuf::serialize(dx(),*cmp.mutable_dx());
-        protobuf::serialize(vertex_shape(),*cmp.mutable_shape());
+        protobuf::serialize(cell_shape(),*cmp.mutable_shape());
         for(auto&& f: m_faces) {
             f.serialize(*cmp.add_faces());
         }
@@ -645,7 +645,7 @@ namespace mandoline {
         VecX DL = VecX::Zero(face_size());
 
         auto& dx = Base::dx();
-        auto g = adaptive_grid().grid();
+        auto g = adaptive_grid().cell_ownership_grid();
         for(auto&& c: cells()) {
             auto& gc = c.grid_cell;
             for(auto&& [fidx,s]: c) {
@@ -885,7 +885,7 @@ namespace mandoline {
         auto trips = m_adaptive_grid.boundary_triplets(m_faces.size());
         Eigen::SparseMatrix<double> B(face_size(),cell_size());
 
-        auto g = adaptive_grid().grid();
+        auto g = adaptive_grid().cell_ownership_grid();
 
         for(auto&& c: cells()) {
             int region = c.region;

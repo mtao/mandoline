@@ -83,9 +83,6 @@ SET(CUTMESH2_HDRS
     )
 SET(CUTMESH3_HDRS
     ${CUTMESH_HDRS}
-    include/mandoline/construction/cell_collapser.hpp
-    include/mandoline/construction/face_collapser.hpp
-    include/mandoline/construction/remesh_self_intersections.hpp
     include/mandoline/proto_util.hpp
     include/mandoline/cutface.hpp
     include/mandoline/cutface_impl.hpp
@@ -104,6 +101,7 @@ SET(CONSTRUCTION_SRCS
     src/construction/subgrid_transformer.cpp
     src/construction/face_collapser.cpp
     src/construction/construct.cpp
+    src/construction/adaptive_grid_factory.cpp
     )
 
 
@@ -120,6 +118,10 @@ SET(CONSTRUCTION_HDRS
     include/mandoline/construction/facet_intersections_impl.hpp
     include/mandoline/construction/subgrid_transformer.hpp
     include/mandoline/construction/construct.hpp
+    include/mandoline/construction/cell_collapser.hpp
+    include/mandoline/construction/face_collapser.hpp
+    include/mandoline/construction/adaptive_grid_factory.hpp
+    include/mandoline/construction/remesh_self_intersections.hpp
     )
 
 if(USE_OPENGL)

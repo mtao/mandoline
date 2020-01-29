@@ -11,6 +11,7 @@
 #include "mandoline/construction/subgrid_transformer.hpp"
 #include <variant>
 #include "mandoline/construction/cell_collapser.hpp"
+#include "mandoline/construction/adaptive_grid_factory.hpp"
 using namespace mtao::iterator;
 using namespace mtao::logging;
 
@@ -268,7 +269,8 @@ namespace mandoline::construction {
             auto V = all_GV();
 
             if(adaptive) {
-            auto t = mtao::logging::profiler("Adaptive grid",false,"profiler");
+                auto t = mtao::logging::profiler("Adaptive grid",false,"profiler");
+                assert(m_active_grid_cell_mask.shape() == cell_shape());
                 auto adaptive_grid_factory = AdaptiveGridFactory(m_active_grid_cell_mask);
                 adaptive_grid_factory.make_cells(adaptive_level);
                 adaptive_grid  = adaptive_grid_factory.create();
@@ -334,7 +336,7 @@ namespace mandoline::construction {
                 }
                 if(adaptive) {
                     auto& ag = *adaptive_grid;
-                    auto grid = ag.grid();
+                    auto grid = ag.cell_ownership_grid();
                     auto ag_faces = ag.faces(grid);
                     for(auto&& [c,b]: ag.cells()) {
                         cell_ds.add_node(c);
