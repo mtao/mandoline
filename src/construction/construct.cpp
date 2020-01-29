@@ -37,6 +37,8 @@ namespace mandoline::construction {
 
         _ccg->adaptive = true;
         _ccg->adaptive_level = adaptive_level;
+        assert(F.size() > 0);
+        assert(V.size() > 0);
         {
             auto t = mtao::logging::profiler("generator_bake",false,"profiler");
             _ccg->add_boundary_elements(F);

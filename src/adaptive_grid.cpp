@@ -102,7 +102,7 @@ namespace mandoline {
                         if(c == -1) {
                             c = cid;
                         } else {
-                            std::cout << "Overlapping cells!" << std::endl;
+                            std::cout << "Overlapping cells! Checked" << aa << "," << bb << "," << cc << " with cid " <<cid << " got " << c << "instead" << std::endl;
                         }
 
                     }
