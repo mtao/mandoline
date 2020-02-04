@@ -17,7 +17,7 @@ else()
     FetchContent_Declare(
         mtao
         GIT_REPOSITORY https://github.com/mtao/core.git
-        GIT_TAG 0a57f1cf30e272f4699add60d035172a63acebd4
+        GIT_TAG a8a67cf6
         )
     if(${CMAKE_VERSION} VERSION_LESS 3.14)
         FetchContent_Populate(mtao)
@@ -52,7 +52,6 @@ ENDIF(USE_OPENMP)
 
 MESSAGE(STATUS "MODULE PATH:${CMAKE_MODULE_PATH}")
 #FIND_PACKAGE(libigl REQUIRED)
-FIND_PACKAGE(Boost COMPONENTS thread REQUIRED)
 
 
 MESSAGE(STATUS "LIBIGL Path: ${LIBIGL_PATH}")
@@ -89,8 +88,56 @@ endif()
 
 if(USE_OPENGL)
     find_package(ImGui REQUIRED)
-    find_package(MagnumIntegration COMPONENTS ImGui)
+    #find_package(MagnumIntegration COMPONENTS ImGui)
 endif()
 
-find_package(Protobuf REQUIRED)
-find_package(CGAL)
+find_package(Protobuf)
+if(NOT Protobuf_FOUND)
+    option(protobuf_BUILD_TESTS "PROTOBUF BUILD TESTS" OFF)
+    FetchContent_Declare(
+        protobuf
+        GIT_REPOSITORY https://github.com/protocolbuffers/protobuf.git
+        #GIT_TAG f6b406427400ed7ddb56cfc2577b6af571827c8c
+        GIT_TAG v3.11.3
+        )
+        FetchContent_Populate(protobuf)
+        add_subdirectory(${protobuf_SOURCE_DIR}/cmake ${protobuf_BINARY_DIR} EXCLUDE_FROM_ALL)
+
+endif()
+if(HANDLE_SELF_INTERSECTIONS)
+    find_package(CGAL REQUIRED)
+    if(NOT CGAL_FOUND)
+        #because its required we will never get here
+        FetchContent_Declare(
+            CGAL
+            GIT_REPOSITORY https://github.com/CGAL/cgal.git
+            #GIT_TAG f6b406427400ed7ddb56cfc2577b6af571827c8c
+            GIT_TAG releases/CGAL-5.0.1
+            )
+
+        if(${CMAKE_VERSION} VERSION_LESS 3.14)
+            FetchContent_Populate(CGAL)
+            add_subdirectory(${CGAL_SOURCE_DIR} ${CGAL_BINARY_DIR} EXCLUDE_FROM_ALL)
+        else()
+            FetchContent_MakeAvailable(CGAL)
+        endif()
+    endif(NOT CGAL_FOUND)
+    FIND_PACKAGE(Boost COMPONENTS thread)
+#if(NOT Boost_FOUND)
+#    FetchContent_Declare(
+#        boost
+#        GIT_REPOSITORY https://github.com/boostorg/boost.git
+#        GIT_TAG 789155d 
+#        )
+#    if(${CMAKE_VERSION} VERSION_LESS 3.14)
+#        FetchContent_Populate(boost)
+#        add_subdirectory(${boost_SOURCE_DIR} ${boost_BINARY_DIR} EXCLUDE_FROM_ALL)
+#    else()
+#        FetchContent_MakeAvailable(boost)
+#    endif()
+#     set(Boost_INCLUDE_DIR ${boost_INCLUDE_DIR} CACHE STRING "The location of hte boost include")
+#     #set(Boost_NO_BOOST_CMAKE ON CACHE BOOL "We fetched our own boost so tell cmake to not look for it anymore")
+
+
+#ENDIF()
+endif(HANDLE_SELF_INTERSECTIONS)

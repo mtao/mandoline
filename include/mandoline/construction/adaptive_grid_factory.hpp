@@ -5,6 +5,7 @@
 #include <set>
 #include "cutmesh.pb.h"
 #include <mtao/eigen/stl2eigen.hpp>
+#include <optional>
 namespace mandoline::construction {
 
 

@@ -24,7 +24,10 @@ namespace mandoline::construction {
     template <int D> 
         class CutCellEdgeGenerator: public mtao::geometry::grid::StaggeredGrid<double,D> {
             public:
+#if !defined(_MSC_VER)
+                // If _MSC_VER code should eat the epsilon in vertex.cpp
                 constexpr static double threshold_epsilon = std::sqrt(std::numeric_limits<double>::epsilon());
+#endif
                 EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
                 using Vec = mtao::Vector<double,D>;
                 using Veci = mtao::Vector<int,D>;

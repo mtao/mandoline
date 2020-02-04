@@ -110,7 +110,7 @@ namespace mandoline {
 
     template <int D>
         auto Vertex<D>::p() const -> Vec {
-            return Eigen::Map<const mtao::Vector<int,D>>(coord.begin()).template cast<double>() + quot; 
+            return Eigen::Map<const mtao::Vector<int,D>>(&*coord.begin()).template cast<double>() + quot; 
         }
 
     template <int D>
