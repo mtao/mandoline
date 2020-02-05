@@ -15,7 +15,7 @@ else()
     FetchContent_Declare(
         mtao
         GIT_REPOSITORY https://github.com/mtao/core.git
-        GIT_TAG 08fa08710134a634ebbd6b4e7fea80a6a6ac4273
+        GIT_TAG d2940868082743f7c1e043b90c3c9162a4544222
         )
     if(${CMAKE_VERSION} VERSION_LESS 3.14)
         FetchContent_Populate(mtao)
@@ -28,23 +28,6 @@ endif()
 
 
 
-if(NOT Eigen3_FOUND)
-    FIND_PACKAGE(Eigen3 3.3.9)
-ENDIF()
-if(NOT Eigen3_FOUND)
-    FetchContent_Declare(
-        eigen
-        GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
-        GIT_TAG bcbaad6d874d451817457ae0603f953cda3c0c06 
-        )
-    if(${CMAKE_VERSION} VERSION_LESS 3.14)
-        FetchContent_Populate(eigen)
-        add_subdirectory(${eigen_SOURCE_DIR} ${eigen_BINARY_DIR} EXCLUDE_FROM_ALL)
-    else()
-        FetchContent_MakeAvailable(eigen)
-    endif()
-
-ENDIF()
 
 IF(USE_OPENMP)
     FIND_PACKAGE(OpenMP REQUIRED)

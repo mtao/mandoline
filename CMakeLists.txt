@@ -23,6 +23,7 @@ OPTION(HANDLE_SELF_INTERSECTIONS "Handle Self-Intersections" ON)
 include(mandoline_fetch_dependencies)
 
 
+find_package(Eigen3 REQUIRED)
 
 
 
