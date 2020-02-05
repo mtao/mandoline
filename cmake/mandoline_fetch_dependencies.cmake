@@ -1,7 +1,5 @@
 include(FetchContent REQUIRED)
 
-MESSAGE(STATUS "MANDOLINE FETCH DEPS")
-MESSAGE(STATUS "MTAO Path: ${MTAO_PATH}")
 
 
 OPTION(MTAO_USE_ELTOPO "Should we build the el topo submodule" OFF)
@@ -17,7 +15,7 @@ else()
     FetchContent_Declare(
         mtao
         GIT_REPOSITORY https://github.com/mtao/core.git
-        GIT_TAG 0a57f1cf30e272f4699add60d035172a63acebd4
+        GIT_TAG ea455ff8befb269b8ce7dd503c1d7b4fc931af8b
         )
     if(${CMAKE_VERSION} VERSION_LESS 3.14)
         FetchContent_Populate(mtao)
