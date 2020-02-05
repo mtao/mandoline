@@ -24,7 +24,7 @@ jobs:
                 command: 'apt-get install -y libeigen3-dev libblas-dev liblapack-dev libcgal-dev'
             - run:
                 name: Installing graphics libs
-                command: 'apt-get install -y libglfw3-dev libgl-dev libpng++-dev'
+                command: 'apt-get install -y libglfw3-dev libgl-dev libpng++-dev libxinerama-dev xorg-dev'
             - run:
                 name: Installing protobuf
                 command: 'apt-get install -y protobuf-compiler'
