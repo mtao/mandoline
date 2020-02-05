@@ -17,7 +17,7 @@ namespace mandoline::tools {
                 return transform;
             }
 
-    SliceGenerator::SliceGenerator(const mtao::ColVecs3d& V, const mtao::ColVecs3i& F): Base(std::array<int,3>{{1,1,2}}),  V(V) {
+    SliceGenerator::SliceGenerator(const mtao::ColVecs3d& V, const mtao::ColVecs3i& F): Base(std::array<int,3>{{2,2,3}}),  V(V) {
         std::vector<Vertex<3>> vertices(V.cols());
         for(int i = 0; i < V.cols(); ++i) {
             mtao::Vec3d v = V.col(i);

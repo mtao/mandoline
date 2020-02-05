@@ -489,6 +489,12 @@ namespace mandoline {
 
 
     void  CutCellMesh<3>::serialize(protobuf::CutMeshProto& cmp) const {
+
+        protobuf::serialize(origin(),*cmp.mutable_origin());
+        protobuf::serialize(dx(),*cmp.mutable_dx());
+        protobuf::serialize(vertex_shape(),*cmp.mutable_shape());
+
+
         for(int i = 0; i < cut_vertex_size(); ++i) {
             protobuf::serialize(cut_vertex(i),*cmp.add_vertices());
         }
@@ -501,9 +507,6 @@ namespace mandoline {
         for(int i = 0; i < m_origF.cols(); ++i) {
             protobuf::serialize(m_origF.col(i),*cmp.add_origf());
         }
-        protobuf::serialize(origin(),*cmp.mutable_origin());
-        protobuf::serialize(dx(),*cmp.mutable_dx());
-        protobuf::serialize(vertex_shape(),*cmp.mutable_shape());
         for(auto&& f: m_faces) {
             f.serialize(*cmp.add_faces());
         }
@@ -553,6 +556,8 @@ namespace mandoline {
         o = protobuf::deserialize(cmp.origin());
         dx = protobuf::deserialize(cmp.dx());
         protobuf::deserialize(cmp.shape(),s);
+
+        //s should be the vertex shape
         CutCellMesh<3> ret = CutCellMesh<3>::StaggeredGrid(GridType(s,dx,o));
         //ret.m_face_volumes.resize(20);
 
@@ -645,7 +650,7 @@ namespace mandoline {
         VecX DL = VecX::Zero(face_size());
 
         auto& dx = Base::dx();
-        auto g = adaptive_grid().grid();
+        auto g = adaptive_grid().cell_ownership_grid();
         for(auto&& c: cells()) {
             auto& gc = c.grid_cell;
             for(auto&& [fidx,s]: c) {
@@ -885,7 +890,7 @@ namespace mandoline {
         auto trips = m_adaptive_grid.boundary_triplets(m_faces.size());
         Eigen::SparseMatrix<double> B(face_size(),cell_size());
 
-        auto g = adaptive_grid().grid();
+        auto g = adaptive_grid().cell_ownership_grid();
 
         for(auto&& c: cells()) {
             int region = c.region;

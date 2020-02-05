@@ -20,7 +20,6 @@
 #include <mandoline/construction/remesh_self_intersections.hpp>
 #include <mandoline/mesh3.hpp>
 
-#include <glm/gtc/matrix_transform.hpp> 
 using TrackerType = ElTopoTracker;
 //using TrackerType = mtao::geometry::mesh::LosToposTracker;
 

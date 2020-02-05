@@ -5,11 +5,17 @@
 #include "mandoline/coord_mask.hpp"
 
 namespace mandoline {
+#if defined(_MSC_VER)
+    const static double threshold_epsilon;
+#else
+    constexpr static double threshold_epsilon = std::sqrt(std::numeric_limits<double>::epsilon());
+#endif
     //Base vertex class, holds points in grid space.
     //Vertex is at p() = coord+quot and clamped_indices stores what type of grid entry the vertex belongs to
     template <int D>
         struct Vertex {
-                constexpr static double threshold_epsilon = std::sqrt(std::numeric_limits<double>::epsilon());
+
+
 
             //Definitions
             using Vec = mtao::Vector<double,D>;

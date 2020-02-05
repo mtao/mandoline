@@ -32,7 +32,7 @@ IF(HANDLE_SELF_INTERSECTIONS)
         mtao::common igl::core)
     TARGET_COMPILE_DEFINITIONS(remove_self_intersections
         PUBLIC -DMANDOLINE_HANDLE_SELF_INTERSECTIONS)
-ENDIF(HANDLE_SELF_INTERSECTIONS)
+
 
 
 ADD_EXECUTABLE(cutmesh_validation
@@ -42,10 +42,10 @@ ADD_EXECUTABLE(cutmesh_validation
     validation/region_volumes.cpp
     )
 
-TARGET_LINK_LIBRARIES(cutmesh_validation gmp CGAL mpfr Boost::thread
+TARGET_LINK_LIBRARIES(cutmesh_validation gmp CGAL mpfr 
     mandoline
     )
-
+    ENDIF(HANDLE_SELF_INTERSECTIONS)
 IF(${USE_OPENGL})
 ADD_EXECUTABLE(make_cutmesh_gui make_cutmesh_gui.cpp)
 TARGET_LINK_LIBRARIES(make_cutmesh_gui mandoline OpenMP::OpenMP_CXX mtao::common mtao::visualization)
