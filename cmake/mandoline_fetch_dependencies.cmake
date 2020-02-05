@@ -15,7 +15,7 @@ else()
     FetchContent_Declare(
         mtao
         GIT_REPOSITORY https://github.com/mtao/core.git
-        GIT_TAG ea455ff8befb269b8ce7dd503c1d7b4fc931af8b
+        GIT_TAG 08fa08710134a634ebbd6b4e7fea80a6a6ac4273
         )
     if(${CMAKE_VERSION} VERSION_LESS 3.14)
         FetchContent_Populate(mtao)
@@ -27,8 +27,10 @@ else()
 endif()
 
 
-FIND_PACKAGE(Eigen3 3.3.9)
 
+if(NOT Eigen3_FOUND)
+    FIND_PACKAGE(Eigen3 3.3.9)
+ENDIF()
 if(NOT Eigen3_FOUND)
     FetchContent_Declare(
         eigen
