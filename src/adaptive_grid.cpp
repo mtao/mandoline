@@ -203,11 +203,10 @@ namespace mandoline {
         std::set<Face,decltype(myless)> faces(myless);
         auto add_bdry = [&](int d, int a, int b) {
             Edge dual_edge{{a,b}};
-            if(is_valid_edge(dual_edge)) {
-                Face f;
+            //if(is_valid_edge(dual_edge)) {
+            {
                 int axis=d, width;
                 coord_type corner;
-                f.dual_edge = dual_edge;
                 if(a == -1) {
                     auto&& c = cell(b);
                     corner = c.corner();
@@ -246,6 +245,7 @@ namespace mandoline {
                             if(low) {
                                 add_bdry(d,-1,grid(abc));
                             } else {
+                                // if we're high we have to go down one grid cell
                                 coord_type tmp = abc;
                                 tmp[d]--;
                                 add_bdry(d,grid(tmp),-1);

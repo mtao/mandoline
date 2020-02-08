@@ -28,7 +28,7 @@ IF(HANDLE_SELF_INTERSECTIONS)
         ../include/mandoline/construction/remesh_self_intersections.hpp
         ../src/construction/remesh_self_intersections.cpp
         )
-    TARGET_LINK_LIBRARIES(remove_self_intersections gmp CGAL mpfr Boost::thread
+    TARGET_LINK_LIBRARIES(remove_self_intersections ${MANDOLINE_SELF_INTERSECTION_LIBS}
         mtao::common igl::core)
     TARGET_COMPILE_DEFINITIONS(remove_self_intersections
         PUBLIC -DMANDOLINE_HANDLE_SELF_INTERSECTIONS)

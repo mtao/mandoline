@@ -35,8 +35,8 @@ TARGET_LINK_LIBRARIES(cutmesh_proto protobuf::libprotobuf)
 TARGET_INCLUDE_DIRECTORIES(cutmesh_proto PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 
 IF(HANDLE_SELF_INTERSECTIONS)
-    SET(SELF_INTERSECTION_LIBS
-        gmp CGAL::CGAL mpfr
+    SET(MANDOLINE_SELF_INTERSECTION_LIBS
+        gmp CGAL::CGAL mpfr Boost::thread
         )
 ENDIF(HANDLE_SELF_INTERSECTIONS)
 
@@ -196,7 +196,7 @@ ADD_LIBRARY(mandoline
     )
 TARGET_LINK_LIBRARIES(mandoline
     mtao::geometry OpenMP::OpenMP_CXX
-    ${SELF_INTERSECTION_LIBS}
+    ${MANDOLINE_SELF_INTERSECTION_LIBS}
     igl::core
     protobuf::libprotobuf
     mandoline_headers
@@ -209,7 +209,7 @@ ADD_LIBRARY(mandoline2 EXCLUDE_FROM_ALL
     )
 TARGET_LINK_LIBRARIES(mandoline2
     mtao::geometry OpenMP::OpenMP_CXX
-    ${SELF_INTERSECTION_LIBS}
+    ${MANDOLINE_SELF_INTERSECTION_LIBS}
     igl::core
     protobuf::libprotobuf
     mandoline_headers
@@ -224,7 +224,7 @@ ADD_LIBRARY(mandoline3 EXCLUDE_FROM_ALL
     )
 TARGET_LINK_LIBRARIES(mandoline3 
     mtao::geometry OpenMP::OpenMP_CXX
-    ${SELF_INTERSECTION_LIBS} 
+    ${MANDOLINE_SELF_INTERSECTION_LIBS} 
     igl::core
 protobuf::libprotobuf
     mandoline_headers
@@ -236,7 +236,7 @@ ADD_LIBRARY(mandoline_cutmesh3
     )
 TARGET_LINK_LIBRARIES(mandoline_cutmesh3
     mtao::geometry OpenMP::OpenMP_CXX
-    ${SELF_INTERSECTION_LIBS}
+    ${MANDOLINE_SELF_INTERSECTION_LIBS}
     igl::core
     protobuf::libprotobuf
     mandoline_headers
