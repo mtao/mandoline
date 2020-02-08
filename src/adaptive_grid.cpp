@@ -202,9 +202,8 @@ namespace mandoline {
         };
         std::set<Face,decltype(myless)> faces(myless);
         auto add_bdry = [&](int d, int a, int b) {
-            Edge dual_edge{{a,b}};
-            //if(is_valid_edge(dual_edge)) {
-            {
+            if(a != b) {
+                Edge dual_edge{{a,b}};
                 int axis=d, width;
                 coord_type corner;
                 if(a == -1) {
