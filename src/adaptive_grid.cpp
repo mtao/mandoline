@@ -3,6 +3,7 @@
 #include <set>
 #include "mandoline/proto_util.hpp"
 #include <iterator>
+#include <mtao/logging/logger.hpp>
 namespace mandoline {
     template <typename GridB>
         void print_gridb(const GridB& g) {
@@ -316,14 +317,21 @@ namespace mandoline {
         mtao::Vec3d dws = mtao::Vec3d::Ones();
         for(int i = 0; i < 3; ++i) {
             for(int j = 0; j < 2; ++j) {
-                dws(i) = dx((j+i)%3);
+                dws(i) *= dx((j+i)%3);
             }
         }
         for(auto&& [i,f]: mtao::iterator::enumerate(m_faces)) {
             auto&& e = f.dual_edge;
-            if(!is_valid_edge(e)) continue;
+            //if(!is_valid_edge(e)) continue;
             int w= f.width();
             ret(i) = w * w * dws(f.axis());
+        }
+        double mv = ret.minCoeff();
+        if(mv < 0)
+        {
+            mtao::logging::error() << "Negative adaptive face area ! error mtao because this shouldn't happen";
+        } else if(mv == 0) {
+            mtao::logging::error() << "Zero adaptive face! error mtao because this shouldn't happen";
         }
         return ret;
     }

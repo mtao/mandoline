@@ -705,10 +705,6 @@ namespace mandoline {
                         for(auto&& indices: f.indices) {
                             vol += mtao::geometry::curve_volume(V,indices);
                         }
-                        if(vol < 0) {
-                            mtao::logging::warn() << "Negative volume! warn mtao because this shouldn't happen";
-                            vol = -vol;
-                        }
 
                     }
                     if(!std::isfinite(FV(i))) {
@@ -721,6 +717,11 @@ namespace mandoline {
             FV.tail(adaptive_grid().num_faces()) = adaptive_grid().face_volumes();
         }
 
+        if(FV.minCoeff() < 0) {
+            mtao::logging::warn() << "Negative face area! warn mtao because this shouldn't happen";
+            FV = FV.cwiseAbs();
+            
+        }
         return FV;
     }
 
