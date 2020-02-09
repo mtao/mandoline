@@ -10,6 +10,7 @@ namespace mandoline {
     }
     template <>
         struct CutCellMesh<3>: public CutCellMeshBase<3,CutCellMesh<3>> {
+            // NOTE: Grid index of -1 == inside stencil, -2 == boundary
             public:
                 friend class construction::CutCellGenerator<3>;
                 using Base = CutCellMeshBase<3,CutCellMesh<3>>;
@@ -36,6 +37,7 @@ namespace mandoline {
                 const AdaptiveGrid& adaptive_grid() const { return m_adaptive_grid; }
                 const mtao::ColVecs3d& origV() const { return m_origV; }
                 const mtao::ColVecs3i& origF() const { return m_origF; }
+                const mtao::map<int,BarycentricTriangleFace>& mesh_faces() const { return m_mesh_faces;}
 
 
                 //info on cells
@@ -71,22 +73,27 @@ namespace mandoline {
                 Eigen::SparseMatrix<double> boundary() const;
                 //face -> edge boundary operator
                 Eigen::SparseMatrix<double> face_boundary() const;
-                VecX cell_volumes() const;
                 mtao::ColVecs3d face_centroids() const;
                 mtao::ColVecs3d cell_centroids() const;
                 ColVecs dual_vertices() const;//alias for centroids
+                VecX cell_volumes() const;
                 VecX face_volumes(bool from_triangulation = false)const ;
+
+                // impl in operators/volume.hpp
                 mtao::VecXd dual_edge_lengths() const;
                 mtao::VecXd dual_hodge2() const;
                 mtao::VecXd primal_hodge2() const;
                 mtao::VecXd dual_hodge3() const;
                 mtao::VecXd primal_hodge3() const;
+                // impl in operators/masks.hpp
                 mtao::VecXd mesh_face_mask() const;//for removing mesh faces
                 mtao::VecXd grid_boundary_mask() const;//for removing mesh faces
+
                 std::set<int> grid_boundary_faces() const;//for removing mesh faces
 
                 //Eigen::SparseMatrix<double> trilinear_matrix() const;
 
+                // impl in operators/boundary.hpp
                 //mesh vertex -> cut vertex
                 Eigen::SparseMatrix<double> barycentric_matrix() const;
                 //mesh face -> cut face

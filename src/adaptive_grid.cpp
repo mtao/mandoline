@@ -201,12 +201,12 @@ namespace mandoline {
 
         mtao::VecXd M = mtao::VecXd::Ones(num_faces());
         for(auto&& [fidx_,f]: mtao::iterator::enumerate(faces())) {
-            int fidx = fidx_ + fidx_offset;
+            int fidx = fidx_;
             int dim = f.dimension();
             int val = f.corner()[dim];
             if(val == 0) {
                 M(fidx) = 0;
-            } else if(val == ccm.vertex_shape()[dim]-1) {
+            } else if(val == vertex_shape()[dim]-1) {
                 M(fidx) = 0;
             }
         }
@@ -221,7 +221,7 @@ namespace mandoline {
             int val = f.corner()[dim];
             if(val == 0) {
                 ret.insert(fidx);
-            } else if(val == ccm.vertex_shape()[dim]-1) {
+            } else if(val == vertex_shape()[dim]-1) {
                 ret.insert(fidx);
             }
         }
@@ -252,16 +252,16 @@ namespace mandoline {
                 Edge dual_edge{{a,b}};
                 int axis=d, width;
                 coord_type corner;
-                if(a == -1) {
+                if(a == -2 && b >= 0) {
                     auto&& c = cell(b);
                     corner = c.corner();
                     width = c.width();
-                } else if(b == -1) {
+                } else if(b == -2 && a >= 0) {
                     auto&& c = cell(a);
                     corner = c.corner();
                     width = c.width();
                     corner[d] += width;
-                } else {
+                } else if(is_valid_edge(dual_edge)) {
                     auto&& ca = cell(a);
                     auto&& cb = cell(b);
                     width = std::min(ca.width(),cb.width());
@@ -288,12 +288,12 @@ namespace mandoline {
                         bool high = abc[d] == shape[d]-1;
                         if( low ^ high) {
                             if(low) {
-                                add_bdry(d,-1,grid(abc));
+                                add_bdry(d,-2,grid(abc));
                             } else {
                                 // if we're high we have to go down one grid cell
                                 coord_type tmp = abc;
                                 tmp[d]--;
-                                add_bdry(d,grid(tmp),-1);
+                                add_bdry(d,grid(tmp),-2);
                             }
                         } else {
                             int pidx = cell_index(abc);
@@ -487,6 +487,10 @@ namespace mandoline {
         return R;
     }
     int AdaptiveGrid::get_cell_index(const Vec& p) const {
+        Eigen::Map<const mtao::Vec3i> mshape(vertex_shape().data());
+        if(p.minCoeff() < 0 || (p.array() > (mshape.cast<double>().array())).any()) {
+            return -2;
+        }
         for(auto&& [i,c]: cells()) {
             if(c.is_inside(p)) {
                 return i;

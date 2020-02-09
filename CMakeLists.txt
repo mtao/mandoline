@@ -64,6 +64,10 @@ SET(CUTMESH3_SRCS
     src/barycentric_triangle_face.cpp
     src/cutface.cpp
     src/adaptive_grid.cpp
+    src/operators/boundary.cpp
+    src/operators/interpolation.cpp
+    src/operators/masks.cpp
+    src/operators/volume.cpp
     )
 
 
@@ -92,6 +96,10 @@ SET(CUTMESH3_HDRS
     include/mandoline/barycentric_triangle_face.hpp
     include/mandoline/mesh3.hpp
     include/mandoline/cutcell.hpp
+    include/mandoline/operators/boundary.hpp
+    include/mandoline/operators/interpolation.hpp
+    include/mandoline/operators/masks.hpp
+    include/mandoline/operators/volume.hpp
     )
 
 SET(CONSTRUCTION_SRCS

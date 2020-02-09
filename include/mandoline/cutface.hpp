@@ -62,7 +62,10 @@ namespace mandoline {
             std::optional<mtao::ColVecs3i> triangulation;
             bool is_mesh_face() const ;
             bool is_axial_face() const ;
+            // when this face comes from a mesh,  as_face_id returns the face index in the mesh
             int as_face_id() const ;
+
+            // when the face comes from a grid plane mesh/axial
             const std::array<int,2>& as_axial_id() const ;
             int as_axial_axis() const ;
             int as_axial_coord() const ;

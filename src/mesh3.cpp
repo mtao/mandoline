@@ -11,6 +11,10 @@
 #include <igl/winding_number.h>
 #include "mandoline/diffgeo_utils.hpp"
 #include "mandoline/proto_util.hpp"
+#include "mandoline/operators/interpolation.hpp"
+#include "mandoline/operators/boundary.hpp"
+#include "mandoline/operators/volume.hpp"
+#include "mandoline/operators/masks.hpp"
 
 
 namespace mandoline {
@@ -37,27 +41,7 @@ namespace mandoline {
         return m_mesh_faces.find(idx) != m_mesh_faces.end();
     }
     auto CutCellMesh<3>::cell_volumes() const -> VecX{
-        /*
-           VecX V(cell_size());
-           V.topRows(StaggeredGrid::cell_size()).array() = dx().prod();
-           */
-        VecX V(cells().size());
-        V.setZero();
-        auto Vs = vertices();
-        mtao::VecXd face_brep_vols(m_faces.size());
-        for(auto&& [i,f]: mtao::iterator::enumerate(m_faces)) {
-            face_brep_vols(i) = f.brep_volume(Vs);
-        }
-
-        for(auto&& [k,c]: mtao::iterator::enumerate(m_cells)) {
-            V(k) = c.volume(face_brep_vols);
-            //V(k) = c.volume(Vs,faces);
-            //V(k) = mtao::geometry::brep_volume(Vs,c.triangulated(faces));
-            //std::cout << (V(k) / std::abs(c.volume(Vs,faces))) << std::endl;
-        }
-
-
-        return mtao::eigen::vstack(V,adaptive_grid().cell_volumes());
+        return operators::cell_volumes(*this);
     }
     auto CutCellMesh<3>::face_centroids() const -> mtao::ColVecs3d{
         /*
@@ -647,305 +631,49 @@ namespace mandoline {
     }
 
     mtao::VecXd CutCellMesh<3>::dual_edge_lengths() const {
-        VecX DL = VecX::Zero(face_size());
-
-        auto& dx = Base::dx();
-        auto g = adaptive_grid().cell_ownership_grid();
-        for(auto&& c: cells()) {
-            auto& gc = c.grid_cell;
-            for(auto&& [fidx,s]: c) {
-                auto& f = faces()[fidx];
-                if(f.external_boundary) {
-                    auto [cid,s] = *f.external_boundary;
-                    if(cid >= 0) {
-                        auto&& c = adaptive_grid().cell(g.get(cid));
-                        mtao::Vec3d C = c.center();
-                        C.array() -= .5;
-                        C -= mtao::eigen::stl2eigen(gc).cast<double>();
-
-                        DL(fidx) = (dx.asDiagonal() * C).norm();
-                    }
-                }
-            }
-        }
-        for(auto&& [fidx,f]: mtao::iterator::enumerate(faces())) {
-            if(f.is_axial_face() && !f.external_boundary) {
-                int ba = f.as_axial_axis();
-                DL(fidx) = dx(ba);
-            }
-        }
-        auto ADL = adaptive_grid().dual_edge_lengths();
-        DL.tail(ADL.rows()) = ADL;
-        return DL;
+        return operators::dual_edge_lengths(*this);
     }
 
     auto CutCellMesh<3>::face_volumes(bool from_triangulation) const -> VecX{
-        VecX FV(faces().size());
-        if(from_triangulation) {
-            for(auto&& [i,face]: mtao::iterator::enumerate(faces())) {
-                auto V = vertices();
-                if(face.triangulation) {
-                    auto&& T = *face.triangulation;
-                    FV(i) = mtao::geometry::volumes(V,T).sum();
-                }
-            }
-            FV = mtao::eigen::vstack(FV,adaptive_grid().face_volumes());
-        } else {
-            //Use barycentric for tri-mesh cut-faces, planar areas for axial cut-faces, and let the adaptive grid do it's thing
-            auto trimesh_vols = mtao::geometry::volumes(m_origV,m_origF);
-
-            if(trimesh_vols.size() > 0) {
-                FV = face_barycentric_volume_matrix() * trimesh_vols;
-                auto subVs = compute_subVs();
-                for(auto&& [i,f]: mtao::iterator::enumerate(faces())) {
-                    if(f.is_axial_face()) {
-                        auto [dim,coord] = f.as_axial_id();
-                        auto& vol = FV(i) = 0;
-                        auto& V = subVs[dim];
-                        for(auto&& indices: f.indices) {
-                            vol += mtao::geometry::curve_volume(V,indices);
-                        }
-
-                    }
-                    if(!std::isfinite(FV(i))) {
-                        FV(i) = 0;
-                    }
-                }
-            } else {
-                FV.resize(adaptive_grid().num_faces());
-            }
-            FV.tail(adaptive_grid().num_faces()) = adaptive_grid().face_volumes();
-        }
-
-        if(FV.minCoeff() < 0) {
-            mtao::logging::warn() << "Negative face area! warn mtao because this shouldn't happen";
-            FV = FV.cwiseAbs();
-            
-        }
-        return FV;
+        return operators::face_volumes(*this,from_triangulation);
     }
 
     mtao::VecXd CutCellMesh<3>::mesh_face_mask() const {
-        mtao::VecXd M = mtao::VecXd::Ones(face_size());
-        for(auto&& [i,f]: mtao::iterator::enumerate(faces())) {
-            if(f.is_mesh_face()) {
-                M(i) = 0;
-            }
-        }
-        return M;
+        return operators::mesh_face_mask(*this);
     }
-    mtao::VecXd CutCellMesh<3>::boundary_face_mask() const {
-        //TODO: Implement this. also, make sure that stencil boundary faces are ignored
-    }
-    std::set<int> CutcellMesh<3>::grid_boundary_faces() const {
-        std::set<int> ret;
-        std::cout << "Going through faces" << std::endl;
-        for(auto&& [fidx,f]: mtao::iterator::enumerate(ccm.faces())) {
-            auto mask = f.mask();
-            for(auto [dim,valo]: mtao::iterator::enumerate(mask)) {
-                if(valo) {
-                    int val = *valo;
-                    if(val == 0) {
-                        ret.insert(fidx);
-                    } else if(val == ccm.vertex_shape()[dim]-1) {
-                        ret.insert(fidx);
-                    }
-                }
-            }
-        }
-        // adaptive grid part
-        int fidx_offset = ccm.cut_face_size();
-        auto adret = grid_boundary_faces(fidx_offset);
-        ret.merge(adret);
-        return ret;
+    std::set<int> CutCellMesh<3>::grid_boundary_faces() const {
+        return operators::grid_boundary_faces(*this);
     }
 
     mtao::VecXd CutCellMesh<3>::primal_hodge2() const {
-        auto PV = face_volumes();
-        auto DV = dual_edge_lengths();
-        mtao::VecXd CV = (PV.array() > 1e-5).select(DV.cwiseQuotient(PV),0);
-        for(int i = 0; i < CV.size(); ++i) {
-            if(!std::isfinite(CV(i))) {
-                CV(i) = 0;
-            }
-        }
-        return CV;
+        return operators::primal_hodge2(*this);
     }
 
     mtao::VecXd CutCellMesh<3>::dual_hodge2() const {
-        auto PV = face_volumes();
-        auto DV = dual_edge_lengths();
-        mtao::VecXd  CV = (DV.array() > 1e-5).select(PV.cwiseQuotient(DV),0);
-        for(int i = 0; i < CV.size(); ++i) {
-            if(!std::isfinite(CV(i))) {
-                CV(i) = 0;
-            }
-        }
-        return CV;
+        return operators::dual_hodge2(*this);
     }
     mtao::VecXd CutCellMesh<3>::dual_hodge3() const {
-        auto CV = cell_volumes();
-        for(int i = 0; i < CV.size(); ++i) {
-            CV(i) = (std::abs(CV(i)) < 1e-5) ? 0 : (1. / CV(i));
-            if(!std::isfinite(CV(i))) {
-                CV(i) = 0;
-            }
-        }
-        return CV;
+        return operators::dual_hodge3(*this);
     }
     mtao::VecXd CutCellMesh<3>::primal_hodge3() const {
-        auto CV = cell_volumes();
-        for(int i = 0; i < CV.size(); ++i) {
-            if(!std::isfinite(CV(i))) {
-                CV(i) = 0;
-            }
-        }
-        return CV;
+        return operators::primal_hodge3(*this);
     }
 
     Eigen::SparseMatrix<double> CutCellMesh<3>::trilinear_matrix() const {
-        Eigen::SparseMatrix<double> A(vertex_size(), StaggeredGrid::vertex_size());
-        std::vector<Eigen::Triplet<double>> trips;
-        trips.reserve(StaggeredGrid::vertex_size() + 8 * cut_vertex_size());
-        for(int i = 0; i < StaggeredGrid::vertex_size(); ++i) {
-            trips.emplace_back(i,i,1);
-        }
-        int offset = StaggeredGrid::vertex_size();
-        for(auto&& [idx,v]: mtao::iterator::enumerate(cut_vertices())) {
-            int index = idx + offset;
-            coord_type a = v.coord;
-            for(int i = 0; i < 2; ++i) {
-                a[0] = v.coord[0] + i;
-                double vi = i==0?(1-v.quot(0)):v.quot(0);
-                for(int j = 0; j < 2; ++j) {
-                    a[1] = v.coord[1] + j;
-                    double vij = vi * (j==0?(1-v.quot(1)):v.quot(1));
-                    for(int k = 0; k < 2; ++k) {
-                        a[2] = v.coord[2] + k;
-                        double vijk = vij * (k==0?(1-v.quot(2)):v.quot(2));
-                        trips.emplace_back(index,vertex_index(a),vijk);
-                    }
-                }
-            }
-        }
-        A.setFromTriplets(trips.begin(),trips.end());
-        return A;
+        return operators::trilinear_matrix(*this);
     }
     Eigen::SparseMatrix<double> CutCellMesh<3>::face_grid_volume_matrix() const {
-        auto trips = m_adaptive_grid.grid_face_projection(m_faces.size());
-        auto FV = face_volumes();
-        mtao::Vec3d gfv;
-        gfv(0) = dx()(1) * dx()(2);
-        gfv(1) = dx()(0) * dx()(2);
-        gfv(2) = dx()(0) * dx()(1);
-        Eigen::SparseMatrix<double> A(this->face_size(),this->form_size<2>());
-        for(auto&& t: trips) {
-            const int row = t.row();
-            const int col = t.col();
-        }
-        for(auto&& [i,face]: mtao::iterator::enumerate(faces())) {
-            if(face.count() == 1) {
-                int axis = face.bound_axis();
-                constexpr static int maxval = std::numeric_limits<int>::max();
-                coord_type c{{maxval,maxval,maxval}};
-                for(auto&& ind: face.indices) {
-                    for(auto&& i: ind) {
-                        auto v = masked_vertex(i).coord;
-                        for(auto&& [a,b]: mtao::iterator::zip(c,v)) {
-                            a = std::min(a,b);
-                        }
-                    }
-                }
-                const int row = i;
-                const int col = staggered_index<2>(c,axis);
-                double value = FV(i) / gfv(axis) * face.N(axis);//face.N(axis) should be a unit vector either facing up or down....
-                trips.emplace_back(row,col,value);
-            }
-        }
-        A.setFromTriplets(trips.begin(),trips.end());
-        //mtao::VecXd sums = A * mtao::VecXd::Zero(A.cols());
-        //sums = (sums.array().abs() > 1e-10).select(1.0 / sums.array(), 0);
-        //A = sums.asDiagonal() * A;
-        return A;
+        return operators::face_grid_volume_matrix(*this);
     }
 
     Eigen::SparseMatrix<double> CutCellMesh<3>::barycentric_matrix() const {
-        Eigen::SparseMatrix<double> A(vertex_size(), m_origV.cols());
-        std::vector<Eigen::Triplet<double>> trips;
-        std::map<std::array<int,2>,double> mp;
-        for(auto&& [fid, btf]: m_mesh_faces) {
-            auto t = btf.sparse_entries(m_faces[fid], m_origF);
-            std::copy(t.begin(),t.end(),std::inserter(mp,mp.end()));
-        }
-        trips.reserve(mp.size());
-        for(auto&& [pr,v]: mp) {
-            auto [a,b] = pr;
-            trips.emplace_back(a,b,v);
-        }
-        A.setFromTriplets(trips.begin(),trips.end());
-        mtao::VecXd sums = A * mtao::VecXd::Ones(A.cols());
-        sums = (sums.array().abs() > 1e-10).select(1.0 / sums.array(), 0);
-        A = sums.asDiagonal() * A;
-        return A;
+        return operators::barycentric_matrix(*this);
     }
     Eigen::SparseMatrix<double> CutCellMesh<3>::face_barycentric_volume_matrix() const {
-        int face_size = 0;
-        //artifact from before i passed in m_origF
-        if(m_origF.size() == 0) {
-            for(auto&& f: faces()) {
-                if(f.is_mesh_face()) {
-                    face_size = std::max<int>(face_size,f.as_face_id());
-                }
-            }
-            face_size++;
-        } else {
-            face_size = m_origF.cols();
-        }
-        Eigen::SparseMatrix<double> A(this->face_size(),face_size);
-        std::vector<Eigen::Triplet<double>> trips;
-        for(auto&& [fid, btf]: m_mesh_faces) {
-            double vol = btf.volume() * 2;//proportion of 2 is required because barycentric coordinates live in a unit triangle
-            trips.emplace_back(fid, btf.parent_fid, vol);
-        }
-        A.setFromTriplets(trips.begin(),trips.end());
-        //for(int i = 0; i < A.cols(); ++i) {
-        //    A.col(i) /= A.col(i).sum();
-        //}
-        return A;
+        return operators::face_barycentric_volume_matrix(*this);
     }
     Eigen::SparseMatrix<double> CutCellMesh<3>::boundary() const {
-        auto trips = m_adaptive_grid.boundary_triplets(m_faces.size());
-        Eigen::SparseMatrix<double> B(face_size(),cell_size());
-
-        auto g = adaptive_grid().cell_ownership_grid();
-
-        for(auto&& c: cells()) {
-            int region = c.region;
-            for(auto&& [fidx,s]: c) {
-                auto& f = faces()[fidx];
-                if(f.is_axial_face()) {
-                    int a = cell_shape()[f.as_axial_axis()];
-                    int v = f.as_axial_coord();
-                    if(v > 0 && v < a) {
-                        trips.emplace_back(fidx,c.index, s?1:-1);
-                    }
-                } else {
-                    trips.emplace_back(fidx,c.index, s?1:-1);
-                }
-            }
-        }
-        for(auto&& [fidx,f]: mtao::iterator::enumerate(faces())) {
-            if(f.external_boundary) {
-                auto [c,s] = *f.external_boundary;
-                if(c >= 0) {
-                    trips.emplace_back(fidx,g.get(c), s?-1:1);
-                }
-            }
-        }
-
-
-        B.setFromTriplets(trips.begin(),trips.end());
-        return B;
+        return operators::boundary(*this);
     }
     Eigen::SparseMatrix<double> CutCellMesh<3>::face_boundary() const {
         Eigen::SparseMatrix<double> B(edge_size(),face_size());
@@ -1090,7 +818,11 @@ namespace mandoline {
     int CutCellMesh<3>::get_cell_index(const VecCRef& p) const {
         auto v = vertex_grid().local_coord(p);
         //check if its  in an adaptive grid cell, tehn we can just use that cell
+        // if the grid returns -2 we pass that through
         if(int ret = m_adaptive_grid.get_cell_index(v); ret != -1) {
+            if(ret == -2) {
+                mtao::logging::warn() << "Point lies outside the grid";
+            }
             return ret;
         } else {
 
