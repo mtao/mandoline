@@ -252,7 +252,9 @@ namespace mandoline {
                 Edge dual_edge{{a,b}};
                 int axis=d, width;
                 coord_type corner;
-                if(a == -2 && b >= 0) {
+                if(a < 0 && b < 0) {
+                    return;
+                } else if(a == -2 && b >= 0) {
                     auto&& c = cell(b);
                     corner = c.corner();
                     width = c.width();

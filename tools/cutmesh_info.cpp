@@ -17,8 +17,8 @@ void print_file_info(const std::string& filename)
     }
 
     {
-        auto s = ccm.shape();
-        std::cout << "Grid resolution: ";
+        auto s = ccm.cell_shape();
+        std::cout << "Grid cell shape: ";
         std::copy(s.begin(),s.end(),std::ostream_iterator<int>(std::cout," "));
         std::cout << std::endl;
     }
