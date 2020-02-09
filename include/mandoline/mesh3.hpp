@@ -82,6 +82,8 @@ namespace mandoline {
                 mtao::VecXd dual_hodge3() const;
                 mtao::VecXd primal_hodge3() const;
                 mtao::VecXd mesh_face_mask() const;//for removing mesh faces
+                mtao::VecXd grid_boundary_mask() const;//for removing mesh faces
+                std::set<int> grid_boundary_faces() const;//for removing mesh faces
 
                 //Eigen::SparseMatrix<double> trilinear_matrix() const;
 

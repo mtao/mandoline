@@ -90,9 +90,14 @@ namespace mandoline {
             const std::map<int,Cell>& cells() const { return m_cells; }
             const Cell& cell(int idx) const { return m_cells.at(idx); }
             mtao::VecXd dual_edge_lengths() const;
-            mtao::VecXd face_volumes() const;
+            mtao::VecXd face_volumes(bool mask_boundary = false) const;
             mtao::VecXd cell_volumes() const;
-            std::vector<Eigen::Triplet<double>> boundary_triplets(int min_edge_index) const;
+            std::vector<Eigen::Triplet<double>> boundary_triplets(int offset) const;
+            // computes the boundary of the adaptive grid, including the interior boundaries
+            mtao::VecXd boundary_face_mask() const;
+            // includes the boundary of hte adaptive grid, ignoring hte interior boundaries
+            mtao::VecXd grid_boundary_face_mask() const; // grid boundary mask using grid indices
+            std::set<int> grid_boundary_faces(int offset = 0) const;// grid boundary faces using grid indices
             int num_edges() const;
             int num_faces() const;
             int num_cells() const;

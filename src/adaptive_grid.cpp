@@ -185,13 +185,58 @@ namespace mandoline {
                 });
     }
 
+    auto AdaptiveGrid::boundary_face_mask() const -> mtao::VecXd  {
+
+        mtao::VecXd M = mtao::VecXd::Ones(num_faces());
+        for(auto&& [i,f]: mtao::iterator::enumerate(m_faces)) {
+            auto&& e = f.dual_edge;
+            if(!is_valid_edge(e)) {
+                M(i) = 0;
+            }
+        }
+        return M;
+    }
+
+    auto AdaptiveGrid::grid_boundary_face_mask() const -> mtao::VecXd  {
+
+        mtao::VecXd M = mtao::VecXd::Ones(num_faces());
+        for(auto&& [fidx_,f]: mtao::iterator::enumerate(faces())) {
+            int fidx = fidx_ + fidx_offset;
+            int dim = f.dimension();
+            int val = f.corner()[dim];
+            if(val == 0) {
+                M(fidx) = 0;
+            } else if(val == ccm.vertex_shape()[dim]-1) {
+                M(fidx) = 0;
+            }
+        }
+        return M;
+    }
+
+    std::set<int> AdaptiveGrid::grid_boundary_faces(int fidx_offset) const {
+        std::set<int> ret;
+        for(auto&& [fidx_,f]: mtao::iterator::enumerate(faces())) {
+            int fidx = fidx_ + fidx_offset;
+            int dim = f.dimension();
+            int val = f.corner()[dim];
+            if(val == 0) {
+                ret.insert(fidx);
+            } else if(val == ccm.vertex_shape()[dim]-1) {
+                ret.insert(fidx);
+            }
+        }
+        return ret;
+    }
+
     auto AdaptiveGrid::boundary_triplets(int offset) const -> std::vector<Eigen::Triplet<double>> {
         std::vector<Eigen::Triplet<double>> trips;
         for(auto&& [i,face]: mtao::iterator::enumerate(m_faces)) {
             auto& e = face.dual_edge;
-            if(is_valid_edge(e)) {
-                auto [l,h] = e;
+            auto [l,h] = face.dual_edge;
+            if(l >= 0) {
                 trips.emplace_back(offset+i,l,-1);
+            }
+            if(h >= 0) {
                 trips.emplace_back(offset+i,h,1);
             }
         }
@@ -311,7 +356,7 @@ namespace mandoline {
         }
     }
 
-    mtao::VecXd AdaptiveGrid::face_volumes() const {
+    mtao::VecXd AdaptiveGrid::face_volumes(bool mask_grid_boundary) const {
         auto&dx = Base::dx();
         mtao::VecXd ret(num_faces());
         mtao::Vec3d dws = mtao::Vec3d::Ones();
@@ -322,7 +367,7 @@ namespace mandoline {
         }
         for(auto&& [i,f]: mtao::iterator::enumerate(m_faces)) {
             auto&& e = f.dual_edge;
-            //if(!is_valid_edge(e)) continue;
+            if(mask_grid_boundary && !is_valid_edge(e)) continue;
             int w= f.width();
             ret(i) = w * w * dws(f.axis());
         }

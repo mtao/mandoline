@@ -734,6 +734,32 @@ namespace mandoline {
         }
         return M;
     }
+    mtao::VecXd CutCellMesh<3>::boundary_face_mask() const {
+        //TODO: Implement this. also, make sure that stencil boundary faces are ignored
+    }
+    std::set<int> CutcellMesh<3>::grid_boundary_faces() const {
+        std::set<int> ret;
+        std::cout << "Going through faces" << std::endl;
+        for(auto&& [fidx,f]: mtao::iterator::enumerate(ccm.faces())) {
+            auto mask = f.mask();
+            for(auto [dim,valo]: mtao::iterator::enumerate(mask)) {
+                if(valo) {
+                    int val = *valo;
+                    if(val == 0) {
+                        ret.insert(fidx);
+                    } else if(val == ccm.vertex_shape()[dim]-1) {
+                        ret.insert(fidx);
+                    }
+                }
+            }
+        }
+        // adaptive grid part
+        int fidx_offset = ccm.cut_face_size();
+        auto adret = grid_boundary_faces(fidx_offset);
+        ret.merge(adret);
+        return ret;
+    }
+
     mtao::VecXd CutCellMesh<3>::primal_hodge2() const {
         auto PV = face_volumes();
         auto DV = dual_edge_lengths();
