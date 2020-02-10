@@ -324,6 +324,7 @@ namespace mandoline {
 
     mtao::VecXd AdaptiveGrid::dual_edge_lengths() const {
 
+        if(num_faces() == 0) return {};
         auto&dx = Base::dx();
         mtao::VecXd ret(num_faces());
         for(auto&& [i,f]: mtao::iterator::enumerate(m_faces)) {
@@ -344,10 +345,10 @@ namespace mandoline {
         }
     }
     mtao::VecXd AdaptiveGrid::cell_volumes() const {
-        mtao::VecXd R(num_cells());
         if(num_cells() == 0) {
             return {};
         } else {
+            mtao::VecXd R(num_cells());
             int offset = m_cells.begin()->first;
             double vol = dx().prod();
             for(auto&& [i,c]: cells()) {
@@ -359,6 +360,7 @@ namespace mandoline {
     }
 
     mtao::VecXd AdaptiveGrid::face_volumes(bool mask_grid_boundary) const {
+        if(num_faces() == 0) return {};
         auto&dx = Base::dx();
         mtao::VecXd ret(num_faces());
         mtao::Vec3d dws = mtao::Vec3d::Ones();
