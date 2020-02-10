@@ -129,7 +129,6 @@ namespace mandoline::operators {
     mtao::VecXd dual_hodge3(const CutCellMesh<3>& ccm) {
         auto CV = cell_volumes(ccm);
         for(int i = 0; i < CV.size(); ++i) {
-            CV(i) = (std::abs(CV(i)) < 1e-5) ? 0 : (1. / CV(i));
             if(!std::isfinite(CV(i))) {
                 CV(i) = 0;
             }
@@ -139,6 +138,7 @@ namespace mandoline::operators {
     mtao::VecXd primal_hodge3(const CutCellMesh<3>& ccm) {
         auto CV = cell_volumes(ccm);
         for(int i = 0; i < CV.size(); ++i) {
+            CV(i) = (std::abs(CV(i)) < 1e-5) ? 0 : (1. / CV(i));
             if(!std::isfinite(CV(i))) {
                 CV(i) = 0;
             }
