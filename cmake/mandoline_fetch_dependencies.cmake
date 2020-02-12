@@ -15,7 +15,7 @@ else()
     FetchContent_Declare(
         mtao
         GIT_REPOSITORY https://github.com/mtao/core.git
-        GIT_TAG d2940868082743f7c1e043b90c3c9162a4544222
+        GIT_TAG 173aedf
         )
     if(${CMAKE_VERSION} VERSION_LESS 3.14)
         FetchContent_Populate(mtao)
