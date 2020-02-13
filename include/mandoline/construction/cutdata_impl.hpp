@@ -236,11 +236,13 @@ namespace mandoline::construction {
     template <int D, typename Indexer>
         void CutData<D,Indexer>::set_topology(const Edges& E,const Faces& F,  const Faces& FEA) {
             assert(m_V.size() > 0);
-            assert(F.size() > 0);
-            assert(F.maxCoeff() < m_V.size());
             m_E = E;
-            m_F = F;
-            m_FE = FEA;
+            if constexpr(D == 3) {
+                assert(F.size() > 0);
+                assert(F.maxCoeff() < m_V.size());
+                m_F = F;
+                m_FE = FEA;
+            }
             reset_intersections();
         }
 

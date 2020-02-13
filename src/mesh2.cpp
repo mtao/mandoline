@@ -132,7 +132,7 @@ namespace mandoline {
                 return r;
 
             } else {
-                return hem.cell(index);
+                return hem.cells()[index - StaggeredGrid::cell_size()];
             }
         }
 

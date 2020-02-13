@@ -377,8 +377,9 @@ class MeshViewer: public mtao::opengl::Window2 {
         mtao::ColVectors<double,2> cachedV;
         mtao::ColVectors<int,2> cachedE;
 
+        int face_index = -1;
 
-        mtao::Vec2f origin = mtao::Vec2f::Zero(), direction = mtao::Vec2f::Unit(2);
+        mtao::Vec2f origin = mtao::Vec2f::Zero(), direction = mtao::Vec2f::Unit(1);
 
 
         int size() const { return colors.cols(); }
@@ -386,7 +387,7 @@ class MeshViewer: public mtao::opengl::Window2 {
 
 
         MeshViewer(const Arguments& args): Window2(args) {
-            mtao::logging::make_logger().set_level(mtao::logging::Level::Off);
+            //mtao::logging::make_logger().set_level(mtao::logging::Level::Off);
             mtao::logging::make_logger("profiler").set_level(mtao::logging::Level::Off);
             bbox.min().setConstant(-1);
             bbox.max().setConstant(1);
@@ -431,6 +432,7 @@ class MeshViewer: public mtao::opengl::Window2 {
 
         void mouseMoveEvent(MouseMoveEvent& event) override;
         void mousePressEvent(MouseEvent& event) override;
+        void update_face(int idx);
     private:
         Magnum::SceneGraph::DrawableGroup2D background_drawgroup, curve_drawgroup;
 
@@ -475,6 +477,9 @@ void MeshViewer::mousePressEvent(MouseEvent& event) {
 void MeshViewer::gui() {
     if(ImGui::InputInt2("N", N.data()))  {
         //update_bbox();
+    }
+    if(ImGui::InputInt("Face index", &face_index))  {
+        update_face(face_index);
     }
     if(ImGui::SliderFloat2("min", bbox.min().data(),-2,2))  {
         bbox.min() = (bbox.min().array() < bbox.max().array()).select(bbox.min(),bbox.max());
@@ -552,10 +557,11 @@ void MeshViewer::update_curve() {
         //cutedge_renderer->setVertices(V.cast<float>());
         //cutedge_renderer->setEdges(E.cast<unsigned int>());
         //cutedge_renderer->setColor(ccg_cols_edge);
-        //auto F = ccm.faces();
+        //auto F = ccm->faces();
         //std::cout << "F size: " << F.rows() << "," << F.cols()  << std::endl;
         //cutmesh_renderer->setVertices(V.cast<float>());
-        //cutmesh_renderer->setFaces(F.cast<unsigned int>());
+        //cutcell_mesh.setTriangleBuffer(F.cast<unsigned int>());
+        //cutcell_drawable->activate_triangles();
         //cutmesh_renderer->setColor(ccg_cols);
         //point_renderer->setVertices(ccm.dual_vertices().rightCols(ccm.cell_size() - ccm.StaggeredGrid::cell_size()).cast<float>());
         //point_renderer->setVertices(ccg.compact_vertices().cast<float>().colwise() - mtao::Vec2f(.5,.5));
@@ -564,11 +570,26 @@ void MeshViewer::update_curve() {
         //cutedge_renderer->set_face_style();
         //cutedge_renderer->set_edge_style(renderers::MeshRenderer::EdgeStyle::Mesh);
 
+        ccm->faces();
         grid_mesh.set(ccm->vertex_grid());
         grid_drawable->activate_edges();
     }
 }
 
+
+void MeshViewer::update_face(int idx) {
+    if(!ccm) return;
+
+    if(idx < 0 || idx >= ccm->cell_size()) return;
+    auto c = ccm->cell(idx);
+    std::copy
+        (c.begin(),c.end(),std::ostream_iterator<int>(std::cout,","));
+    std::cout << std::endl;
+    if(c.size() < 3) return;
+    auto F = mtao::geometry::mesh::earclipping(ccm->vertices(),c);
+    cutcell_mesh.setTriangleBuffer(F.cast<unsigned int>());
+    cutcell_drawable->activate_triangles();
+}
 
 
 MAGNUM_APPLICATION_MAIN(MeshViewer)

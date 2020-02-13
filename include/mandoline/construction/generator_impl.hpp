@@ -9,6 +9,7 @@
 #include <iterator>
 #include <algorithm>
 #include "mandoline/construction/cutdata.hpp"
+#include <spdlog/spdlog.h>
 
 namespace mandoline::construction {
     template <int D>
@@ -517,7 +518,7 @@ namespace mandoline::construction {
         template <int D>
             auto CutCellEdgeGenerator<D>::all_GV() const -> ColVecs {
 
-                ColVecs R(3,num_vertices());
+                ColVecs R(D,num_vertices());
                 for(int i = 0; i < num_vertices(); ++i) {
                     R.col(i) = grid_vertex(i).p();
                 }
