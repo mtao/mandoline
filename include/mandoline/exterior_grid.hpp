@@ -29,11 +29,6 @@ namespace mandoline {
             using DomainBoundary::boundary_facet_pairs;
 
 
-            struct BoundaryFacet: public std::tuple<coord_type, int> {
-                const coord_type& coord() const { return std::get<0>(*this); }
-                int axis() const { return std::get<1>(*this); }
-            };
-
 
             ExteriorGrid() = default;
             // takes in a cell that indicates true for cells inside the stencil

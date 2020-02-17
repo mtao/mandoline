@@ -122,17 +122,20 @@ namespace mandoline {
         }
 
         std::vector<int> CutCellMesh<2>::cell(int index) const {
-            if(index < StaggeredGrid::cell_size()) {
-                auto v =  StaggeredGrid::form_vertices<2>(index);
-                // change from 00 01 10 11 to 00 01 11 10
-                std::swap(v[2],v[3]);
-                std::vector<int> r(4);
-                std::copy(v.begin(),v.end(),r.begin());
-
+            int ccsize =  hem.num_cells();
+            if(index >= ccsize ) {
+                return hem.cells()[index];
+            } else {
+                std::vector<int> r;
+                coord_type cidx = exterior_grid.cell_coords(index - ccsize);
+                for(int i = cidx[0]; i < cidx[0]+1; ++i) {
+                    for(int j = cidx[1]; j < cidx[1]+1; ++j) {
+                        r.push_back(vertex_grid(std::array<int,2>{{i,j}}));
+                    }
+                }
+                std::swap(r[2],r[3]);
                 return r;
 
-            } else {
-                return hem.cells()[index - StaggeredGrid::cell_size()];
             }
         }
 

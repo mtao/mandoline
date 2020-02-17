@@ -7,8 +7,8 @@ namespace mandoline {
         ExteriorGrid<D>::ExteriorGrid(const GridDatab& cell_mask): m_cell_indices(cell_mask.shape()) {
             using namespace mtao::geometry::grid;
             int counter = 0;
-            std::transform(cell_mask.begin(),cell_mask.end(), m_cell_indices.begin(),[&counter](bool inside) -> int {
-                    if(inside) {
+            std::transform(cell_mask.begin(),cell_mask.end(), m_cell_indices.begin(),[&counter](bool outside) -> int {
+                    if(!outside) {
                     return -1;
                     } else {
                     return counter++;
@@ -81,6 +81,8 @@ namespace mandoline {
             }
             return R;
         }
-
-
+    template <int D>
+        int ExteriorGrid<D>::num_cells() const {
+            return m_cell_indices.maxCoeff()+1;
+        }
 }

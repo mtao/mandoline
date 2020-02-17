@@ -4,7 +4,6 @@ jobs:
     build:
         docker:
             - image: "ubuntu:devel"
-            - image: "gcc:9.2.0"
         steps:
             - checkout
             - run:
