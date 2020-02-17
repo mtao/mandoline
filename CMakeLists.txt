@@ -51,13 +51,16 @@ TARGET_LINK_LIBRARIES(mandoline_headers PUBLIC INTERFACE Eigen3::Eigen)
 SET(COMMON_SRCS
     #src/diffgeo_utils.cpp
     src/vertex.cpp
+    src/domain_boundary.cpp
     )
 
 
 SET(CUTMESH2_SRCS
+    ${COMMON_SRCS}
     src/mesh2.cpp
     )
 SET(CUTMESH3_SRCS
+    ${COMMON_SRCS}
     src/mesh3.cpp
     src/cutcell.cpp
     src/proto_util.cpp
@@ -81,6 +84,8 @@ SET(CUTMESH_HDRS
     #include/mandoline/diffgeo_utils.hpp
     include/mandoline/coord_mask.hpp
     include/mandoline/adaptive_grid.hpp
+    include/mandoline/exterior_grid.hpp
+    include/mandoline/exterior_grid_impl.hpp
     $<TARGET_OBJECTS:cutmesh_proto>
     )
 

@@ -522,6 +522,23 @@ void MeshViewer::update_curve() {
 
     ccm = ccg.generate();
 
+    for(auto&& [a,b]: ccm->exterior_grid.boundary_facet_pairs()) {
+        std::cout << a << ":" << b << " ";
+    }
+    std::cout << std::endl;
+    {
+    auto g = ccm->exterior_grid.cell_indices();
+    auto s = g.shape();
+    for(int i = 0; i < s[0]; ++i) {
+        for(int j = 0; j < s[1]; ++j) {
+            std::cout << g(i,j) << " ";
+        }
+        std::cout << std::endl;
+    }
+    std::cout << std::endl;
+    }
+
+
     //set_colors(ccm.active_grid_cell_mask);
 
     {

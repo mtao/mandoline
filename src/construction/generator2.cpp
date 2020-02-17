@@ -71,6 +71,7 @@ namespace mandoline::construction {
         }
 
         ret.m_active_grid_cell_mask = m_active_grid_cell_mask;
+        ret.exterior_grid = ExteriorGrid<2>(m_active_grid_cell_mask);
         ret.active_cell_mask.resize(ret.cell_size());
         ret.active_cell_mask.setConstant(1);
 

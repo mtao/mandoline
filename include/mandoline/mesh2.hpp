@@ -1,5 +1,6 @@
 #pragma once
 #include "mandoline/mesh.hpp"
+#include "mandoline/exterior_grid.hpp"
 namespace mandoline {
     template <>
         struct CutCellMesh<2>: public CutCellMeshBase<2, CutCellMesh<2>> {
@@ -24,6 +25,7 @@ namespace mandoline {
                 Edges halfedges_per_edge;//halfedge indices
 
                 mtao::geometry::mesh::HalfEdgeMesh hem;
+                ExteriorGrid<2> exterior_grid;
                 VecX halfedge_orientations;
                 std::map<int, int> halfedge_to_edge_index;
                 std::map<int,std::set<int>> cell_grid_ownership;
