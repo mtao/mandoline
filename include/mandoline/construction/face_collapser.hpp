@@ -33,12 +33,17 @@ namespace mandoline::construction {
             std::map<int,std::map<int,int>> face_adjacency_map() const;
             std::map<int,std::map<Edge,Edge>> face_dual_adjacency_map() const;
 
+            // indicate 
             void set_edges_for_removal(const std::vector<int>& boundary_loop);
             void set_edge_for_removal(const Edge& e);
             //private:
+            // a directed edge maps to a face identity and whether this is the same order as the input
             std::map<Edge,std::tuple<int,bool>> m_edge_to_face;
+            // unused
             std::set<Edge> invalid_edges;
+            // structure for combining face identities
             mtao::data_structures::DisjointSet<int> face_ds;
+            // face to face map
             std::map<Edge,Edge> dual_edge_graph;
 
     };

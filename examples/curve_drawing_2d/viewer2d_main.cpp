@@ -521,22 +521,32 @@ void MeshViewer::update_curve() {
     ccg.bake();
 
     ccm = ccg.generate();
+    std::cout << "HEM data: " << std::endl;
+    std::cout << ccm->hem.edges() << std::endl;
+    std::cout <<std::endl;
 
     for(auto&& [a,b]: ccm->exterior_grid.boundary_facet_pairs()) {
         std::cout << a << ":" << b << " ";
     }
     std::cout << std::endl;
     {
-    auto g = ccm->exterior_grid.cell_indices();
-    auto s = g.shape();
-    for(int i = 0; i < s[0]; ++i) {
-        for(int j = 0; j < s[1]; ++j) {
-            std::cout << g(i,j) << " ";
+        std::cout << "Cell index grid: " << std::endl;
+        auto g = ccm->exterior_grid.cell_indices();
+        auto s = g.shape();
+        for(int i = 0; i < s[0]; ++i) {
+            for(int j = 0; j < s[1]; ++j) {
+                std::cout << g(i,j) << " ";
+            }
+            std::cout << std::endl;
         }
         std::cout << std::endl;
     }
-    std::cout << std::endl;
+    std::cout << "Cell coordinates: " << ccm->exterior_grid.num_cells()  << std::endl;
+    std::cout << "Cell coordinates: " << ccm->exterior_grid.cell_coords().size()  << std::endl;
+    for(auto&& [a,b]: ccm->exterior_grid.cell_coords()) {
+        std::cout << a << ":" << b << " ";
     }
+    std::cout << std::endl;
 
 
     //set_colors(ccm.active_grid_cell_mask);
@@ -597,7 +607,7 @@ void MeshViewer::update_curve() {
 void MeshViewer::update_face(int idx) {
     if(!ccm) return;
 
-    if(idx < 0 || idx >= ccm->cell_size()) return;
+    if(idx < 0 || idx >= ccm->num_cells()) return;
     auto c = ccm->cell(idx);
     std::copy
         (c.begin(),c.end(),std::ostream_iterator<int>(std::cout,","));

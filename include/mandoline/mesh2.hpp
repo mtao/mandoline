@@ -10,7 +10,8 @@ namespace mandoline {
                 using ColVecs = typename Base::ColVecs;
                 using VecX = typename Base::VecX;
 
-                int cell_size() const;
+                int num_cells() const;
+                int num_cutcells() const;
                 std::array<int,2> dual_edge(int idx) const;
                 int cell_index(const VecCRef&) const;
                 ColVecs dual_vertices() const;

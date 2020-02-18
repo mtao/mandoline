@@ -372,7 +372,7 @@ namespace mandoline::construction {
                             }
                         }
                     };
-                    for(auto& v: v) {
+                    for(auto& v: v) { // for every boundary cell figure out if this is a boundary stencil
                         if(ahd.is_boundary_cell(v)) {
                             auto pc = possible_cells(v);
                             if(pc.empty()) {

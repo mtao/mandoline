@@ -9,12 +9,15 @@
 #include "mandoline/line.hpp"
 
 namespace mandoline {
-    int CutCellMesh<2>::cell_size() const {
-
-        if(hem.cell_indices().size() == 0) {
-            return StaggeredGrid::cell_size();
-        }
-        return std::max<int>(StaggeredGrid::cell_size(),hem.cell_indices().maxCoeff()+1);
+    int CutCellMesh<2>::num_cutcells() const {
+            if(hem.cell_indices().size() == 0) {
+                return 0;
+            } else {
+                return hem.cell_indices().maxCoeff()+1;
+            }
+    }
+    int CutCellMesh<2>::num_cells() const {
+        return exterior_grid.num_cells() + num_cutcells();
     }
 
     mtao::ColVectors<int,3> CutCellMesh<2>::faces() const {
@@ -26,13 +29,13 @@ namespace mandoline {
             std::cout << std::endl;
         }
         std::vector<std::vector<int>> mycells;
-        for(int i = 0; i < cell_size(); ++i) {
+        for(int i = 0; i < num_cells(); ++i) {
             mycells.push_back(cell(i));
         }
         return mtao::geometry::mesh::earclipping(vertices(),mycells);
     }
     auto CutCellMesh<2>::volumes() const -> VecX{
-        VecX V(cell_size());
+        VecX V(num_cells());
         V.topRows(StaggeredGrid::cell_size()).array() = dx().prod();
 
         auto C = hem.cell_halfedges();
@@ -77,7 +80,7 @@ namespace mandoline {
 
 
     auto CutCellMesh<2>::dual_vertices() const -> ColVecs {
-        ColVecs V = ColVecs::Zero(D,cell_size());
+        ColVecs V = ColVecs::Zero(D,num_cells());
         V.leftCols(StaggeredGrid::cell_size()) = StaggeredGrid::cell_vertices();
 
         for(auto&& [i,c]: mtao::iterator::enumerate(hem.cell_halfedges())) {
@@ -122,20 +125,22 @@ namespace mandoline {
         }
 
         std::vector<int> CutCellMesh<2>::cell(int index) const {
-            int ccsize =  hem.num_cells();
-            if(index >= ccsize ) {
+            const int ccsize =  hem.num_cells();
+            if(index < ccsize ) {
                 return hem.cells()[index];
-            } else {
+            } else if(int nidx = index - ccsize; nidx < exterior_grid.num_cells()) {
                 std::vector<int> r;
-                coord_type cidx = exterior_grid.cell_coords(index - ccsize);
-                for(int i = cidx[0]; i < cidx[0]+1; ++i) {
-                    for(int j = cidx[1]; j < cidx[1]+1; ++j) {
-                        r.push_back(vertex_grid(std::array<int,2>{{i,j}}));
-                    }
-                }
-                std::swap(r[2],r[3]);
+
+                coord_type cidx = exterior_grid.cell_coord(nidx);
+                r.push_back(vertex_index(std::array<int,2>{{cidx[0]+0,cidx[1]+0}}));
+                r.push_back(vertex_index(std::array<int,2>{{cidx[0]+0,cidx[1]+1}}));
+                r.push_back(vertex_index(std::array<int,2>{{cidx[0]+1,cidx[1]+1}}));
+                r.push_back(vertex_index(std::array<int,2>{{cidx[0]+1,cidx[1]+0}}));
                 return r;
 
+            } else {
+                std::cout << index << "/" << ccsize << "/" << exterior_grid.num_cells() << std::endl;
+                return {};
             }
         }
 

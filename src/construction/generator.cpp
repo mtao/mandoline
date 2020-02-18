@@ -2,6 +2,16 @@
 
 namespace mandoline::construction {
 
+    std::array<int,2> smallest_ordered_edge(const std::vector<int>& v) {
+        assert(v.size()>=2);
+        std::array<int,2> min{{v[0],v[1]}};
+        for(int i = 0; i < v.size(); ++i) {
+            int j = (i+1)%v.size();
+            std::array<int,2> e{{v[i],v[j]}};
+            min = std::min(e,min);
+        }
+        return min;
+    } 
     template <>
         auto CutCellEdgeGenerator<2>::compute_planar_hem(const std::vector<VType>& GV, const Edges& E, const GridDatab& interior_cell_mask, int cell_size) const-> std::tuple<mtao::geometry::mesh::HalfEdgeMesh,std::set<Edge>> {
             ColVecs V(2,GV.size());

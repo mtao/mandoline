@@ -4,29 +4,24 @@
 #include <mtao/geometry/mesh/earclipping.hpp>
 
 namespace mandoline {
-    template <>
         void CutFace<3>::cache_triangulation(const std::array<mtao::ColVecs2d,3>& V, bool add_verts) {
             auto [VV,F] = triangulate(V,add_verts);
             cache_triangulation(VV,F);
         }
-    template <>
         void CutFace<3>::cache_triangulation(const mtao::ColVecs3d& V, const mtao::ColVecs3i& F) {
             if(V.size() > 0) {
                 triangulated_vertices = V;
             }
             cache_triangulation(F);
         }
-    template <>
         void CutFace<3>::cache_triangulation(const mtao::ColVecs3i& F) {
             if(F.size() > 0) {
             triangulation = F; 
             }
         }
-    template <>
         mtao::ColVecs3i CutFace<3>::triangulate(const std::array<mtao::ColVecs2d,3>& V) const {
             return std::get<1>(triangulate(V,false));
         }
-    template <>
         std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> CutFace<3>::triangulate(const std::array<mtao::ColVecs2d,3>& V, bool add_vertices) const {
             if(is_mesh_face()) {
                 return {{},triangulate_fan()};
@@ -40,7 +35,6 @@ namespace mandoline {
             }
 
         }
-    template <>
         std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> CutFace<3>::triangulate(const mtao::ColVecs2d& V, bool add_vertices) const {
 
             if(is_mesh_face()) {
@@ -58,18 +52,15 @@ namespace mandoline {
             return mtao::geometry::mesh::triangle_fan(indices);
         }
 
-    template <>
         mtao::ColVecs3i CutFace<3>::triangulate_fan() const {
             assert(indices.size() == 1);
             return mtao::geometry::mesh::triangle_fan(*indices.begin());
         }
-    template <>
         mtao::ColVecs3i CutFace<3>::triangulate_earclipping(const mtao::ColVecs2d& V) const {
             assert(indices.size() == 1);
             return mtao::geometry::mesh::earclipping(V,indices);
         }
 
-    template <>
         std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> CutFace<3>::triangulate_triangle(const mtao::ColVecs2d& V, bool do_add_vertices) const {
 
             //collect the number of edges
@@ -203,4 +194,63 @@ namespace mandoline {
             }
         }
 
+        void   CutFace<3>::serialize(protobuf::CutFace& face) const {
+            protobuf::serialize(N,*face.mutable_normal());
+            if(is_mesh_face()) {
+                face.set_face_id(std::get<int>(id));
+            } else {
+                auto& ap = *face.mutable_plane_id();
+                auto&& [a,b] = std::get<std::array<int,2>>(id);
+                ap.set_axis(a);
+                ap.set_value(b);
+            }
+            for(auto&& curve: indices) {
+                auto&& c = *face.add_curves();
+                for(auto&& v: curve) {
+                    c.add_indices(v);
+                }
+            }
+            if(triangulation) {
+                auto&& T = *triangulation;
+                for(int i = 0; i < T.cols(); ++i) {
+                    protobuf::serialize(T.col(i),*face.add_triangulation());
+                }
+            }
+            if(external_boundary) {
+                auto [b,s] = *external_boundary;
+                auto&& fb = *face.mutable_face_boundary();
+                fb.set_index(b);
+                fb.set_sign(s);
+            }
+        }
+
+        CutFace<3>  CutFace<3>::from_proto(const protobuf::CutFace& face) {
+            CutFace<3> ret;
+            ret.N = protobuf::deserialize(face.normal());
+            if(face.id_case() == protobuf::CutFace::IdCase::kFaceId) {
+                ret.id = face.face_id();
+            } else {
+                auto&& pid = face.plane_id();
+                ret.id = std::array<int,2>{{int(pid.axis()),int(pid.value())}};
+            }
+            for(auto&& c: face.curves()) {
+                std::vector<int> curve(c.indices().size());
+                std::copy(c.indices().begin(),c.indices().end(),curve.begin());
+                ret.indices.insert(curve);
+            }
+
+            if(face.triangulation().size() > 0) {
+                mtao::ColVecs3i T;
+                T.resize(3,face.triangulation().size());
+                for(int i = 0; i < T.cols(); ++i) {
+                    T.col(i) = protobuf::deserialize(face.triangulation(i));
+                }
+                ret.triangulation = T;
+            }
+            if(face.has_face_boundary()) {
+                auto&& fb = face.face_boundary();
+                ret.external_boundary = {fb.index(),fb.sign()};
+            }
+            return ret;
+        }
 }

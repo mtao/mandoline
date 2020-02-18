@@ -20,6 +20,7 @@
 
 namespace mandoline::construction {
 
+    std::array<int,2> smallest_ordered_edge(const std::vector<int>& v) ;
     //ASSUMES SIMPLICIAL INPUTS
     template <int D> 
         class CutCellEdgeGenerator: public mtao::geometry::grid::StaggeredGrid<double,D> {
@@ -315,6 +316,11 @@ namespace mandoline::construction {
                 void bake_faces() override;
                 void extra_metadata(CutCellMesh<2>& mesh) const;
                 mtao::geometry::mesh::HalfEdgeMesh hem;
+
+                mtao::map<int,CutFace<D>> m_faces;
+                std::set<int> mesh_face_indices;
+                std::array<std::set<Edge>,3> axial_primal_faces;
+                mtao::map<int,int> cut_cell_to_primal_map; // store the cut-face -> input face map
         };
     template <>
         class CutCellGenerator<3>: public CutCellEdgeGenerator<3> {
@@ -352,7 +358,6 @@ namespace mandoline::construction {
                 void bake() override;
                 void clear() override;
 
-                Edge smallest_ordered_edge(const std::vector<int>& v) const;
 
 
 
@@ -389,18 +394,16 @@ namespace mandoline::construction {
                 mtao::Vec3d area_normal(const std::vector<int>& F) const;
                 mtao::Vec3d area_normal(const std::set<std::vector<int>>& F) const;
                 std::set<Edge> edge_slice(int dim, int slice) const;
-                mtao::map<int,int> cut_cell_to_primal_map;
-                mtao::ColVecs3d origN;
-                std::array<mtao::map<int,AxisHEMData>,3> axis_hem_data;
-                std::array<std::set<Edge>,3> axial_primal_faces;
-                BoundaryElements m_newF;
+                mtao::map<int,int> cut_cell_to_primal_map; // store the cut-face -> input face map
+                mtao::ColVecs3d origN; // the normals from the input mesh
+                std::array<mtao::map<int,AxisHEMData>,3> axis_hem_data; // per-cut-plane information
+                std::array<std::set<Edge>,3> axial_primal_faces; // a hash for the faces of the input mesh that lie on axial planes
+                BoundaryElements m_newF; // ??? what is this
 
                 mtao::map<int,CutFace<D>> m_faces;
-                std::set<int> mesh_face_indices;
-                std::array<std::set<int>,3> axis_face_indices;
-                std::set<int> folded_faces;
-                std::set<Edge> adaptive_edges;
-                std::set<Edge> adaptive_bedges;
+                std::set<int> mesh_face_indices; // as m_faces loses track of teh cutmesh faces, this keeps track
+                std::array<std::set<int>,3> axis_face_indices; // store the faces that come from each axis
+                std::set<int> folded_faces; // elements that are on the boundary of hte input mesh
 
 
                 std::vector<CutCell> cell_boundaries;

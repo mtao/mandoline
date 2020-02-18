@@ -40,7 +40,7 @@ namespace mandoline {
             mtao::VecXd face_volumes(bool mask_boundary = false) const;
             mtao::VecXd cell_volumes() const;
             int num_faces() const { return DomainBoundary::boundary_facet_size(); }
-            int num_cells() const;
+            int num_cells() const { return m_cell_coords.size(); }
             void make_faces();
             const coord_type& cell_shape() const { return m_cell_indices.shape(); }
 
@@ -51,6 +51,8 @@ namespace mandoline {
 
             const std::vector<int>& boundary_facet_axes() const { return  m_boundary_facet_axes; }
             int boundary_facet_axis(size_t idx) const { return  m_boundary_facet_axes.at(idx); }
+            const coord_type& cell_coord(size_t idx) const { return m_cell_coords.at(idx); }
+            const std::vector<coord_type>& cell_coords() const { return m_cell_coords;}
 
             int get_face_axis(int face_index) const;
         private:

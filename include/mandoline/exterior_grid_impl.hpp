@@ -4,20 +4,22 @@
 
 namespace mandoline {
     template <int D>
-        ExteriorGrid<D>::ExteriorGrid(const GridDatab& cell_mask): m_cell_indices(cell_mask.shape()) {
+        ExteriorGrid<D>::ExteriorGrid(const GridDatab& cell_mask): Base(cell_mask.shape()), m_cell_indices(cell_mask.shape()) {
             using namespace mtao::geometry::grid;
             int counter = 0;
             std::transform(cell_mask.begin(),cell_mask.end(), m_cell_indices.begin(),[&counter](bool outside) -> int {
                     if(!outside) {
-                    return -1;
+                        return -1;
                     } else {
-                    return counter++;
+                        return counter++;
                     }
                     });
 
-            m_cell_coords.reserve(counter);
-            m_cell_indices.loop([&](auto&& c,auto) {
-                    m_cell_coords.emplace_back(c);
+            m_cell_coords.resize(counter);
+            m_cell_indices.loop([&](auto&& c,int idx) {
+                    if(idx >= 0) {
+                    m_cell_coords[idx] = c;
+                    }
                     });
 
             // we'll assume that the grid is mostly full
@@ -80,9 +82,5 @@ namespace mandoline {
                 }
             }
             return R;
-        }
-    template <int D>
-        int ExteriorGrid<D>::num_cells() const {
-            return m_cell_indices.maxCoeff()+1;
         }
 }

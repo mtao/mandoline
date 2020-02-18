@@ -32,7 +32,6 @@ namespace mandoline::construction {
 
 
         CutCellMesh<3> ccm = CCEG::generate();
-        //ccm.m_cut_edges = mtao::eigen::hstack(ccm.m_cut_edges,mtao::eigen::stl2eigen(adaptive_edges));
         ccm.m_folded_faces = folded_faces;
         //extra_metadata(ccm);
         ccm.m_faces.clear();
@@ -155,16 +154,6 @@ namespace mandoline::construction {
     }
 
 
-    auto CutCellGenerator<3>::smallest_ordered_edge(const std::vector<int>& v) const -> Edge {
-        assert(v.size()>=2);
-        Edge min{{v[0],v[1]}};
-        for(int i = 0; i < v.size(); ++i) {
-            int j = (i+1)%v.size();
-            Edge e{{v[i],v[j]}};
-            min = std::min(e,min);
-        }
-        return min;
-    } 
 
     void CutCellGenerator<3>::extra_metadata(CutCellMesh<3>& mesh) const {
 
@@ -185,8 +174,6 @@ namespace mandoline::construction {
         mesh_face_indices.clear();
         axis_face_indices = {};
         folded_faces.clear();
-        adaptive_edges.clear();
-        adaptive_bedges.clear();
         cell_boundaries.clear();
         boundary_vertices.clear();
         boundary_faces.clear();
