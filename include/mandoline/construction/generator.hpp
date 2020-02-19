@@ -6,19 +6,24 @@
 #include <mtao/eigen/stl2eigen.hpp>
 #include <mtao/functional.hpp>
 #include <mtao/geometry/grid/staggered_grid.hpp>
+#include <mtao/geometry/grid/grid_data.hpp>
 #include <mtao/logging/timer.hpp>
 #include <map>
 #include <set>
-#include "mandoline/mesh2.hpp"
-#include "mandoline/mesh3.hpp"
 #include "mandoline/construction/cutdata.hpp"
 #include "mandoline/cutface.hpp"
 #include <iterator>
-#include "mandoline/adaptive_grid.hpp"
 
 #define USE_INTERIOR_MASK
 
+namespace mandoline {
+    template <int D>
+        class CutCellMesh;
+
+}
+
 namespace mandoline::construction {
+
 
     std::array<int,2> smallest_ordered_edge(const std::vector<int>& v) ;
     //ASSUMES SIMPLICIAL INPUTS
@@ -83,8 +88,9 @@ namespace mandoline::construction {
                 
                 virtual void clear();
 
-                CutCellMesh<D> generate_edges() const;
-                CutCellMesh<D> generate_faces() const;
+                CutCellMesh<D> generate_vertices() const; // generate the initial mesh object
+                CutCellMesh<D> generate_edges() const; // generate the edges on top of vertices
+                CutCellMesh<D> generate_faces() const; // generate the faces on top of edges
                 CutCellMesh<D> generate() const;
 
                 //This threshold is to fuse vertices near grid vertices. for the results of float to double conversions 1e-6 seemed reasonable
@@ -291,8 +297,9 @@ namespace mandoline::construction {
                 std::array<crossing_store_type,D> m_per_axis_crossings;
                 std::vector<CrossingType> m_crossings;
                 //baked by bake_edges
-                std::set<CoordMaskedEdgeType> m_edges;
                 Edges cut_edges;
+                std::vector<CoordMaskedEdge<D>> m_grid_edges;
+                std::vector<CutMeshEdge<D>> m_cut_edges;
                 std::vector<CutMeshFace<D>> m_cut_faces;
 
                 GridDatab m_active_grid_cell_mask;
@@ -300,129 +307,8 @@ namespace mandoline::construction {
         };
 
     template <int D>
-        class CutCellGenerator;
-    template <>
-        class CutCellGenerator<2>: public CutCellEdgeGenerator<2> {
-            public:
-                using CCEG = CutCellEdgeGenerator<2>;
-                using BoundaryElements = typename CCEG::BoundaryElements;
-                using CCEG::CCEG;
-                using CoordType = typename CCEG::CoordType;
-                CutCellGenerator() = default;
-                CutCellGenerator(CutCellGenerator&&) = default;
-                CutCellGenerator& operator=(CutCellGenerator&&) = default;
-                CutCellMesh<2> generate() const ;
-                void add_boundary_elements(const BoundaryElements& E);
-                void bake_faces() override;
-                void extra_metadata(CutCellMesh<2>& mesh) const;
-                mtao::geometry::mesh::HalfEdgeMesh hem;
+        class CutCellGenerator {};
 
-                mtao::map<int,CutFace<D>> m_faces;
-                std::set<int> mesh_face_indices;
-                std::array<std::set<Edge>,3> axial_primal_faces;
-                mtao::map<int,int> cut_cell_to_primal_map; // store the cut-face -> input face map
-        };
-    template <>
-        class CutCellGenerator<3>: public CutCellEdgeGenerator<3> {
-            public:
-                using CCEG = CutCellEdgeGenerator<3>;
-                using BoundaryElements = typename CCEG::BoundaryElements;
-                using CoordType = typename CCEG::CoordType;
-                using CCEG::add_boundary_elements;
-                using CCEG::CCEG;
-                CutCellGenerator() = default;
-                CutCellGenerator(CutCellGenerator&&) = default;
-                CutCellGenerator& operator=(CutCellGenerator&&) = default;
-                using CCEG::vertex_shape;
-
-                size_t Vsize() const {
-                    return CCEG::Vsize();
-                }
-                ~CutCellGenerator();
-
-                const mtao::map<int,CutFace<D>>& faces()const { return m_faces; }
-
-                void compute_faces();
-                void compute_faces_vertex();
-                void compute_faces_axis(int idx);
-                mtao::map<int,CutFace<D>> compute_faces_axis(int idx, int cidx)const;
-
-                void bake_faces() override;
-                void bake_cells() override;
-                void update_active_grid_cell_mask();
-                bool adaptive = true;
-                std::optional<int> adaptive_level = 0;
-                std::optional<AdaptiveGrid> adaptive_grid;
-                std::optional<std::map<int,int>> adaptive_grid_regions;
-                void set_region_map(const std::map<int,std::set<int>>& region_vertices);
-                void bake() override;
-                void clear() override;
-
-
-
-
-                static mtao::ColVecs3i faceMap_to_faces(mtao::map<int,mtao::ColVecs3i>& fm);
-
-                void update_vertices_from_intersections();
-                CutCellMesh<3> generate() const ;
-                //void make_faces(const CutCellMesh<3>& ccm ) const;
-
-                void extra_metadata(CutCellMesh<3>& mesh) const;
-                /*
-                   const auto& newV() const { return m_newV; }
-                   const Vec& newV(int i) const { return m_newV[i]; }
-                   auto&& stl_face_cutE() const { return m_face_cutedges; }
-                   const BoundaryElements& origF() const { return m_origF;}
-                   auto origF(int i) const { return m_origF.col(i);}
-                   const BoundaryElements& origFE() const { return m_cell_edge_map;}
-                   auto origFE(int i) const { return m_cell_edge_map.col(i);}
-                   */
-
-                //baked by bake_faces
-                struct AxisHEMData {
-                    using GridDatab = mtao::geometry::grid::GridDataD<bool,2>;
-                    GridDatab active_grid_cell_mask;
-                    std::set<Edge> edges;
-                    std::set<Edge> boundary_edges;
-                    mtao::geometry::mesh::HalfEdgeMesh hem;
-                    bool is_boundary_cell(const std::vector<int>& verts) const;
-
-                };
-                bool check_cell_containment() const;
-                bool check_face_utilization() const;
-
-                mtao::Vec3d area_normal(const std::vector<int>& F) const;
-                mtao::Vec3d area_normal(const std::set<std::vector<int>>& F) const;
-                std::set<Edge> edge_slice(int dim, int slice) const;
-                mtao::map<int,int> cut_cell_to_primal_map; // store the cut-face -> input face map
-                mtao::ColVecs3d origN; // the normals from the input mesh
-                std::array<mtao::map<int,AxisHEMData>,3> axis_hem_data; // per-cut-plane information
-                std::array<std::set<Edge>,3> axial_primal_faces; // a hash for the faces of the input mesh that lie on axial planes
-                BoundaryElements m_newF; // ??? what is this
-
-                mtao::map<int,CutFace<D>> m_faces;
-                std::set<int> mesh_face_indices; // as m_faces loses track of teh cutmesh faces, this keeps track
-                std::array<std::set<int>,3> axis_face_indices; // store the faces that come from each axis
-                std::set<int> folded_faces; // elements that are on the boundary of hte input mesh
-
-
-                std::vector<CutCell> cell_boundaries;
-                std::set<int> boundary_vertices;
-                std::set<int> boundary_faces;
-        };
-
-    template <>
-        CutCellMesh<2> CutCellEdgeGenerator<2>::generate_faces() const;
-    template <>
-        CutCellMesh<2> CutCellEdgeGenerator<2>::generate() const;
-    template <>
-        CutCellMesh<3> CutCellEdgeGenerator<3>::generate() const;
-    template <>
-        auto CutCellEdgeGenerator<2>::compute_planar_hem(const ColVecs& V, const Edges& E, const GridDatab& interior_cell_mask, int cell_size) const-> std::tuple<mtao::geometry::mesh::HalfEdgeMesh,std::set<Edge>>;
-    template <>
-        auto CutCellEdgeGenerator<2>::compute_planar_hem(const std::vector<VType>& V, const Edges& E, const GridDatab& interior_cell_mask, int cell_size) const-> std::tuple<mtao::geometry::mesh::HalfEdgeMesh,std::set<Edge>>;
-    template <>
-        auto CutCellEdgeGenerator<2>::compute_planar_hem(const std::vector<VType>& GV, const ColVecs& V, const Edges& E, const GridDatab& interior_cell_mask, int cell_size) const-> std::tuple<mtao::geometry::mesh::HalfEdgeMesh,std::set<Edge>>;
 }
 
 

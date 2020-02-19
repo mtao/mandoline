@@ -43,6 +43,7 @@ namespace mandoline {
                 return -1;
             }
 
+
             int bound_axis() const {
                 assert(count() == 1);
                 for(int i = 0; i < D; ++i) {

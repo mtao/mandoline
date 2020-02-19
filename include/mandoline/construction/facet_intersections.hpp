@@ -11,6 +11,7 @@
 #include <map>
 #include <bitset>
 #include "mandoline/construction/vertex_types.hpp"
+#include "mandoline/cutedge.hpp"
 #include "mandoline/cutface.hpp"
 #include <mtao/geometry/mesh/halfedge.hpp>
 #include "mandoline/construction/face_collapser.hpp"

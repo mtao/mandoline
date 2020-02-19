@@ -60,6 +60,7 @@ namespace mandoline::construction {
             mtao::ColVectors<int,2> edges() const ;
             std::vector<std::vector<int>> faces() const;
             const std::vector<CutMeshFace<D>>& cut_faces() const { return m_cut_faces; }
+            const std::vector<CutMeshEdge<D>>& cut_edges() const { return m_cut_edges; }
 
 
             void update_vertices(const mtao::vector<VType>& V);
@@ -153,6 +154,7 @@ namespace mandoline::construction {
             //needs to be baked
             std::vector<Crossing<D>> m_crossings;
             std::map<const VType*,int> m_vertex_indexer;
+            mtao::vector<CutMeshEdge<D>> m_cut_edges;
             mtao::vector<CutMeshFace<D>> m_cut_faces;
 
         };

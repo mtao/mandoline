@@ -16,6 +16,8 @@
 #include <mtao/eigen/stack.h>
 #include "mandoline/barycentric_triangle_face.hpp"
 #include "mandoline/vertex.hpp"
+#include "mandoline/cutedge.hpp"
+#include "mandoline/cutface.hpp"
 
 namespace mandoline {
     namespace construction {
@@ -95,8 +97,8 @@ namespace mandoline {
             Edge dual_edge(int idx) const;
             Edges edges() const;
 
-            auto cut_edge(int idx) const { return m_cut_edges.col(idx); }
-            int cut_edge_size() const { return m_cut_edges.cols(); }
+            auto cut_edge(int idx) const { return m_cut_edges.at(idx); }
+            int cut_edge_size() const { return m_cut_edges.size(); }
 
             auto grid_vertices() const { return StaggeredGrid::vertices(); }
             auto grid_vertex(int idx) const { return StaggeredGrid::vertex(idx); }
@@ -115,14 +117,15 @@ namespace mandoline {
             const std::vector<Vertex>& cut_vertices() const {return m_cut_vertices;}
 
             const GridDatab& active_grid_cell_mask() const { return m_active_grid_cell_mask;}
-            const Edges& cut_edges() const {return m_cut_edges;}
+            const std::vector<CutEdge<D>>& cut_edges() const {return m_cut_edges;}
+            Edges cut_edges_eigen() const;
 
             EIGEN_MAKE_ALIGNED_OPERATOR_NEW
             protected:
             std::vector<Vertex> m_cut_vertices;
 
             GridDatab m_active_grid_cell_mask;
-            Edges m_cut_edges;
+            std::vector<CutEdge<D>> m_cut_edges;
         };
     template <int D>
         struct CutCellMesh;

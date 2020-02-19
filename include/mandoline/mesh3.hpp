@@ -163,6 +163,7 @@ namespace mandoline {
 
                 //Original mesh
                 mtao::ColVecs3d m_origV;
+                mtao::ColVecs2i m_origE;
                 mtao::ColVecs3i m_origF;
 
                 //Face annotations

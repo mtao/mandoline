@@ -1,4 +1,4 @@
-#include "mandoline/construction/generator.hpp"
+#include "mandoline/construction/generator2.hpp"
 
 namespace mandoline::construction {
 

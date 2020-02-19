@@ -105,7 +105,7 @@ namespace mandoline::construction {
                         m_edge_intersections[i].bake(grid);
                     }
                 }
-                {
+                if constexpr(D == 3) {
                     auto t = mtao::logging::profiler("mesh face intersections",false,"profiler");
                     //auto t = mtao::logging::timer("data bake faces");
                     int i;
@@ -126,50 +126,100 @@ namespace mandoline::construction {
             using namespace mtao::geometry::mesh;
             using Edge = std::array<int,2>;
 
-            std::map<int,int> cut_to_primal;
-            int cut_face_index = 0;
-
             {
+                auto tt = mtao::logging::profiler("mesh edge bake",false,"profiler");
+                std::mutex edge_mutex;
+                // function for adding a single edge, with mutex lock for paralellism
+                auto add_edge = [&](const coord_mask<D>& m, const std::array<int,2>& E, int eidx) {
+                    std::scoped_lock lock(edge_mutex);
+                    m_cut_edges.emplace_back(m,E,eidx);
+
+                };
+
+                // loop over every edge and find potential edges
+                int i = 0;
+#pragma omp parallel for
+                for (i=0; i<m_edge_intersections.size(); i++) {
+                    auto&& EI = m_edge_intersections[i];
+                    coord_mask<D> ei_mask = EI.mask();
+
+                    // if the edge has no intersections AND no edge has
+                    // intersections then the resulting cut-edge is the
+                    // original geometry (i.e the "trivial" case)
+                    bool trivial = true;
+                    if(EI.intersections.empty()) {
+
+                        // generate the edge, reindexed by m_crossings
+                        std::array<int,2> e;
+                        auto ei = E(EI.edge_index);
+                        for(auto&& [i,v]: mtao::iterator::enumerate(e)) {
+                            v = m_crossings[ei(i)].index;
+                        }
+
+                        add_edge(ei_mask,e,EI.edge_index);
+
+                    }  else { // can't just put subsequent logic in here because edge can set trivial
+                        // 
+                        auto Es = EI.edges(m_vertex_indexer);
+                        assert(Es.size() != 0);
+                        for(auto&& E: Es) {
+                            add_edge(ei_mask,E,EI.edge_index);
+                        }
+                    }
+                    //std::cout << "Face intersections: " << FI.edge_index << std::endl;
+
+                }
+            }
+            if constexpr(D==3) {
+                //std::map<int,int> cut_to_primal;
+                //int cut_face_index = 0;
                 auto tt = mtao::logging::profiler("mesh face bake",false,"profiler");
                 std::mutex face_mutex;
+                // function for adding a single face, with mutex lock for paralellism
                 auto add_face = [&](const coord_mask<D>& m, const std::vector<int>& F, int fidx) {
                     std::scoped_lock lock(face_mutex);
-                    cut_to_primal[m_cut_faces.size()] = fidx;
+                    //cut_to_primal[m_cut_faces.size()] = fidx;
                     m_cut_faces.emplace_back(m,F,fidx);
 
                 };
 
+                // loop over every triangle and find potential faces
                 int i = 0;
 #pragma omp parallel for
                 for (i=0; i<m_triangle_intersections.size(); i++) {
                     auto&& FI = m_triangle_intersections[i];
                     coord_mask<D> fi_mask = FI.mask();
-                    bool can_skip = true;
+
+                    // if the face has no intersections AND no edge has
+                    // intersections then the resulting cut-face is the
+                    // original geometry (i.e the "trivial" case)
+                    bool trivial = true;
                     if(FI.intersections.empty()) {
                         for(auto&& e: FI.edge_isects) {
                             if(!e->intersections.empty()) {
-                                can_skip = false;
+                                trivial = false;
                                 break;
                             }
                         }
 
-                        if(can_skip) {
+                        if(trivial) {
+                            // generate the triangle, reindexed by m_crossings
                             std::vector<int> f(3);
                             auto fi = F(FI.triangle_index);
                             for(auto&& [i,v]: mtao::iterator::enumerate(f)) {
                                 v = m_crossings[fi(i)].index;
                             }
-                            //std::transform(FI.vptr_tri.begin(),FI.vptr_tri.end(),f.begin(),[&](auto&& v) {
-                            //        return index(v);
-                            //        });
+
                             add_face(fi_mask,f,FI.triangle_index);
                         }
 
-                    }  else {
-                        can_skip = false;
+                    }  else { // can't just put subsequent logic in here because edge can set trivial
+                        trivial = false;
                     }
-                    if(!can_skip){
+                    if(!trivial){
+                        // 
                         auto Fs = FI.faces(m_vertex_indexer);
+                        assert(Fs.size() != 0);
                         for(auto&& F: Fs) {
                             add_face(fi_mask,F,FI.triangle_index);
                         }
@@ -183,6 +233,7 @@ namespace mandoline::construction {
 
     template <int D, typename Indexer>
         auto CutData<D,Indexer>::get_bary(int face_index, const Crossing<D>& crossing) const -> mtao::Vec3d{
+            static_assert(D == 3);
             auto& FI = m_triangle_intersections[face_index];
             return std::visit(
                     [&](auto&& v) -> mtao::Vec3d {

@@ -482,9 +482,12 @@ namespace mandoline {
         for(int i = 0; i < cut_vertex_size(); ++i) {
             protobuf::serialize(cut_vertex(i),*cmp.add_vertices());
         }
+        // TODO: Add back in after upgrading proto
+        /*
         for(int i = 0; i < cut_edge_size(); ++i) {
             protobuf::serialize(m_cut_edges.col(i),*cmp.add_edges());
         }
+        */
         for(int i = 0; i < m_origV.cols(); ++i) {
             protobuf::serialize(m_origV.col(i),*cmp.add_origv());
         }
@@ -549,10 +552,13 @@ namespace mandoline {
         for(int i = 0; i < ret.cut_vertex_size(); ++i) {
             protobuf::deserialize(cmp.vertices(i),ret.m_cut_vertices[i]);
         }
+        // TODO: Add back in after updating proto
+        /*
         ret.m_cut_edges.resize(2,cmp.edges().size());
         for(int i = 0; i < ret.cut_edge_size(); ++i) {
             ret.m_cut_edges.col(i) = protobuf::deserialize(cmp.edges(i));
         }
+        */
         ret.m_origV.resize(3,cmp.origv().size());
         for(int i = 0; i < ret.m_origV.cols(); ++i) {
             ret.m_origV.col(i) = protobuf::deserialize(cmp.origv(i));

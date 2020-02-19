@@ -52,26 +52,26 @@ namespace mandoline::construction {
                         //std::cout << std::string(gv) << " => ";
                         gv.apply_thresholding(mythresh);
                         /*
-                        for(int i = 0; i < D; ++i) {
-                            bool higher = gv.quot(i) > .5;
-                            double p = (gv.coord[i] + (higher ? 1 : 0)) * vertex_grid().dx()(i) + vertex_grid().origin()(i);
-                            if(std::abs(v(i) - p) < threshold_epsilon)
-                            {
-                                gv.quot(i) = 0;
-                                gv.clamped_indices[i] = true;
-                                if(higher) {
-                                gv.coord[i]++;
-                                }
+                           for(int i = 0; i < D; ++i) {
+                           bool higher = gv.quot(i) > .5;
+                           double p = (gv.coord[i] + (higher ? 1 : 0)) * vertex_grid().dx()(i) + vertex_grid().origin()(i);
+                           if(std::abs(v(i) - p) < threshold_epsilon)
+                           {
+                           gv.quot(i) = 0;
+                           gv.clamped_indices[i] = true;
+                           if(higher) {
+                           gv.coord[i]++;
+                           }
 
-                            }
-                        }
-                        */
+                           }
+                           }
+                           */
                         //std::cout << std::string(gv )<< std::endl;
                         }
 
 
                         return gv;
-                        });
+                });
                 m_data.update_topology_masks();
             }
         template <int D>
@@ -99,8 +99,8 @@ namespace mandoline::construction {
                 m_per_axis_crossings = {};
                 m_newV.clear();
                 m_crossings.clear();
-                m_edges.clear();
                 cut_edges = {};
+                m_cut_edges.clear();
                 m_cut_faces.clear();
             }
 
@@ -126,7 +126,7 @@ namespace mandoline::construction {
                     //auto t = mtao::logging::timer("generator bake edges");
                     auto t = mtao::logging::profiler("grid bake edges",false,"profiler");
                     bake_edges();
-                    mtao::logging::debug() << "Number of edges: " << m_edges.size();
+                    mtao::logging::debug() << "Number of edges [cut,grid]: [" << m_cut_edges.size() << "," << m_grid_edges.size() << "]";
                 }
                 {
                     //auto t = mtao::logging::timer("generator bake faces");
@@ -282,17 +282,17 @@ namespace mandoline::construction {
 
 
                     /*
-                    for(int i = 0; i < D; ++i) {
-                        if(quot(i) == 0) {
-                            std::set<CoordType> newcoords;
-                            std::transform(mycells.begin(),mycells.end(),std::inserter(newcoords,newcoords.end()),[&](CoordType c) {
-                                    c[i]--;
-                                    return c;
-                                    });
-                            mycells.insert(newcoords.begin(),newcoords.end());
-                        }
-                    }
-                    */
+                       for(int i = 0; i < D; ++i) {
+                       if(quot(i) == 0) {
+                       std::set<CoordType> newcoords;
+                       std::transform(mycells.begin(),mycells.end(),std::inserter(newcoords,newcoords.end()),[&](CoordType c) {
+                       c[i]--;
+                       return c;
+                       });
+                       mycells.insert(newcoords.begin(),newcoords.end());
+                       }
+                       }
+                       */
                     if(quot(0) == 0) {
                         mac(0,0);
                         mac(1,0);
@@ -709,21 +709,7 @@ namespace mandoline::construction {
             void CutCellEdgeGenerator<D>::bake_edges() {
                 {
                     auto t = mtao::logging::timer("Adding data edges");
-                    cut_edges = data().edges();
-
-
-                    m_edges.clear();
-
-                    {
-                        for(auto&& de: mtao::colvector_loop(cut_edges)) {
-                            Edge e;
-                            mtao::eigen::stl2eigen(e) = de;
-                            if(e[0] != e[1]) {
-                                m_edges.emplace(CoordMaskedEdge<D>(e,[&](int idx) { return get_mask(idx);}));
-                            }
-
-                        }
-                    }
+                    m_cut_edges = data().cut_edges();
                 }
 
 
@@ -737,7 +723,6 @@ namespace mandoline::construction {
 
                 {
                     std::mutex edges_mutex;
-                    //std::cout << "edges in mask: " << std::endl;
                     //Create every new edge possible where at least one side is on the interior of the mask
                     auto add_edges = [&](auto&& s, const CoordType& grid_edge, int dim) {
                         std::vector<int> vec;
@@ -758,18 +743,14 @@ namespace mandoline::construction {
                         for(int i = 0; i < vec.size()-1; ++i) {
                             auto e = std::array<int,2>{{vec[i],vec[i+1]}};
                             if(e[0] != e[1]) {
-                                m_edges.emplace(CoordMaskedEdge<D>{mask,e});
+                                m_grid_edges.emplace_back(CoordMaskedEdge<D>{mask,e});
                             }
 
                         }
                     };
 
 
-                    auto interior = [&](const CoordType& c) -> bool {
-                        return !m_active_grid_cell_mask.valid_index(c) || !m_active_grid_cell_mask(c);
-                    };
                     int i;
-
 #pragma omp for
                     for (i=0; i<m_per_axis_crossings.size(); i++) {
                         //for(auto&& [i,crossings]: mtao::iterator::enumerate(m_per_axis_crossings)) {
@@ -786,15 +767,19 @@ namespace mandoline::construction {
 
                 }
                 template <int D>
-                    CutCellMesh<D> CutCellEdgeGenerator<D>::generate_edges() const {
+                    CutCellMesh<D> CutCellEdgeGenerator<D>::generate_vertices() const {
                         //auto t = mtao::logging::timer("Generating edges");
                         int size = 0;
+                        // get the number of non-grid vertices
                         for(auto&& c: crossings()) {
                             int idx = c.index;
                             size = std::max(size,idx+1);
                         }
                         size -= grid_vertex_size();
+                        // if we only have grid vertices then size was a grtid vertex, so subtracting made it negative
                         size = std::max<int>(0,size);
+
+                        // for every vertex that isn't a grid vertex lets extract it 
                         std::vector<VType> V(size);
                         for(auto&& c: crossings()) {
                             if(!is_grid_vertex(c.index)) {
@@ -808,17 +793,45 @@ namespace mandoline::construction {
 
                             }
                         }
-                        std::cout << V.size() << std::endl;
                         CutCellMesh<D> ret(*this,V);
-                        ret.m_cut_edges = mtao::eigen::stl2eigen(edges());
-                        //ret.cut_mesh_edges = cut_edges;
+                        return ret;
+                    }
+                template <int D>
+                    CutCellMesh<D> CutCellEdgeGenerator<D>::generate_edges() const {
+                        CutCellMesh<D> ret = generate_vertices();
+                        ret.m_cut_edges.reserve(m_cut_edges.size() + m_grid_edges.size());
+
+                        if constexpr(D == 2) {
+                            mtao::ColVectors<double,D> N(D,data().nE());
+                            for(int i = 0; i < N.cols(); ++i) {
+                                auto n = N.col(i);
+                                auto e = data().E(i);
+                                auto v0 = origV(e(0));
+                                auto v1 = origV(e(1));
+                                mtao::Vec2d r = v1 - v0;
+                                n.x() = -r.y();
+                                n.y() = r.x();
+                            }
+
+                                std::transform(m_cut_edges.begin(),m_cut_edges.end(),std::back_inserter(ret.m_cut_edges)   , [&](const CutMeshEdge<2>& E) {
+                                        return CutEdge<2>(E,N.col(E.parent_eid));
+                                            });
+                                std::copy(m_grid_edges.begin(),m_grid_edges.end(),std::back_inserter(ret.m_cut_edges));
+
+                            } else {
+                                std::copy(m_cut_edges.begin(),m_cut_edges.end(),std::back_inserter(ret.m_cut_edges));
+                                std::copy(m_grid_edges.begin(),m_grid_edges.end(),std::back_inserter(ret.m_cut_edges));
+                            }
                         return ret;
                     }
                 template <int D>
                     auto CutCellEdgeGenerator<D>::edges() const -> std::set<Edge> {
                         //auto t = mtao::logging::timer("Generating edges");
                         std::set<Edge> ret;
-                        std::transform(m_edges.begin(),m_edges.end(),std::inserter(ret,ret.end()),[](auto&& e) {
+                        std::transform(m_cut_edges.begin(),m_cut_edges.end(),std::inserter(ret,ret.end()),[](auto&& e) {
+                                return e.indices;
+                                });
+                        std::transform(m_grid_edges.begin(),m_grid_edges.end(),std::inserter(ret,ret.end()),[](auto&& e) {
                                 return e.indices;
                                 });
                         return ret;
@@ -827,7 +840,12 @@ namespace mandoline::construction {
                     auto CutCellEdgeGenerator<D>::edge_slice(int dim, int coord) const -> std::set<Edge> {
                         //auto t = mtao::logging::timer("Generating edges");
                         std::set<Edge> ret;
-                        for(auto&& e: m_edges) {
+                        for(auto&& e: m_grid_edges) {
+                            if(e[dim] && *e[dim] == coord) {
+                                ret.emplace(e.indices);
+                            }
+                        }
+                        for(auto&& e: m_cut_edges) {
                             if(e[dim] && *e[dim] == coord) {
                                 ret.emplace(e.indices);
                             }
@@ -837,7 +855,14 @@ namespace mandoline::construction {
                 template <int D>
                     auto CutCellEdgeGenerator<D>::axial_edges() const -> std::array<mtao::map<int,std::set<Edge>>,D> {
                         std::array<mtao::map<int,std::set<Edge>>,D> ret;
-                        for(auto&& e: m_edges) {
+                        for(auto&& e: m_cut_edges) {
+                            for(int dim = 0; dim < D; ++dim) {
+                                if(e[dim]) {
+                                    ret[dim][*e[dim]].emplace(e.indices);
+                                }
+                            }
+                        }
+                        for(auto&& e: m_grid_edges) {
                             for(int dim = 0; dim < D; ++dim) {
                                 if(e[dim]) {
                                     ret[dim][*e[dim]].emplace(e.indices);

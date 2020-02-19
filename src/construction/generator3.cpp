@@ -1,4 +1,4 @@
-#include "mandoline/construction/generator.hpp" 
+#include "mandoline/construction/generator3.hpp" 
 #include <mtao/geometry/mesh/boundary_facets.h>
 #include <mtao/geometry/mesh/boundary_elements.h>
 #include <mtao/geometry/grid/grid_data.hpp>
@@ -147,6 +147,7 @@ namespace mandoline::construction {
         for(int i = 0; i < origV().size(); ++i) {
             ccm.m_origV.col(i) = origV()[i];
         }
+        ccm.m_origE = data().E();
         ccm.m_origF = data().F();
 
 

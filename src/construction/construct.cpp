@@ -1,4 +1,4 @@
-#include "mandoline/construction/generator.hpp"
+#include "mandoline/construction/generator3.hpp"
 #include "mandoline/construction/construct.hpp"
 #include <mtao/geometry/bounding_box.hpp>
 

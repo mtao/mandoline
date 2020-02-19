@@ -1,4 +1,4 @@
-#include "mandoline/construction/generator.hpp"
+#include "mandoline/construction/generator2.hpp"
 #include <mtao/geometry/grid/grid_data.hpp>
 #include <mtao/eigen/stl2eigen.hpp>
 #include <mtao/colvector_loop.hpp>
@@ -59,14 +59,13 @@ namespace mandoline::construction {
             {
                 //auto t = mtao::logging::timer("Gluing halfedges to edges");
                 mtao::map<std::array<int,2>,int> emap;
-                for(int i = 0; i < ret.m_cut_edges.cols(); ++i) {
-                    std::array<int,2> v;
-                    IVecMap(v.data()) = ret.m_cut_edges.col(i);
+                for(int i = 0; i < ret.m_cut_edges.size(); ++i) {
+                    std::array<int,2> v = ret.m_cut_edges[i].indices;
                     emap[v] = i;
                     std::swap(v[0],v[1]);
                     emap[v] = i;
                 }
-                ret.halfedges_per_edge.resizeLike(ret.m_cut_edges);
+                ret.halfedges_per_edge.resize(2,ret.m_cut_edges.size());
 
 
                 for(int i = 0; i < ret.hem.size(); ++i) {
@@ -78,8 +77,8 @@ namespace mandoline::construction {
                     v[1] = e.vertex();
                     int idx = ret.halfedge_to_edge_index[i] = emap[v];
                     auto hpee = ret.halfedges_per_edge.col(idx);
-                    auto ee = ret.m_cut_edges.col(idx);
-                    if(v[0] == ee(0)) {
+                    auto&& ee = ret.m_cut_edges[idx].indices;
+                    if(v[0] == ee[0]) {
                         hpee(0) = i;
                         hpee(1) = dhe;
                     } else {
@@ -125,6 +124,11 @@ namespace mandoline::construction {
                 }
             }
             //extra_metadata(ret);
+            ret.m_origV.resize(2,origV().size());
+            for(int i = 0; i < origV().size(); ++i) {
+                ret.m_origV.col(i) = origV()[i];
+            }
+            ret.m_origE = data().E();
             return ret;
         }
 
@@ -134,103 +138,5 @@ namespace mandoline::construction {
     }
 
 
-    void CutCellGenerator<2>::compute_faces_vertex() {
-        auto t = mtao::logging::timer("Computing input mesh faces with normals ");
-        std::array<double,3> N;
-        for(auto&& [i,f]: mtao::iterator::enumerate(m_cut_faces)) {
-            if(f.indices.size() > 2) {// && f.mask().count() < 2) {
 
-                m_faces[i] = CutFace<D>(f,origN.col(f.parent_fid));
-                mesh_face_indices.insert(i);
-            } else {
-                std::cout << "Cut faces should always be  real faces!" << std::endl;
-            }
-            }
-        }
-
-        mtao::map<int,CutFace<3>> CutCellGenerator<3>::compute_faces_axis()const {
-
-            mtao::map<int,CutFace<D>> faces;
-
-            auto V = all_GV();
-
-
-            auto mesh_faces = hem.cells_multi_component_map();
-
-            auto vols = hem.signed_areas(V);
-            for(auto&& [i,v]: mesh_faces) {
-                CutFace<D> F;
-                F.id = Edge{{idx,cidx}};
-                auto add_loop = [&](const std::vector<int>& v) {
-                    if(v.size() > 2) {
-                        if(axial_primal_faces[idx].find(smallest_ordered_edge(v)) == axial_primal_faces[idx].end()) {
-                            F.indices.emplace(v);
-                        }
-                    }
-                };
-                // TODO:remove handling this crap
-                /*
-                for(auto& v: v) {
-                    if(ahd.is_boundary_cell(v)) {
-                        auto pc = possible_cells(v);//possible grid cell
-                        if(pc.empty()) {
-                            continue;
-                        }
-                        std::array<CoordType,2> pca;
-                        std::copy(pc.begin(),pc.end(),pca.begin());
-                        if(pca[0][idx]+1 != pca[1][idx]) {
-                            std::cout << "SET WASNT LEXICOGRAPHICAL ORDER SOMEHOW?" << std::endl;
-                        }
-                        std::array<int,2> ind;
-                        ind[0] = pca[0][(idx+1)%3];
-                        ind[1] = pca[0][(idx+2)%3];
-                        if(!ahd.active_grid_cell_mask.valid_index(ind)) {
-                            std::cout << "Invalid index???? " << std::endl;
-                        }
-                        if(!ahd.active_grid_cell_mask(ind)) {
-                            if(vols.at(i) >= 0) {
-                                add_loop(v);
-                            }
-                        }
-                    } else {
-                        if(vols.at(i) >= 0) {
-                            add_loop(v);
-                        }
-                    }
-                }
-                */
-                if(!F.indices.empty()) {
-
-                    F.N = N;
-                    F.coord_mask<D>::operator=(face_mask(F.indices));
-                    faces[i] = std::move(F);
-                }
-            }
-
-            /*
-            //debug when i was only generating quads
-            bool bad = false;
-            for(auto&& [fidx,f]: faces) 
-            {
-            if(f.indices.begin()->size() > 4)
-            {
-            bad = true;
-            }
-            }
-            if(bad)
-            {
-            std::cout << "A bunch of edges weren't used due to some failure. " << std::endl;
-            std::cout << " we only got " << faces.size() << "things" << std::endl;
-            std::cout << "Edges on " << idx << "," << cidx << std::endl;
-            std::cout << mtao::eigen::stl2eigen(ahd.edges) << std::endl;
-            for(auto&& [a,b]: ahd.edges)
-            {
-            std::cout << grid_info(a) << " => " << grid_info(b) << std::endl;
-            }
-            std::cout << std::endl;
-            }
-            */
-            return faces;
-        }
-
-    }
+}

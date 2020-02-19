@@ -33,7 +33,9 @@ namespace mandoline {
                 std::map<int,std::set<int>> edge_grid_ownership;
                 std::map<Edge, int> edge_vertices_to_edge_index;
                 VecX active_cell_mask;
-                Edges cut_mesh_edges;//cut edges from the input mesh. not necessary for anything really
 
+                //Original mesh
+                mtao::ColVecs2d m_origV;
+                mtao::ColVecs2i m_origE;
         };
 }
