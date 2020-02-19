@@ -2,6 +2,11 @@ syntax = "proto3";
 
 package mandoline.protobuf;
 
+// A vector or position in R^2
+message Vec2d {
+    double x = 1;
+    double y = 2;
+}
 // A vector or position in R^3
 message Vec3d {
     double x = 1;
@@ -9,24 +14,6 @@ message Vec3d {
     double z = 3;
 }
 
-// An augmented vertex rep using trilinear coordinates in the grid 
-// and a bitmask
-// World coordinates of the vertex is:
-// p = origin + dx * ( [i,j,k] + [u,v,w] )
-message Vertex {
-    //the grid cell 
-    int64 i = 1;
-    int64 j = 2;
-    int64 k = 3;
-    //the trilinear coordinates
-    double u = 4;
-    double v = 5;
-    double w = 6;
-    //the bitmask
-    bool ci = 7; // equiv to u == 0
-    bool cj = 8; // equiv to v == 0
-    bool ck = 9; // equiv to w == 0
-}
 
 // An integer vector in Z^2
 message Vec2i {
@@ -57,114 +44,21 @@ message SimplePolygon {
 // mechanism.  To connect our cut-faces on the boundary of the stencil we store
 // which regular grid cell this is adjacent to as well as the relative sign
 // between the cut-face and grid cell
-message FaceBoundary {
+message StencilBoundary {
     int64 index = 1;
     bool sign = 2;
 }
 
-message CutFace {
+message CutEdge {
     // The boundary loops for the polygon
-    repeated SimplePolygon curves = 1;
-    Vec3d normal = 2;
+    Vec2i indices = 1;
+    Vec2d normal = 2;
     // the parent geometory that this is cut from
     oneof id {
-        int64 face_id = 3;
+        int64 edge_id = 3;
         AxialPlane plane_id = 4;
     }
-    // sometimes we may cache a triangulation, but dont depend on it
-    repeated Vec3i triangulation = 5;
-    // sometimes we may cache vertices for a triangulation, but dont depend on
-    // it. if this is empty then the indices in triangulation (if htey exist)
-    // point to the cut-cell mesh's vertices
-    repeated Vec3i triangulation_vertices = 7;
-    // for cut-cells on the boundary of the stencil, point to the cut-cell grid
-    // should connect to
-    FaceBoundary face_boundary = 6;
-}
-message CutCell {
-    // the numerical index of the cut-cell (may be redundant)
-    int64 id = 1;
-    // the region id for this cell, 0 typically means outside the input mesh
-    int64 region = 2;
-    // a map of cut-face indices and relative signs of the
-    // boundary  (true = positive)
-    map<int64,bool> entries = 3;
-    // the grid cell that this cut-cell lies within
-    Vec3i grid_cell = 4;
 
+    StencilBoundary edge_boundary = 5;
 }
 
-// A representation of a cut-face in terms of barycentric
-// coordinates on teh triangle that created it. 
-// Should be aligned to a cut-face's indices
-//
-// Note: cut-faces that come from triangle-faces are comprised of
-// a single boundary loop so, although general cut-faces have
-// multiple loops, these don't need that sophistication
-message BarycentricTriangleFace {
-    int64 parent_id = 1;
-    repeated Vec3d barycentric_coordinates = 2;
-}
-
-// An axis-aligned square tha goes from corner to corner+radius on
-// two axes (the one that isn't axis)
-message Square {
-    Vec3i corner = 1;
-    int64 radius = 2;
-    int64 axis = 3;
-}
-
-//// A face in a staggered grid as well as the indices of two Adaptive grid Cubes
-message Face {
-    Square geometry = 1;
-    Vec2i dual_edge = 2;
-}
-
-// the geometric position of a cube that goes from corner to corner + radius
-message Cube {
-    Vec3i corner = 1;
-    int64 radius = 2;
-}
-
-// A cut-cell mesh
-message CutMeshProto {
-
-
-    // hte coordinates of hte grid the mesh is built within
-    Vec3d origin = 1;
-    Vec3d dx = 2;
-    Vec3i shape = 3;
-
-    // the augmented vertices of the mesh
-    repeated Vertex vertices = 4;
-
-
-    // the indices of the edges of the mesh
-    repeated Vec2i edges = 5;
-    repeated CutFace faces = 6;
-    repeated CutCell cells = 7;
-    // the barycentric coordinates of a cut-face's vertices with
-    // respect to the triangle the cut-face came from
-    // It's st ored as a map that is parallel to the faces array.
-    // i.e mesh_faces has index idx if and only if
-    // faces[idx].face_id is set and has the property
-    // faces[idx].face_id == mesh_faces[idx].parent_id
-    map<int64,BarycentricTriangleFace> mesh_faces= 13;
-
-    // the vertices of the input mesh
-    repeated Vec3d origV= 8;
-    // the triangle indices of hte input mesh
-    repeated Vec3i origF= 9;
-    // indices of cut-faces for which both sides are in a single
-    // cut-cell
-    repeated int64 foldedFaces = 10;
-
-    // Adaptive grid structure stuff
-    // the indices and positions of cube-cells
-    map<int64,Cube> cubes = 11;
-    // the indices  and positions of square-faces that bound hte
-    // cube-cells
-    map<int64,Square> squares = 14;
-    // the region ids for the cube-cells, they're aligned with the regions used for cut-cells
-    map<int64,int64> cube_regions = 12;
-}
