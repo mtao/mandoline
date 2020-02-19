@@ -4,9 +4,12 @@
 #include <variant>
 #include "mandoline/coord_mask.hpp"
 
+#define __STATIC_TEST__
+
+
 namespace mandoline {
-#if defined(_MSC_VER) || defined(__APPLE__)
-    const static double threshold_epsilon;
+#if defined(_MSC_VER) || defined(__APPLE__) || defined(__STATIC_TEST__)
+    extern const double threshold_epsilon;
 #else
     //TODO: sqrt isn't constepxr on mac
     constexpr static double threshold_epsilon = std::sqrt(std::numeric_limits<double>::epsilon());
