@@ -123,13 +123,14 @@ namespace mandoline::construction {
             VV[i] = grid_vertex(i);
         }
         std::string timer_str = "Flagging active cells 0";
-        for(auto&& [dim,ahdata,ae,g_]: mtao::iterator::enumerate(axis_hem_data, AE,grids)) {
-            auto& g = g_;
+            for(int i = 0; i < 3; ++i) {
+                int dim = i;
+                auto&& ahdata = axis_hem_data[i];
+                auto&& ae = AE[i];
+                auto&& g = grids[i];
+        //for(auto&& [dim,ahdata,ae,g_]: mtao::iterator::enumerate(axis_hem_data, AE,grids)) {
+            //auto& g = g_;
             SubGridTransformer subtran(g,*this,dim,0);
-            //for(int i = 0; i < 3; ++i) {
-            //    auto&& ahdata = axis_hem_data[i];
-            //    auto&& ae = AE[i];
-            //    auto&& g = grids[i];
             //subV.row(0) = V.row((i+1)%3);
             //subV.row(1) = V.row((i+2)%3);
 

@@ -24,6 +24,7 @@ include(mandoline_fetch_dependencies)
 
 
 find_package(Eigen3 REQUIRED)
+FIND_PACKAGE(OpenMP REQUIRED)
 
 
 

@@ -5,9 +5,10 @@
 #include "mandoline/coord_mask.hpp"
 
 namespace mandoline {
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(__APPLE__)
     const static double threshold_epsilon;
 #else
+    //TODO: sqrt isn't constepxr on mac
     constexpr static double threshold_epsilon = std::sqrt(std::numeric_limits<double>::epsilon());
 #endif
     //Base vertex class, holds points in grid space.
