@@ -209,7 +209,8 @@ namespace mandoline::construction {
                         if(grid) {
                             int v = *std::max_element(grid->vertex_shape().begin(),grid->vertex_shape().end());
                             v = 2 * std::max<int>(1,v);
-                            mythresh =  v * threshold_epsilon;
+                            //mythresh =  v * threshold_epsilon;
+                            mythresh =  v * 1e-10;
                         }
                         std::transform(mm.begin(),mm.end(),std::back_inserter(intersections), [&](auto&& pr) {
                                 EdgeIsect e = pr.second;

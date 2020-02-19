@@ -344,7 +344,7 @@ int main(int argc, char * argv[]) {
 #include <mtao/opengl/objects/grid.h>
 #include <Corrade/Utility/Arguments.h>
 #include "plcurve2.hpp"
-#include "mandoline/construction/generator.hpp"
+#include "mandoline/construction/generator2.hpp"
 #include <Magnum/GL/Renderer.h>
 
 #include <thread>
@@ -553,7 +553,7 @@ void MeshViewer::update_curve() {
 
     {
         auto V = ccm->vertices();
-        auto E = ccm->cut_edges();
+        auto E = ccm->cut_edges_eigen();
         mtao::ColVectors<float,3> ccg_cols_edge(3,E.cols());
         ccg_cols_edge.setZero();
         for(int i = 0; i < ccg_cols_edge.cols(); ++i) {

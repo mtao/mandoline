@@ -42,7 +42,8 @@ namespace mandoline::construction {
                 if(mythresh < 0) { 
                     int v = *std::max_element(vertex_shape().begin(),vertex_shape().end());
                     v = 2 * std::max<int>(1,v);
-                    mythresh =  v * threshold_epsilon; 
+                    //mythresh =  v * threshold_epsilon; 
+                    mythresh =  v * 1e-10; 
                 }
                 std::transform(V.begin(),V.end(),m_data.m_V.begin(), [&](const Vec& v) {
                         auto gv = get_vertex(v);

@@ -109,6 +109,7 @@ SET(CUTMESH3_HDRS
     )
 
 SET(CONSTRUCTION_SRCS
+    ${COMMON_SRCS}
     src/construction/generator3_make_faces.cpp
     src/construction/generator.cpp
     src/construction/generator3.cpp
