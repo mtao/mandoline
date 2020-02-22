@@ -186,7 +186,7 @@ TEST_CASE("Near Diagonal Fan", "[face_collapser]") {
         mtao::ColVecs2d V(2,N+1);
 
         V.row(0).head(N) = mtao::VecXd::LinSpaced(N,1,1e10);
-        V.row(1).head(N) = V.row(0).head(N).array() - 1;
+        V.row(1).head(N) = V.row(0).head(N).array() - .5;
         V.col(N).setZero();
 
 
