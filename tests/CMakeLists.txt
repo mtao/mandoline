@@ -10,7 +10,7 @@ FUNCTION(ADD_CATCHTEST BINNAME)
     MESSAGE(STATUS "MAKING ${BINNAME}_TEST")
 ENDFUNCTION()
 
-ADD_CATCHTEST(face_collapser_test
+ADD_CATCHTEST(face_collapser
     face_collapser_test.cpp
     )
 
