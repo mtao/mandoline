@@ -12,7 +12,7 @@ namespace mandoline {
     extern const double threshold_epsilon;
 #else
     //TODO: sqrt isn't constepxr on mac
-    constexpr static double threshold_epsilon = std::sqrt(std::numeric_limits<double>::epsilon());
+   constexpr static double threshold_epsilon = std::sqrt(std::numeric_limits<double>::epsilon());
 #endif
     //Base vertex class, holds points in grid space.
     //Vertex is at p() = coord+quot and clamped_indices stores what type of grid entry the vertex belongs to

@@ -20,6 +20,8 @@ namespace mandoline::construction {
         }
     }
 
+
+
     auto FaceCollapser::collect_edges() const -> std::map<int,std::set<int>> {
         std::map<int,std::set<int>> ret;
         for(auto&& [e,pr]: m_edge_to_face) {
@@ -51,6 +53,7 @@ namespace mandoline::construction {
     void FaceCollapser::set_edge_for_removal(const Edge& e) {
         face_ds.add_node(-1);
 
+        // 
         if(m_edge_to_face.find(e) != m_edge_to_face.end()) {
             face_ds.join(std::get<0>(m_edge_to_face[e]),-1);
         }
