@@ -6,7 +6,7 @@ using E = std::array<int,2>;
 using namespace mandoline::construction;
 
 TEST_CASE("Polygon", "[face_collapser]") {
-    for(int N = 3; N < 5; ++N) {
+    for(int N = 3; N < 50; ++N) {
         std::stringstream ss;
         ss << "Polygon size " << N;
         SECTION(ss.str());
@@ -62,7 +62,7 @@ TEST_CASE("Polygon", "[face_collapser]") {
 
 }
 TEST_CASE("Polygon with Center", "[face_collapser]") {
-    for(int N = 3; N < 6; ++N) {
+    for(int N = 3; N < 50; ++N) {
         std::stringstream ss;
         ss << "Polygon size " << N;
         SECTION(ss.str());
@@ -131,6 +131,91 @@ TEST_CASE("Polygon with Center", "[face_collapser]") {
                 REQUIRE(third == N);
 
 
+            }
+        }
+    }
+
+}
+TEST_CASE("Near Axis Fan", "[face_collapser]") {
+    for(int N = 3; N < 50; ++N) {
+        std::stringstream ss;
+        SECTION(ss.str());
+        mtao::ColVecs2d V(2,N+1);
+
+        V.row(0).head(N).setConstant(1e-8);
+        V.row(1).head(N) = mtao::VecXd::LinSpaced(N,1,1e10);
+        V.col(N).setZero();
+
+
+        std::set<E> edges;
+        for(int j = 0; j < N; ++j) {
+            if(j+1 < N) {
+                edges.emplace(E{{j,(j+1)}});
+            }
+            edges.emplace(E{{j,N}});
+        }
+
+
+        FaceCollapser fc(edges);
+        fc.set_edge_for_removal(E{{1,0}});
+        fc.bake(V);
+
+        {
+            auto faces = fc.faces();
+            REQUIRE(faces.size() == N-1);
+            for(auto [a,l]: faces) {
+                REQUIRE(l.size() == 3);
+                std::sort(l.begin(),l.end());
+                auto it = l.begin();
+                int first = *it++;
+                int second= *it++;
+                int third = *it++;
+
+                REQUIRE(first+1 == second);
+                REQUIRE(third == N);
+            }
+        }
+    }
+
+}
+
+TEST_CASE("Near Diagonal Fan", "[face_collapser]") {
+    for(int N = 3; N < 50; ++N) {
+        std::stringstream ss;
+        SECTION(ss.str());
+        mtao::ColVecs2d V(2,N+1);
+
+        V.row(0).head(N) = mtao::VecXd::LinSpaced(N,1,1e10);
+        V.row(1).head(N) = V.row(0).head(N).array() - 1;
+        V.col(N).setZero();
+
+
+        std::set<E> edges;
+        for(int j = 0; j < N; ++j) {
+            if(j+1 < N) {
+                edges.emplace(E{{j,(j+1)}});
+            }
+            edges.emplace(E{{j,N}});
+        }
+
+
+        FaceCollapser fc(edges);
+        fc.set_edge_for_removal(E{{1,0}});
+        fc.bake(V);
+
+        {
+            auto faces = fc.faces();
+            REQUIRE(faces.size() == N-1);
+            for(auto [a,l]: faces) {
+                REQUIRE(l.size() == 3);
+                std::sort(l.begin(),l.end());
+                auto it = l.begin();
+                int first = *it++;
+                int second= *it++;
+                int third = *it++;
+
+                REQUIRE(first+1 == second);
+                REQUIRE(third == N);
             }
         }
     }
