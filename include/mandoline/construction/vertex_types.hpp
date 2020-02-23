@@ -125,6 +125,8 @@ namespace mandoline::construction {
             const VType& vertex() const;
         };
 
+
+    // treat a vertex as a point on an edge
     template <int D>
         struct EdgeCrossing {
             //Definitions

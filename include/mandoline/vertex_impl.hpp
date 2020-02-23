@@ -165,6 +165,8 @@ namespace mandoline {
 
     template <int D>
         auto Vertex<D>::possible_cells() const -> std::set<CoordType> {
+            return mask().possible_cells(coord);
+            /*
             std::set<CoordType> ret;
             for(int i = 0; i < (2 << D); ++i) {
                 std::bitset<D> bs(i);
@@ -179,6 +181,7 @@ namespace mandoline {
                 }
             }
             return ret;
+            */
         }
 
 

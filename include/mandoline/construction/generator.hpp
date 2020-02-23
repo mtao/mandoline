@@ -74,6 +74,7 @@ namespace mandoline::construction {
                 std::tuple<mtao::geometry::mesh::HalfEdgeMesh,std::set<Edge>> compute_planar_hem(const std::vector<VType>& GV, const Edges& E, const GridDatab& interior_cell_mask, int cell_size) const;
                 std::tuple<mtao::geometry::mesh::HalfEdgeMesh,std::set<Edge>> compute_planar_hem(const std::vector<VType>& GV, const ColVecs& V, const Edges& E, const GridDatab& interior_cell_mask, int cell_size) const;
 
+               std::vector<CutFace<D>> compute_planar_cut_faces(const std::vector<VType>& GV, const ColVecs& V) const;
 
                 virtual void bake();
                 virtual void bake_vertices();

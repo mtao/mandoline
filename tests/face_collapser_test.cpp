@@ -28,7 +28,7 @@ TEST_CASE("Polygon", "[face_collapser]") {
 
 
         {
-            auto faces = fc.faces();
+            auto faces = fc.faces_no_holes();
             REQUIRE(faces.size() == 2);
             {
                 auto prit = faces.find(0);
@@ -47,7 +47,7 @@ TEST_CASE("Polygon", "[face_collapser]") {
         fc.bake(V);
 
         {
-            auto faces = fc.faces();
+            auto faces = fc.faces_no_holes();
             REQUIRE(faces.size() == 1);
             {
                 auto prit = faces.find(0);
@@ -86,7 +86,7 @@ TEST_CASE("Polygon with Center", "[face_collapser]") {
 
 
         {
-            auto faces = fc.faces();
+            auto faces = fc.faces_no_holes();
             REQUIRE(faces.size() == N+1);
             {
                 int triangle_count = 0;
@@ -113,7 +113,7 @@ TEST_CASE("Polygon with Center", "[face_collapser]") {
         fc.bake(V);
 
         {
-            auto faces = fc.faces();
+            auto faces = fc.faces_no_holes();
             REQUIRE(faces.size() == N);
             for(auto [a,l]: faces) {
                 REQUIRE(l.size() == 3);
@@ -161,7 +161,7 @@ TEST_CASE("Near Axis Fan", "[face_collapser]") {
         fc.bake(V);
 
         {
-            auto faces = fc.faces();
+            auto faces = fc.faces_no_holes();
             REQUIRE(faces.size() == N-1);
             for(auto [a,l]: faces) {
                 REQUIRE(l.size() == 3);
@@ -204,7 +204,7 @@ TEST_CASE("Near Diagonal Fan", "[face_collapser]") {
         fc.bake(V);
 
         {
-            auto faces = fc.faces();
+            auto faces = fc.faces_no_holes();
             REQUIRE(faces.size() == N-1);
             for(auto [a,l]: faces) {
                 REQUIRE(l.size() == 3);
@@ -218,6 +218,74 @@ TEST_CASE("Near Diagonal Fan", "[face_collapser]") {
                 REQUIRE(third == N);
             }
         }
+    }
+
+}
+
+TEST_CASE("Triangle with hole", "[face_collapser]") {
+    // triangle
+    int N = 3;
+
+    mtao::ColVecs2d V(2, 2 * N);
+
+    // triangle in a triangle
+    mtao::VecXd ang = mtao::VecXd::LinSpaced(N,0,2*M_PI * (N-1.) / N);
+    V.row(0).head(N) = 3*ang.array().cos().transpose();
+    V.row(1).head(N) = 3*ang.array().sin().transpose();
+    V.row(0).tail(N) = ang.array().cos().transpose();
+    V.row(1).tail(N) = ang.array().sin().transpose();
+
+
+
+    std::set<E> edges;
+    for(int i = 0; i < N; ++i) {
+        int a = i;
+        int b = (i+1)%N;
+        int c = a+N;
+        int d = b+N;
+    
+        edges.emplace(E{{a,b}});
+        edges.emplace(E{{c,d}});
+    }
+
+
+    FaceCollapser fc(edges);
+    fc.set_edge_for_removal(E{{1,0}});
+    fc.bake(V);
+
+    {
+        auto faces = fc.faces();
+        REQUIRE(faces.size() == 2);
+        int num_single_loops = 0;
+        int num_double_loops = 0;
+        for(auto [a,l]: faces) {
+            if(l.size() == 2) {// outer one
+                num_double_loops++;
+
+                for(auto&& ll: l) {
+                    std::sort(ll.begin(),ll.end());
+                    int min = ll[0];
+                    for(auto&& [i,v]: mtao::iterator::enumerate(ll)) {
+                        if(min == 0) {
+                            REQUIRE(i==v);
+                        } else {
+                            REQUIRE(i+N==v);
+
+                        }
+                    }
+                }
+            } else if(l.size() == 1) {//inner one
+                num_single_loops++;
+                auto& ll = l.first();
+                std::sort(ll.begin(),ll.end());
+                for(auto&& [i,v]: mtao::iterator::enumerate(ll)) {
+                    REQUIRE(i==v);
+                }
+            }
+
+        }
+        REQUIRE( num_single_loops == 1);
+        REQUIRE( num_double_loops == 1);
     }
 
 }

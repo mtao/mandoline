@@ -16,46 +16,39 @@ namespace mandoline {
     template <int D, typename IndexContainerType_>
         struct CoordMaskedGeometry: public coord_mask<D> {
             using IndexContainerType = IndexContainerType_;
+            using coord_type = typename coord_mask<D>::coord_type;
             CoordMaskedGeometry() = default;
             CoordMaskedGeometry(const CoordMaskedGeometry&) = default;
             CoordMaskedGeometry(CoordMaskedGeometry&&) = default;
             CoordMaskedGeometry& operator=(const CoordMaskedGeometry&) = default;
             CoordMaskedGeometry& operator=(CoordMaskedGeometry&&) = default;
-            CoordMaskedGeometry(const coord_mask<D>& mask): coord_mask<D>(mask) {}
-            CoordMaskedGeometry(const coord_mask<D>& mask, const IndexContainerType& indices): coord_mask<D>(mask), indices(indices) {}
-            CoordMaskedGeometry(const coord_mask<D>& mask, IndexContainerType&& indices): coord_mask<D>(mask), indices(indices) {}
+            CoordMaskedGeometry(const coord_mask<D>& mask);
+            CoordMaskedGeometry(const coord_mask<D>& mask, const IndexContainerType& indices);
+            CoordMaskedGeometry(const coord_mask<D>& mask, IndexContainerType&& indices);
             template <typename Func>
-                CoordMaskedGeometry(const IndexContainerType& indices, Func&& f): coord_mask<D>(get_container_mask(indices,f)), indices(indices) {}
+                CoordMaskedGeometry(const IndexContainerType& indices, Func&& f);
             template <typename Func>
-                CoordMaskedGeometry(IndexContainerType&& indices, Func&& f): coord_mask<D>(get_container_mask(indices,f)), indices(indices) {}
+                CoordMaskedGeometry(IndexContainerType&& indices, Func&& f);
 
-            const coord_mask<D>& mask() const { return *this; }
+            const coord_mask<D>& mask() const;
 
             //Func is an object that retuns the mask of an index
             template <typename Func>
-                static coord_mask<D> get_container_mask(const IndexContainerType& C, Func&& f) {
-                    using S = std::decay_t<typename IndexContainerType::value_type>;
-                    coord_mask<D> mask;
-                    auto it = C.begin();
-                    if constexpr(std::is_integral_v<S>) {
-                        mask = f(*it);
-                    } else {
-                        mask = get_container_mask(*it,f);
-                    }
-                    ++it;
-                    for(;it != C.end(); ++it) {
-                        if constexpr(std::is_integral_v<S>) {
-                            mask &= f(*it);
-                        } else {
-                            mask &= CoordMaskedGeometry<D,S>::get_container_mask(*it,f);
-                        }
-                    }
-                    return mask;
-                }
+                static coord_mask<D> get_container_mask(const IndexContainerType& C, Func&& f);
+                static coord_mask<D> get_container_mask(const IndexContainerType& C, const mtao::vector<Vertex<D>>& vertices);
+            template <typename Func>
+                static coord_type get_min_coord(const IndexContainerType& C, Func&& f);
 
-            bool operator<(const CoordMaskedGeometry& other) const {
-                return indices < other.indices;
-            }
+
+            //coord_mask<D> get_container_mask(const IndexContainerType& C, const mtao::vector<Vertex<D>>& vertices);
+            static coord_type get_min_coord(const IndexContainerType& C, const mtao::vector<Vertex<D>>& vertices);
+            coord_type get_min_coord(const mtao::vector<Vertex<D>>& vertices) const;
+
+            std::set<coord_type> possible_cells(const mtao::vector<Vertex<D>>& vertices) const;
+
+            bool operator<(const CoordMaskedGeometry& other) const;
+
+            
             IndexContainerType indices;
         };
 
@@ -70,3 +63,4 @@ namespace mandoline {
     template <int D>
         using CoordMaskedPointSet = CoordMaskedGeometry<D,std::set<int>>;
 }
+#include "mandoline/coord_masked_geometry_impl.hpp"

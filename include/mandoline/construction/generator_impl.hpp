@@ -814,15 +814,15 @@ namespace mandoline::construction {
                                 n.y() = r.x();
                             }
 
-                                std::transform(m_cut_edges.begin(),m_cut_edges.end(),std::back_inserter(ret.m_cut_edges)   , [&](const CutMeshEdge<2>& E) {
-                                        return CutEdge<2>(E,N.col(E.parent_eid));
-                                            });
-                                std::copy(m_grid_edges.begin(),m_grid_edges.end(),std::back_inserter(ret.m_cut_edges));
+                            std::transform(m_cut_edges.begin(),m_cut_edges.end(),std::back_inserter(ret.m_cut_edges), [&](const CutMeshEdge<2>& E) {
+                                    return CutEdge<2>(E,N.col(E.parent_eid));
+                                    });
+                            std::copy(m_grid_edges.begin(),m_grid_edges.end(),std::back_inserter(ret.m_cut_edges));
 
-                            } else {
-                                std::copy(m_cut_edges.begin(),m_cut_edges.end(),std::back_inserter(ret.m_cut_edges));
-                                std::copy(m_grid_edges.begin(),m_grid_edges.end(),std::back_inserter(ret.m_cut_edges));
-                            }
+                        } else {
+                            std::copy(m_cut_edges.begin(),m_cut_edges.end(),std::back_inserter(ret.m_cut_edges));
+                            std::copy(m_grid_edges.begin(),m_grid_edges.end(),std::back_inserter(ret.m_cut_edges));
+                        }
                         return ret;
                     }
                 template <int D>

@@ -488,7 +488,7 @@ namespace mandoline::construction {
                             fc.bake(B);
 
 
-                            for(auto&& [cid,fs]: fc.faces()) {
+                            for(auto&& [cid,fs]: fc.faces_no_holes()) {
                                 std::vector<const VType*> v(fs.size());
                                 std::transform(fs.begin(),fs.end(),v.begin(),[&](int idx) {
                                         return IVM.at(idx);

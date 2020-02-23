@@ -69,7 +69,7 @@ namespace mandoline::construction {
         }
         return ret;
     }
-    std::map<int,std::vector<int>> FaceCollapser::faces() const {
+    std::map<int,std::vector<int>> FaceCollapser::faces_no_holes() const {
         std::map<int,std::vector<int>> ret;
 
         auto deg = dual_edge_graph;
