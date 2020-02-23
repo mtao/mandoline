@@ -10,6 +10,9 @@ jobs:
                 name: Installing git
                 command: 'apt-get update && apt-get install -y git'
             - run:
+                name: Installing gcc g++
+                command: 'apt-get install -y gcc g++'
+            - run:
                 name: Installing cmake
                 command: 'apt-get install -y cmake'
             - run:
