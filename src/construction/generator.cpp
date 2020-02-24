@@ -193,8 +193,9 @@ namespace mandoline::construction {
     std::vector<CutFace<2>> CutCellEdgeGenerator<2>::compute_planar_cut_faces(const std::vector<VType>& GV, const ColVecs& V) const {
 
         // per_cell_edges[ dimension ] [ cell coordinate ] = list of edges in a cell
-        std::array<std::map<coord_type,std::tuple<std::set<Edge>,Edge>,2> per_cell_edges;
+        std::array<std::map<coord_type,std::tuple<std::set<Edge>,Edge>>,2> per_cell_edges;
         std::vector<CutFace<2>> ret;
+        /*
 
         for(auto&& [idx, ce]: mtao::iterator::enumerate(m_cut_edges)) {
             for(auto&& pc:  ce.possible_cells(GV)) {
@@ -229,6 +230,7 @@ namespace mandoline::construction {
             }
 
         }
+        */
 
 
         return ret;

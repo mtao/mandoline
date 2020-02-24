@@ -25,6 +25,7 @@ namespace mandoline {
                 //bool is_cutface_index(int index) const { return index >= StaggeredGrid::template form_size<D>(); }
                 Edges halfedges_per_edge;//halfedge indices
 
+                std::vector<CutFace<2>> m_faces;
                 mtao::geometry::mesh::HalfEdgeMesh hem;
                 ExteriorGrid<2> exterior_grid;
                 VecX halfedge_orientations;

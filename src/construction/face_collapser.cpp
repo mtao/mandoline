@@ -69,6 +69,9 @@ namespace mandoline::construction {
         }
         return ret;
     }
+
+    //TODO: faces() and faces_no_holes() use the same code except for emplacement into the returned obejct.
+    //TODO: faces() and faces_no_holes() use the same code except for emplacement into the we should take care of that
     std::map<int,std::vector<int>> FaceCollapser::faces_no_holes() const {
         std::map<int,std::vector<int>> ret;
 
@@ -120,6 +123,59 @@ namespace mandoline::construction {
 
     }
 
+    std::map<int,std::set<std::vector<int>>> FaceCollapser::faces() const {
+        std::map<int,std::tuple<std::vector<int>,std::vector<int>>> ret;
+
+        auto deg = dual_edge_graph;
+        auto inc = [&](auto&& it) {
+            return deg.find(it->second);
+        };
+        std::set<Edge> seen_edges;
+        for(auto&& [a,b]: dual_edge_graph) {
+            seen_edges.insert(a);
+        }
+
+        for(auto it = deg.begin(); it != deg.end(); ++it) {
+            if(seen_edges.find(it->first) == seen_edges.end()) {
+                continue;
+            }
+            int myface = face(it->first);
+            if(myface < 0) {
+                seen_edges.erase(it->first);
+                continue;
+            }
+            auto it1 = it;
+            auto it2 = it;
+
+            std::vector<int> face;
+            face.reserve(deg.size());
+            face.push_back(it1->first[0]);
+            seen_edges.erase(it1->first);
+
+            it1 = inc(it1);
+            it2 = inc(it2);
+            it2 = inc(it2);
+            for(; it1 != it && it1 != it2; it1=inc(it1), it2=inc(inc(it2))) {
+                seen_edges.erase(it1->first);
+                if(myface >= 0) {
+                    auto e0 = it1->first;
+                    auto e1 = it1->second;
+                    auto& [a,b] = e0;
+                    auto& [c,d] = e1;
+                    face.push_back(a);
+                }
+            }
+            if(it1 != it) {
+                assert(it1 != it2);
+            }
+            ret[myface].emplace(std::move(face));
+        }
+        return ret;
+
+
+
+
+    }
     void FaceCollapser::finalize() {
         face_ds.reduce_all();
         std::map<int,int> reindexer;
