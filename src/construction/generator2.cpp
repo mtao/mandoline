@@ -97,72 +97,17 @@ CutCellMesh<2> CutCellEdgeGenerator<2>::generate_faces() const {
 
         auto VV = all_GV();
         auto vols = ret.hem.signed_areas(VV);
-        auto mesh_faces = hem.cells_multi_component_map();
+        auto mesh_faces = ret.hem.cells_multi_component_map();
         for (auto &&[i, v] : mesh_faces) {
-            CutFace<D> F;
-            F.id = Edge{ { idx, cidx } };
-            auto add_loop = [&](const std::vector<int> &v) {
-                if (v.size() > 2) {
-                    if (axial_primal_faces[idx].find(smallest_ordered_edge(v)) == axial_primal_faces[idx].end()) {
-                        F.indices.emplace(v);
-                    }
-                }
-            };
-            for (auto &v : v) {// for every boundary cell figure out if this is a boundary stencil
-                if (ahd.is_boundary_cell(v)) {
-                    auto pc = possible_cells(v);
-                    if (pc.empty()) {
-                        continue;
-                    }
-                    std::array<CoordType, 2> pca;
-                    std::copy(pc.begin(), pc.end(), pca.begin());
-                    if (pca[0][idx] + 1 != pca[1][idx]) {
-                        std::cout << "SET WASNT LEXICOGRAPHICAL ORDER SOMEHOW?" << std::endl;
-                    }
-                    std::array<int, 2> ind;
-                    ind[0] = pca[0][(idx + 1) % 3];
-                    ind[1] = pca[0][(idx + 2) % 3];
-                    if (!ahd.active_grid_cell_mask.valid_index(ind)) {
-                        std::cout << "Invalid index???? " << std::endl;
-                    }
-                    if (!ahd.active_grid_cell_mask(ind)) {
-                        if (vols.at(i) >= 0) {
-                            add_loop(v);
-                        }
-                    }
-                } else {
-                    if (vols.at(i) >= 0) {
-                        add_loop(v);
-                    }
-                }
-            }
+            CutFace<2> F;
+            F.indices = v;
             if (!F.indices.empty()) {
-
-                F.N = N;
-                F.coord_mask<D>::operator=(face_mask(F.indices));
-                m_faces[i] = std::move(F);
+                ret.m_faces[i] = std::move(F);
             }
         }
     }
 
 
-    {
-        //auto t = mtao::logging::timer("Cell grid ownership");
-
-        auto dv = ret.dual_vertices();
-        auto cells = ret.hem.cell_halfedges();
-        for (auto &&c : cells) {
-            int cell_ind = ret.hem.cell_index(c);
-            if (is_valid_grid_index(cell_ind)) {
-                continue;
-            }
-            if ((cell_ind) != 0) {
-                auto ij = get_grid_cell(dv.col(cell_ind));
-                int grid_ind = StaggeredGrid::cell_index(ij);
-                ret.cell_grid_ownership[grid_ind].insert(cell_ind);
-            }
-        }
-    }
     //extra_metadata(ret);
     ret.m_origV.resize(2, origV().size());
     for (int i = 0; i < origV().size(); ++i) {
