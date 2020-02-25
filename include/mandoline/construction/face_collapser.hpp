@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <tuple>
 #include <numeric>
@@ -9,6 +10,7 @@
 #include <mtao/data_structures/disjoint_set.hpp>
 #include <mtao/geometry/mesh/triangle_fan.hpp>
 #include <mtao/geometry/trigonometry.hpp>
+#include <mtao/geometry/winding_number.hpp>
 
 
 namespace mandoline::construction {
@@ -19,6 +21,10 @@ struct FaceCollapser {
     using CoordType = std::array<int, 3>;
     //FaceCollapser(const std::map<int,std::set<std::vector<int>>>& faces);
     FaceCollapser(const std::set<Edge> &edges);
+
+
+    // reinterpret undirected edge graph as a sparse adjacency map
+    // simultaneously this of course gives one ring neighborhoods
     std::map<int, std::set<int>> collect_edges() const;
 
     int dual_face(Edge e) const;
@@ -35,6 +41,8 @@ struct FaceCollapser {
 
     template<typename Derived>
     bool is_inside(const Eigen::MatrixBase<Derived> &V, const std::vector<int> &a, const std::vector<int> &b) const;
+    template<typename Derived>
+    bool is_inside_no_topology(const Eigen::MatrixBase<Derived> &V, const std::vector<int> &a, const std::vector<int> &b) const;
 
     template<typename Derived>
     void merge_faces(const Eigen::MatrixBase<Derived> &V);
@@ -48,8 +56,8 @@ struct FaceCollapser {
     // when there are holes, this code will generate every boundary loop in the domain, some of which may have positive or negative volume.
     std::map<int, std::vector<int>> faces_no_holes() const;
     std::map<int, std::set<std::vector<int>>> faces() const;
-    template<typename Derived>
-    void faces(const Eigen::MatrixBase<Derived> &V) const;
+    //template<typename Derived>
+    //void faces(const Eigen::MatrixBase<Derived> &V) const;
     std::map<int, std::map<int, int>> face_adjacency_map() const;
     std::map<int, std::map<Edge, Edge>> face_dual_adjacency_map() const;
 
@@ -70,15 +78,18 @@ struct FaceCollapser {
 template<typename Derived>
 void FaceCollapser::bake(const Eigen::MatrixBase<Derived> &V, bool nonsimple_faces) {
     unify_boundary_loops(V);
+    finalize();
 
     if (nonsimple_faces) {
         merge_faces(V);
     }
 }
 template<typename Derived>
-void FaceCollapser::merge(const Eigen::MatrixBase<Derived> &V) {
+void FaceCollapser::unify_boundary_loops(const Eigen::MatrixBase<Derived> &V) {
+    // for each neighorhood
     for (auto [a, bs] : collect_edges()) {
 
+        // sort indices by quadrant and cross product
         std::vector<int> indices(bs.begin(), bs.end());
         auto va = V.col(a);
         mtao::ColVecs2d D(2, bs.size());
@@ -104,9 +115,14 @@ void FaceCollapser::merge(const Eigen::MatrixBase<Derived> &V) {
                 return qa < qb;
             }
         };
+        // we need to sort D and quadrants simultaneously, easier to just sort
+        // indices into both.
         std::vector<int> ordered_indices(bs.size());
+        // spit the initial indices of indices configuration
         std::iota(ordered_indices.begin(), ordered_indices.end(), 0);
+        // sort the indices of indices
         std::sort(ordered_indices.begin(), ordered_indices.end(), comp);
+        // dereference the indices of indices
         std::transform(ordered_indices.begin(), ordered_indices.end(), ordered_indices.begin(), [&](int idx) -> int { return indices[idx]; });
         auto it = ordered_indices.begin();
         auto it1 = it;
@@ -117,90 +133,91 @@ void FaceCollapser::merge(const Eigen::MatrixBase<Derived> &V) {
             }
             Edge e{ { *it1, a } };
             Edge ne{ { a, *it } };
-            int triangle_indexx = face(e);
-            int ntriangle_indexx = face(ne);
-            face_ds.join(triangle_indexx, ntriangle_indexx);
+            int face_idx = face(e);
+            int nface_idx = face(ne);
+            face_ds.join(face_idx, nface_idx);
             dual_edge_graph[e] = ne;
         }
     }
-    finalize();
 }
 
-template<typename Derived>
-std::map<int, std::vector<std::vector<int>>> FaceCollapser::faces(const Eigen::MatrixBase<Derived> &V) const {
-    std::map<int, std::vector<std::vector<int>>> ret;
-
-    auto deg = dual_edge_graph;
-    auto inc = [&](auto &&it) {
-        return deg.find(it->second);
-    };
-    std::set<Edge> seen_edges;
-    for (auto &&[a, b] : dual_edge_graph) {
-        seen_edges.insert(a);
-    }
-
-    for (auto it = deg.begin(); it != deg.end(); ++it) {
-        if (seen_edges.find(it->first) == seen_edges.end()) {
-            continue;
-        }
-        int myface = face(it->first);
-        if (myface < 0) {
-            seen_edges.erase(it->first);
-            continue;
-        }
-        auto it1 = it;
-        auto it2 = it;
-
-        std::vector<int> face;
-        face.reserve(deg.size());
-        face.push_back(it1->first[0]);
-        seen_edges.erase(it1->first);
-
-        it1 = inc(it1);
-        it2 = inc(it2);
-        it2 = inc(it2);
-        for (; it1 != it && it1 != it2; it1 = inc(it1), it2 = inc(inc(it2))) {
-            seen_edges.erase(it1->first);
-            if (myface >= 0) {
-                auto e0 = it1->first;
-                auto e1 = it1->second;
-                auto &[a, b] = e0;
-                auto &[c, d] = e1;
-                face.push_back(a);
-            }
-        }
-        if (it1 != it) {
-            assert(it1 != it2);
-        }
-        ret[myface] = std::move(face);
-    }
-    return ret;
-}
 template<typename Derived>
 void FaceCollapser::merge_faces(const Eigen::MatrixBase<Derived> &V) {
     auto vols = volumes(V);
     std::map<int, std::set<int>> halfedge_partial_ordering;
-    auto faces = faces();
+    auto faces = faces_no_holes();
     std::set<int> outer_hes;
     std::set<int> interior_hes;
     mtao::data_structures::DisjointSet<int> ds;
-    ds.add_node(-1);
-    /*
-            for(auto&& he: cell_halfedges) {
-                auto area = signed_area(V,edge(he));
-                if(area  > 0) {
-                    outer_hes.insert(he);
-                } else if(area  < 0) {
-                    interior_hes.insert(he);
-                } else {
 
-                    //assert(area != 0);
-                    int ci = cell_index(he);
-                    ds.add_node(ci);
-                    ds.join(-1,ci);
+    std::vector<int> positive_areas;
+    std::vector<int> negative_areas;
 
-                }
+
+    for (auto &&[fidx, vol] : vols) {
+        ds.add_node(fidx);
+        if(fidx == -1) continue;
+        if (vol > 0) {
+            positive_areas.push_back(fidx);
+        } else if (vol < 0) {
+            negative_areas.push_back(fidx);
+        } else {
+            // TODO: this hsould be deleted, no?
+        }
+    }
+    std::sort(positive_areas.begin(), positive_areas.end(), [&](int a, int b) {
+        return vols.at(a) < vols.at(b);
+    });
+    std::sort(negative_areas.begin(), negative_areas.end(), [&](int a, int b) {
+        return vols.at(a) > vols.at(b);//inverted for negative area
+    });
+
+    for (auto &&fidx : positive_areas) {
+        auto &face = faces[fidx];
+        auto vol = vols.at(fidx);
+
+        //std::set<int> removed;
+
+        for (auto &&nfidx : negative_areas) {
+            auto nvol = -vols.at(nfidx);
+            if (nvol > vol) {// positive loops cant have negative loops larger than them!
+                break;
+            } else if (auto &nface = faces[nfidx];
+                    is_inside(V, nface, face)) {
+                ds.join(fidx,nfidx);
+                //ret.emplace(std::move(nface));
+                //removed.emplace(fidx);
             }
+        }
+        //if (removed.size() > 0) {
+        //    negative_areas.erase(std::remove_if(negative_areas.begin(), negative_areas.end(), [&](int idx) {
+        //        // someday: removed.contains(idx)
+        //        return removed.find(idx) != removed.end();
+        //    }));
+        //}
+        //ret.emplace(std::move(face));
+    }
+
+    for(auto&& n: ds.nodes) {
+        int root = ds.get_root(n.data).data;
+    }
+    std::map<int, int> reindexer;
+    reindexer[-1] = -1;
+    int null_root = -1;
+    for (auto &&i : ds.root_indices()) {
+        if (ds.node(i).data != null_root) {
+
+            reindexer[ds.node(i).data] = reindexer.size() - 1;
+        }
+    }
+    for (auto &&[e, pr] : m_edge_to_face) {
+        auto &&[a, b] = e;
+        auto &&[c, s] = pr;
+
+        int root = ds.get_root(c).data;
+        c = reindexer[root];
+    }
+    /*
 
             //the vertices that make each cell
             std::map<int,std::vector<int>> CM;
@@ -297,12 +314,57 @@ void FaceCollapser::merge_faces(const Eigen::MatrixBase<Derived> &V) {
 }
 template<typename Derived>
 std::map<int, typename Derived::Scalar> FaceCollapser::volumes(const Eigen::MatrixBase<Derived> &V) const {
+    std::map<int, typename Derived::Scalar> ret;
+    using Scalar = typename Derived::Scalar;
+
+    for (auto &&[e, fip] : m_edge_to_face) {
+        auto [fidx, sgn] = fip;
+
+        mtao::SquareMatrix<Scalar, 2> M;
+        M.col(0) = V.col(e[0]);
+        M.col(1) = V.col(e[1]);
+        //auto val = (sgn ? 1 : -1) * M.determinant();
+        auto val = M.determinant();
+        auto [it, in] = ret.try_emplace(fidx, val);
+        if (!in) {
+            it->second += val;
+        }
+    }
+    for (auto &&[fidx, val] : ret) {
+        val /= Scalar(2);
+    }
+    return ret;
 }
 
 template<typename Derived>
-std::map<int, typename Derived::Scalar> FaceCollapser::volumes(const Eigen::MatrixBase<Derived> &V) const {
+bool FaceCollapser::is_inside_no_topology(const Eigen::MatrixBase<Derived> &V, const std::vector<int> &a, const std::vector<int> &b) const {
+    for (auto idx : a) {
+        if (!mtao::geometry::interior_winding_number(V, b, V.col(idx))) {
+            return false;
+        }
+    }
+    return true;
 }
+
 template<typename Derived>
 bool FaceCollapser::is_inside(const Eigen::MatrixBase<Derived> &V, const std::vector<int> &a, const std::vector<int> &b) const {
+    // try topological trick
+    if (a.size() == b.size() + 1 || a.size() + 1 == b.size()) {
+        auto aa = a;
+        auto bb = b;
+        std::sort(aa.begin(), aa.end());
+        std::sort(bb.begin(), bb.end());
+        std::vector<int> sym_dist;
+        std::set_symmetric_difference(aa.begin(), aa.end(), bb.begin(), bb.end(), std::back_inserter(sym_dist));
+        if (sym_dist.size() == 1) {
+            int idx = sym_dist.front();
+            if (a.size() > b.size()) {
+                return mtao::geometry::interior_winding_number(V, b, V.col(idx));
+            } else {
+                return mtao::geometry::interior_winding_number(V, a, V.col(idx));
+            }
+        }
+    }
+    return is_inside_no_topology(V, a, b);
 }
 }// namespace mandoline::construction

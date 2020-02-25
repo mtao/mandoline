@@ -74,22 +74,25 @@ std::map<int, std::map<int, int>> FaceCollapser::face_adjacency_map() const {
 std::map<int, std::vector<int>> FaceCollapser::faces_no_holes() const {
     std::map<int, std::vector<int>> ret;
 
-    auto deg = dual_edge_graph;
+    auto& deg = dual_edge_graph;
     auto inc = [&](auto &&it) {
         return deg.find(it->second);
     };
-    std::set<Edge> seen_edges;
+    std::set<Edge> available_edges;
+    // accumulate every edge that was visited by looping
     for (auto &&[a, b] : dual_edge_graph) {
-        seen_edges.insert(a);
+
+        available_edges.insert(a);
     }
 
     for (auto it = deg.begin(); it != deg.end(); ++it) {
-        if (seen_edges.find(it->first) == seen_edges.end()) {
+        // if it isn't available ltes move on
+        if (available_edges.find(it->first) == available_edges.end()) {
             continue;
         }
         int myface = face(it->first);
-        if (myface < 0) {
-            seen_edges.erase(it->first);
+        if (myface < 0) { // if 
+            available_edges.erase(it->first);
             continue;
         }
         auto it1 = it;
@@ -98,13 +101,13 @@ std::map<int, std::vector<int>> FaceCollapser::faces_no_holes() const {
         std::vector<int> face;
         face.reserve(deg.size());
         face.push_back(it1->first[0]);
-        seen_edges.erase(it1->first);
+        available_edges.erase(it1->first);
 
         it1 = inc(it1);
         it2 = inc(it2);
         it2 = inc(it2);
         for (; it1 != it && it1 != it2; it1 = inc(it1), it2 = inc(inc(it2))) {
-            seen_edges.erase(it1->first);
+            available_edges.erase(it1->first);
             if (myface >= 0) {
                 auto e0 = it1->first;
                 auto e1 = it1->second;
@@ -122,24 +125,27 @@ std::map<int, std::vector<int>> FaceCollapser::faces_no_holes() const {
 }
 
 std::map<int, std::set<std::vector<int>>> FaceCollapser::faces() const {
-    std::map<int, std::tuple<std::vector<int>, std::vector<int>>> ret;
+    std::map<int, std::set<std::vector<int>>> ret;
 
-    auto deg = dual_edge_graph;
+    auto& deg = dual_edge_graph;
     auto inc = [&](auto &&it) {
         return deg.find(it->second);
     };
-    std::set<Edge> seen_edges;
-    for (auto &&[a, b] : dual_edge_graph) {
-        seen_edges.insert(a);
+    std::set<Edge> available_edges;
+    for (auto &&[fe, se] : dual_edge_graph) {
+        auto [a,b] = fe;
+        auto [c,d] = se;
+        auto [face,sgn] = m_edge_to_face.at(fe);
+        available_edges.insert(fe);
     }
 
     for (auto it = deg.begin(); it != deg.end(); ++it) {
-        if (seen_edges.find(it->first) == seen_edges.end()) {
+        if (available_edges.find(it->first) == available_edges.end()) {
             continue;
         }
         int myface = face(it->first);
         if (myface < 0) {
-            seen_edges.erase(it->first);
+            available_edges.erase(it->first);
             continue;
         }
         auto it1 = it;
@@ -148,13 +154,13 @@ std::map<int, std::set<std::vector<int>>> FaceCollapser::faces() const {
         std::vector<int> face;
         face.reserve(deg.size());
         face.push_back(it1->first[0]);
-        seen_edges.erase(it1->first);
+        available_edges.erase(it1->first);
 
         it1 = inc(it1);
         it2 = inc(it2);
         it2 = inc(it2);
         for (; it1 != it && it1 != it2; it1 = inc(it1), it2 = inc(inc(it2))) {
-            seen_edges.erase(it1->first);
+            available_edges.erase(it1->first);
             if (myface >= 0) {
                 auto e0 = it1->first;
                 auto e1 = it1->second;
@@ -172,6 +178,7 @@ std::map<int, std::set<std::vector<int>>> FaceCollapser::faces() const {
 }
 void FaceCollapser::finalize() {
     face_ds.reduce_all();
+
     std::map<int, int> reindexer;
 
     int null_root = -1;
