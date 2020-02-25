@@ -12,183 +12,180 @@
 
 
 namespace mandoline::construction {
-    // collapsers a collection of edges into faces
-    struct FaceCollapser {
-        public:
-            using Edge = std::array<int,2>;
-            using CoordType = std::array<int,3>;
-            //FaceCollapser(const std::map<int,std::set<std::vector<int>>>& faces);
-            FaceCollapser(const std::set<Edge>& edges);
-            std::map<int,std::set<int>> collect_edges() const;
+// collapsers a collection of edges into faces
+struct FaceCollapser {
+  public:
+    using Edge = std::array<int, 2>;
+    using CoordType = std::array<int, 3>;
+    //FaceCollapser(const std::map<int,std::set<std::vector<int>>>& faces);
+    FaceCollapser(const std::set<Edge> &edges);
+    std::map<int, std::set<int>> collect_edges() const;
 
-            int dual_face(Edge e) const;
-            int face(const Edge& e) const;
-
-
-            // merge edge face ids 
-            template <typename Derived>
-                void unify_boundary_loops(const Eigen::MatrixBase<Derived>& V);
-            // bake the face structure. for now it is only merge, but could be more?
-            template <typename Derived>
-                void bake(const Eigen::MatrixBase<Derived>& V, bool nonsimple_faces=true);
+    int dual_face(Edge e) const;
+    int face(const Edge &e) const;
 
 
+    // merge edge face ids
+    template<typename Derived>
+    void unify_boundary_loops(const Eigen::MatrixBase<Derived> &V);
+    // bake the face structure. for now it is only merge, but could be more?
+    template<typename Derived>
+    void bake(const Eigen::MatrixBase<Derived> &V, bool nonsimple_faces = true);
 
-            template <typename Derived>
-                bool is_inside(const Eigen::MatrixBase<Derived>& V, const std::vector<int>& a, const std::vector<int>& b) const;
 
-            template <typename Derived>
-                void merge_faces(const Eigen::MatrixBase<Derived>& V);
-            template <typename Derived>
-                std::map<int,typename Derived::Scalar> volumes(const Eigen::MatrixBase<Derived>& V) const;
+    template<typename Derived>
+    bool is_inside(const Eigen::MatrixBase<Derived> &V, const std::vector<int> &a, const std::vector<int> &b) const;
 
-            // cleans up the face identities to start from 0
-            void finalize();
+    template<typename Derived>
+    void merge_faces(const Eigen::MatrixBase<Derived> &V);
+    template<typename Derived>
+    std::map<int, typename Derived::Scalar> volumes(const Eigen::MatrixBase<Derived> &V) const;
 
-            // returns faces with the assumption that there are no holes.
-            // when there are holes, this code will generate every boundary loop in the domain, some of which may have positive or negative volume.
-            std::map<int,std::vector<int>> faces_no_holes() const;
-            std::map<int,std::set<std::vector<int>>> faces() const;
-            template <typename Derived>
-            void faces(const Eigen::MatrixBase<Derived>& V) const;
-            std::map<int,std::map<int,int>> face_adjacency_map() const;
-            std::map<int,std::map<Edge,Edge>> face_dual_adjacency_map() const;
+    // cleans up the face identities to start from 0
+    void finalize();
 
-            // indicate that a loop of vertices, interpreted as directed edges [i,i+1] are on the outside
-            void set_edges_for_removal(const std::vector<int>& boundary_loop);
-            // indicate that a single directed edges in on the outside
-            void set_edge_for_removal(const Edge& e);
-            private:
-            // a directed edge maps to a face identity and whether this is the same order as the input
-            std::map<Edge,std::tuple<int,bool>> m_edge_to_face;
-            // structure for combining face identities
-            mtao::data_structures::DisjointSet<int> face_ds;
-            // face to face map
-            std::map<Edge,Edge> dual_edge_graph;
+    // returns faces with the assumption that there are no holes.
+    // when there are holes, this code will generate every boundary loop in the domain, some of which may have positive or negative volume.
+    std::map<int, std::vector<int>> faces_no_holes() const;
+    std::map<int, std::set<std::vector<int>>> faces() const;
+    template<typename Derived>
+    void faces(const Eigen::MatrixBase<Derived> &V) const;
+    std::map<int, std::map<int, int>> face_adjacency_map() const;
+    std::map<int, std::map<Edge, Edge>> face_dual_adjacency_map() const;
 
-    };
+    // indicate that a loop of vertices, interpreted as directed edges [i,i+1] are on the outside
+    void set_edges_for_removal(const std::vector<int> &boundary_loop);
+    // indicate that a single directed edges in on the outside
+    void set_edge_for_removal(const Edge &e);
 
-    template <typename Derived>
-        void FaceCollapser::bake(const Eigen::MatrixBase<Derived>& V, bool nonsimple_faces) {
-            unify_boundary_loops(V);
+  private:
+    // a directed edge maps to a face identity and whether this is the same order as the input
+    std::map<Edge, std::tuple<int, bool>> m_edge_to_face;
+    // structure for combining face identities
+    mtao::data_structures::DisjointSet<int> face_ds;
+    // face to face map
+    std::map<Edge, Edge> dual_edge_graph;
+};
 
-            if(nonsimple_faces) {
-                merge_faces(V);
-            }
+template<typename Derived>
+void FaceCollapser::bake(const Eigen::MatrixBase<Derived> &V, bool nonsimple_faces) {
+    unify_boundary_loops(V);
 
-        }
-    template <typename Derived>
-        void FaceCollapser::merge(const Eigen::MatrixBase<Derived>& V) {
-            for(auto [a,bs]: collect_edges()) {
-
-                std::vector<int> indices(bs.begin(),bs.end());
-                auto va = V.col(a);
-                mtao::ColVecs2d D(2,bs.size());
-                for(auto [i,j]: mtao::iterator::enumerate(indices)) {
-                    D.col(i) = V.col(j) - va;
-                }
-                std::vector<char> quadrants(bs.size());
-                constexpr static std::array<int,4> __quadrants{{4,1,3,2}};
-                for(int i = 0; i < bs.size(); ++i) {
-                    auto b = D.col(i);
-                    // ++ +- -+ -- => 1 4 2 3
-                    quadrants[i] = __quadrants[2 * std::signbit(b.y()) + std::signbit(b.x())];
-                }
-                // sort by quadrant and then by cross product volume
-                auto comp = [&](int ai, int bi) -> bool {
-                    const char qa = quadrants[ai];
-                    const char qb = quadrants[bi];
-                    if(qa == qb) {
-                        auto a = D.col(ai);
-                        auto b = D.col(bi);
-                        return b.x() * a.y() < a.x() * b.y();
-                    } else {
-                        return qa < qb;
-                    }
-                };
-                std::vector<int> ordered_indices(bs.size());
-                std::iota(ordered_indices.begin(),ordered_indices.end(),0);
-                std::sort(ordered_indices.begin(),ordered_indices.end(),comp);
-                std::transform(ordered_indices.begin(),ordered_indices.end(),ordered_indices.begin(),[&](int idx) -> int { return indices[idx]; });
-                auto it = ordered_indices.begin();
-                auto it1 = it;
-                it1++;
-                for(; it != ordered_indices.end(); ++it, ++it1) {
-                    if(it1 == ordered_indices.end()) {
-                        it1 = ordered_indices.begin();
-                    }
-                    Edge e{{*it1,a}};
-                    Edge ne{{a,*it}};
-                    int triangle_indexx = face(e);
-                    int ntriangle_indexx = face(ne);
-                    face_ds.join(triangle_indexx,ntriangle_indexx);
-                    dual_edge_graph[e] = ne;
-                }
-
-            }
-            finalize();
-        }
-
-    template <typename Derived>
-    std::map<int,std::vector<std::vector<int>>> FaceCollapser::faces(const Eigen::MatrixBase<Derived>& V) const {
-        std::map<int,std::vector<std::vector<int>>> ret;
-
-        auto deg = dual_edge_graph;
-        auto inc = [&](auto&& it) {
-            return deg.find(it->second);
-        };
-        std::set<Edge> seen_edges;
-        for(auto&& [a,b]: dual_edge_graph) {
-            seen_edges.insert(a);
-        }
-
-        for(auto it = deg.begin(); it != deg.end(); ++it) {
-            if(seen_edges.find(it->first) == seen_edges.end()) {
-                continue;
-            }
-            int myface = face(it->first);
-            if(myface < 0) {
-                seen_edges.erase(it->first);
-                continue;
-            }
-            auto it1 = it;
-            auto it2 = it;
-
-            std::vector<int> face;
-            face.reserve(deg.size());
-            face.push_back(it1->first[0]);
-            seen_edges.erase(it1->first);
-
-            it1 = inc(it1);
-            it2 = inc(it2);
-            it2 = inc(it2);
-            for(; it1 != it && it1 != it2; it1=inc(it1), it2=inc(inc(it2))) {
-                seen_edges.erase(it1->first);
-                if(myface >= 0) {
-                    auto e0 = it1->first;
-                    auto e1 = it1->second;
-                    auto& [a,b] = e0;
-                    auto& [c,d] = e1;
-                    face.push_back(a);
-                }
-            }
-            if(it1 != it) {
-                assert(it1 != it2);
-            }
-            ret[myface] = std::move(face);
-        }
-        return ret;
+    if (nonsimple_faces) {
+        merge_faces(V);
     }
-    template <typename Derived>
-        void FaceCollapser::merge_faces(const Eigen::MatrixBase<Derived>& V) {
-            auto vols = volumes(V);
-            std::map<int,std::set<int>> halfedge_partial_ordering;
-            auto faces = faces();
-            std::set<int> outer_hes;
-            std::set<int> interior_hes;
-            mtao::data_structures::DisjointSet<int> ds;
-            ds.add_node(-1);
-            /*
+}
+template<typename Derived>
+void FaceCollapser::merge(const Eigen::MatrixBase<Derived> &V) {
+    for (auto [a, bs] : collect_edges()) {
+
+        std::vector<int> indices(bs.begin(), bs.end());
+        auto va = V.col(a);
+        mtao::ColVecs2d D(2, bs.size());
+        for (auto [i, j] : mtao::iterator::enumerate(indices)) {
+            D.col(i) = V.col(j) - va;
+        }
+        std::vector<char> quadrants(bs.size());
+        constexpr static std::array<int, 4> __quadrants{ { 4, 1, 3, 2 } };
+        for (int i = 0; i < bs.size(); ++i) {
+            auto b = D.col(i);
+            // ++ +- -+ -- => 1 4 2 3
+            quadrants[i] = __quadrants[2 * std::signbit(b.y()) + std::signbit(b.x())];
+        }
+        // sort by quadrant and then by cross product volume
+        auto comp = [&](int ai, int bi) -> bool {
+            const char qa = quadrants[ai];
+            const char qb = quadrants[bi];
+            if (qa == qb) {
+                auto a = D.col(ai);
+                auto b = D.col(bi);
+                return b.x() * a.y() < a.x() * b.y();
+            } else {
+                return qa < qb;
+            }
+        };
+        std::vector<int> ordered_indices(bs.size());
+        std::iota(ordered_indices.begin(), ordered_indices.end(), 0);
+        std::sort(ordered_indices.begin(), ordered_indices.end(), comp);
+        std::transform(ordered_indices.begin(), ordered_indices.end(), ordered_indices.begin(), [&](int idx) -> int { return indices[idx]; });
+        auto it = ordered_indices.begin();
+        auto it1 = it;
+        it1++;
+        for (; it != ordered_indices.end(); ++it, ++it1) {
+            if (it1 == ordered_indices.end()) {
+                it1 = ordered_indices.begin();
+            }
+            Edge e{ { *it1, a } };
+            Edge ne{ { a, *it } };
+            int triangle_indexx = face(e);
+            int ntriangle_indexx = face(ne);
+            face_ds.join(triangle_indexx, ntriangle_indexx);
+            dual_edge_graph[e] = ne;
+        }
+    }
+    finalize();
+}
+
+template<typename Derived>
+std::map<int, std::vector<std::vector<int>>> FaceCollapser::faces(const Eigen::MatrixBase<Derived> &V) const {
+    std::map<int, std::vector<std::vector<int>>> ret;
+
+    auto deg = dual_edge_graph;
+    auto inc = [&](auto &&it) {
+        return deg.find(it->second);
+    };
+    std::set<Edge> seen_edges;
+    for (auto &&[a, b] : dual_edge_graph) {
+        seen_edges.insert(a);
+    }
+
+    for (auto it = deg.begin(); it != deg.end(); ++it) {
+        if (seen_edges.find(it->first) == seen_edges.end()) {
+            continue;
+        }
+        int myface = face(it->first);
+        if (myface < 0) {
+            seen_edges.erase(it->first);
+            continue;
+        }
+        auto it1 = it;
+        auto it2 = it;
+
+        std::vector<int> face;
+        face.reserve(deg.size());
+        face.push_back(it1->first[0]);
+        seen_edges.erase(it1->first);
+
+        it1 = inc(it1);
+        it2 = inc(it2);
+        it2 = inc(it2);
+        for (; it1 != it && it1 != it2; it1 = inc(it1), it2 = inc(inc(it2))) {
+            seen_edges.erase(it1->first);
+            if (myface >= 0) {
+                auto e0 = it1->first;
+                auto e1 = it1->second;
+                auto &[a, b] = e0;
+                auto &[c, d] = e1;
+                face.push_back(a);
+            }
+        }
+        if (it1 != it) {
+            assert(it1 != it2);
+        }
+        ret[myface] = std::move(face);
+    }
+    return ret;
+}
+template<typename Derived>
+void FaceCollapser::merge_faces(const Eigen::MatrixBase<Derived> &V) {
+    auto vols = volumes(V);
+    std::map<int, std::set<int>> halfedge_partial_ordering;
+    auto faces = faces();
+    std::set<int> outer_hes;
+    std::set<int> interior_hes;
+    mtao::data_structures::DisjointSet<int> ds;
+    ds.add_node(-1);
+    /*
             for(auto&& he: cell_halfedges) {
                 auto area = signed_area(V,edge(he));
                 if(area  > 0) {
@@ -297,15 +294,15 @@ namespace mandoline::construction {
                 }
             }
             */
-        }
-    template <typename Derived>
-        std::map<int,typename Derived::Scalar> FaceCollapser::volumes(const Eigen::MatrixBase<Derived>& V) const {
-        }
-
-    template <typename Derived>
-        std::map<int,typename Derived::Scalar> FaceCollapser::volumes(const Eigen::MatrixBase<Derived>& V) const {
-        }
-    template <typename Derived>
-        bool FaceCollapser::is_inside(const Eigen::MatrixBase<Derived>& V, const std::vector<int>& a, const std::vector<int>& b) const {
-        }
 }
+template<typename Derived>
+std::map<int, typename Derived::Scalar> FaceCollapser::volumes(const Eigen::MatrixBase<Derived> &V) const {
+}
+
+template<typename Derived>
+std::map<int, typename Derived::Scalar> FaceCollapser::volumes(const Eigen::MatrixBase<Derived> &V) const {
+}
+template<typename Derived>
+bool FaceCollapser::is_inside(const Eigen::MatrixBase<Derived> &V, const std::vector<int> &a, const std::vector<int> &b) const {
+}
+}// namespace mandoline::construction
