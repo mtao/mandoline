@@ -39,7 +39,8 @@ struct FaceCollapser {
     void bake(const Eigen::MatrixBase<Derived> &V, bool nonsimple_faces = true);
 
 
-    template<typename Derived>
+    // NOTE: is_inside 
+    template<typename Derived, bool RightIsBigger=true>
     bool is_inside(const Eigen::MatrixBase<Derived> &V, const std::vector<int> &a, const std::vector<int> &b) const;
     template<typename Derived>
     bool is_inside_no_topology(const Eigen::MatrixBase<Derived> &V, const std::vector<int> &a, const std::vector<int> &b) const;
@@ -346,16 +347,23 @@ bool FaceCollapser::is_inside_no_topology(const Eigen::MatrixBase<Derived> &V, c
     return true;
 }
 
-template<typename Derived>
+template<typename Derived, bool RightIsBigger>
 bool FaceCollapser::is_inside(const Eigen::MatrixBase<Derived> &V, const std::vector<int> &a, const std::vector<int> &b) const {
-    // try topological trick
-    if (a.size() == b.size() + 1 || a.size() + 1 == b.size()) {
-        auto aa = a;
-        auto bb = b;
-        std::sort(aa.begin(), aa.end());
-        std::sort(bb.begin(), bb.end());
-        std::vector<int> sym_dist;
-        std::set_symmetric_difference(aa.begin(), aa.end(), bb.begin(), bb.end(), std::back_inserter(sym_dist));
+    // try topological trick// TODO: This doesn't work. need to find that unshared edge
+    /*{
+        std::set<int> aa(a.begin(),a.end());
+        std::set<int> bb(b.begin(),b.end());
+
+        bool includes = false;
+        if constexpr(RightIsBigger) {
+            if(std::includes(bb.begin(),bb.end(),aa.begin(),aa.end())) {
+            }
+        }
+
+        if(a.size() > b.size()){
+            swapped = true;
+            std::swap(aa,bb);
+        }
         if (sym_dist.size() == 1) {
             int idx = sym_dist.front();
             if (a.size() > b.size()) {
@@ -365,6 +373,7 @@ bool FaceCollapser::is_inside(const Eigen::MatrixBase<Derived> &V, const std::ve
             }
         }
     }
+    */
     return is_inside_no_topology(V, a, b);
 }
 }// namespace mandoline::construction

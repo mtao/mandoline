@@ -48,6 +48,7 @@ CutEdgeBase<D>::operator std::string() const {
         ss << "],";
     }
 
+    /*
     if (external_boundary) {
         auto [b, s] = *external_boundary;
         if (s) {
@@ -56,6 +57,7 @@ CutEdgeBase<D>::operator std::string() const {
             std::cout << "{-" << b << "}";
         }
     }
+    */
     ss << "}";
 
     return ss.str();

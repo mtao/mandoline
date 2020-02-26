@@ -102,12 +102,70 @@ CutCellMesh<2> CutCellEdgeGenerator<2>::generate_faces() const {
             CutFace<2> F;
             F.indices = v;
             if (!F.indices.empty()) {
-                ret.m_faces[i] = std::move(F);
+                double vol = 0;
+                for (auto &&v : F.indices) {
+                    vol += mtao::geometry::curve_volume(VV, v);
+                }
+                std::cout << "Vol: " << i << ": " << vol << std::endl;
+                if (vol > 0) {
+                    ret.m_faces.emplace_back(std::move(F));
+                }
             }
         }
     }
+    mtao::logging::debug() << "Making cut-faces";
+    auto AV = all_vertices();
 
+    for (auto &&[idx, f] : mtao::iterator::enumerate(ret.m_faces)) {
+        auto c = f.possible_cells(AV);
+        std::cout << "Done" << std::endl;
+        assert(c.size() == 1);
+        int grid_cell = StaggeredGrid::cell_index(*c.begin());
+        ret.cell_grid_ownership[grid_cell].insert(idx);
+    }
 
+    auto make_boundary_pair = [&](auto &&boundary_facet) -> std::tuple<int, bool> {
+        auto pc = boundary_facet.possible_cells(AV);
+        if (pc.size() != 2) {
+            return {};
+        }
+        std::array<CoordType, 2> pca{ { { {} }, { {} } } };
+        std::copy(pc.begin(), pc.end(), pca.begin());
+        //find the boundary cells axis
+        int idx;
+        for (idx = 0; idx < 2; ++idx) {
+            if (pca[0][idx] != pca[1][idx]) {
+                break;
+            }
+        }
+        if (pca[0][idx] + 1 != pca[1][idx]) {
+            std::cout << "SET WASNT LEXICOGRAPHICAL ORDER SOMEHOW?" << std::endl;
+        }
+        if (pca[0][idx] < 0) {
+            return { -1, 1 };
+        } else if (pca[1][idx] >= cell_shape()[idx]) {
+            return { -1, 0 };
+        } else {
+            int pi = cell_index(pca[0]);
+            int ni = cell_index(pca[1]);
+            bool pa = m_active_grid_cell_mask.get(pi);
+            bool na = m_active_grid_cell_mask.get(ni);
+            if (na ^ pa) {//active inactive boundary
+                if (pa) {
+                    return { pi, 1 };
+                } else {
+                    return { ni, 0 };
+                }
+            }
+        }
+        return {};
+    };
+    mtao::logging::debug() << "Making cut-edge boundaries";
+    for (auto &&[idx, e] : mtao::iterator::enumerate(ret.m_cut_edges)) {
+        e.external_boundary = make_boundary_pair(e);
+    }
+
+    mtao::logging::debug() << "Original vertices";
     //extra_metadata(ret);
     ret.m_origV.resize(2, origV().size());
     for (int i = 0; i < origV().size(); ++i) {

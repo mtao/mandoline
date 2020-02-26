@@ -10,17 +10,25 @@
 
 namespace mandoline {
 int CutCellMesh<2>::num_cutcells() const {
-    if (hem.cell_indices().size() == 0) {
-        return 0;
-    } else {
-        return hem.cell_indices().maxCoeff() + 1;
-    }
+    return m_faces.size();
 }
 int CutCellMesh<2>::num_cells() const {
     return exterior_grid.num_cells() + num_cutcells();
 }
 
 mtao::ColVectors<int, 3> CutCellMesh<2>::faces() const {
+    std::cout << "True cutfaces: " << std::endl;
+    for (auto &&[i, c] : mtao::iterator::enumerate(m_faces)) {
+        std::cout << i << ")): ";
+        for (auto &&v : c.indices) {
+            for (auto &&v : v) {
+                std::cout << v << ",";
+            }
+            std::cout << " ";
+        }
+        std::cout << std::endl;
+    }
+    std::cout << "HEM cutfaces: " << std::endl;
     for (auto &&[i, c] : mtao::iterator::enumerate(hem.cells())) {
         std::cout << i << ")): ";
         for (auto &&v : c) {
@@ -30,7 +38,9 @@ mtao::ColVectors<int, 3> CutCellMesh<2>::faces() const {
     }
     std::vector<std::vector<int>> mycells;
     for (int i = 0; i < num_cells(); ++i) {
-        mycells.push_back(cell(i));
+        for (auto &&c : cell(i)) {
+            mycells.push_back(c);
+        }
     }
     return mtao::geometry::mesh::earclipping(vertices(), mycells);
 }
@@ -100,21 +110,30 @@ auto CutCellMesh<2>::dual_vertices() const -> ColVecs {
     }
     return V;
 }
+bool CutCellMesh<2>::in_cell(const VecCRef &p, int idx) const {
+    auto V = vertices();
+    return in_cell(V, p, idx);
+}
+bool CutCellMesh<2>::in_cell(const ColVecs &V, const VecCRef &p, int idx) const {
+    double wn = 0;
+    for (auto &&f : m_faces.at(idx).indices) {
+        wn += mtao::geometry::interior_winding_number(V, f, p);
+    }
+    return std::abs(wn) > .5;
+}
 int CutCellMesh<2>::cell_index(const VecCRef &p) const {
     auto [c, q] = StaggeredGrid::coord(p);
     if (!StaggeredGrid::cell_grid().valid_index(c)) {
         return -1;
     }
 
+    auto V = vertices();
     int grid_cell = StaggeredGrid::cell_index(c);
 
     if (auto it = cell_grid_ownership.find(grid_cell); it != cell_grid_ownership.end()) {
         auto &[i, cs] = *it;
-        mtao::Vec2d pp(p[0], p[1]);
         for (auto &&c : cs) {
-            if (c == -1) {// || !active_cell(c)) {
-                continue;
-            } else if (hem.is_inside(vertices(), hem.cell_edge(c), pp)) {
+            if (in_cell(V, p, c)) {
                 int ret = c;
                 return ret;
             }
@@ -123,11 +142,10 @@ int CutCellMesh<2>::cell_index(const VecCRef &p) const {
     return grid_cell;
 }
 
-std::vector<int> CutCellMesh<2>::cell(int index) const {
-    const int ccsize = hem.num_cells();
-    if (index < ccsize) {
-        return hem.cells()[index];
-    } else if (int nidx = index - ccsize; nidx < exterior_grid.num_cells()) {
+std::set<std::vector<int>> CutCellMesh<2>::cell(int index) const {
+    if (index < num_cutcells()) {
+        return m_faces.at(index).indices;
+    } else if (int nidx = index - num_cutcells(); nidx < exterior_grid.num_cells()) {
         std::vector<int> r;
 
         coord_type cidx = exterior_grid.cell_coord(nidx);
@@ -135,10 +153,10 @@ std::vector<int> CutCellMesh<2>::cell(int index) const {
         r.push_back(vertex_index(std::array<int, 2>{ { cidx[0] + 0, cidx[1] + 1 } }));
         r.push_back(vertex_index(std::array<int, 2>{ { cidx[0] + 1, cidx[1] + 1 } }));
         r.push_back(vertex_index(std::array<int, 2>{ { cidx[0] + 1, cidx[1] + 0 } }));
-        return r;
+        return { r };
 
     } else {
-        std::cout << index << "/" << ccsize << "/" << exterior_grid.num_cells() << std::endl;
+        std::cout << index << "/" << num_cutcells() << "/" << exterior_grid.num_cells() << std::endl;
         return {};
     }
 }

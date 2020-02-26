@@ -12,6 +12,14 @@
 #include <spdlog/spdlog.h>
 
 namespace mandoline::construction {
+    template <int D>
+    std::vector<Vertex<D>> CutCellEdgeGenerator<D>::all_vertices() const {
+        std::vector<Vertex<D>> ret(num_vertices());
+        for(int i = 0; i < num_vertices(); ++i) {
+            ret[i] = GV(i);
+        }
+        return ret;
+    }
 template<int D>
 auto CutCellEdgeGenerator<D>::colvecs_to_vecvector(const ColVecs &V) -> VecVector {
     mtao::vector<mtao::Vec3d> stlp(V.cols());
@@ -996,5 +1004,48 @@ template<int D>
 bool CutCellEdgeGenerator<D>::is_in_cell(const std::vector<int> &face) const {
     return !possible_cells(face).empty();
 }
+
+/*
+// helper for assigning boundary information to
+template<int D, typename IndexContainerType>
+std::optional<std::tuple<int, bool>>
+  make_boundary_pair(const std::vector<Vertex<D>> &V, const CoordMaskedGeometry<D, IndexContainerType> &boundary_facet) {
+    auto pc = boundary_facet.possible_cells(V);
+    if (pc.size() != 2) {
+        return {};
+    }
+    std::array<CoordType, 2> pca;
+    std::copy(pc.begin(), pc.end(), pca.begin());
+    //find the boundary cells axis
+    int idx;
+    for (idx = 0; idx < 2; ++idx) {
+        if (pca[0][idx] != pca[1][idx]) {
+            break;
+        }
+    }
+    if (pca[0][idx] + 1 != pca[1][idx]) {
+        std::cout << "SET WASNT LEXICOGRAPHICAL ORDER SOMEHOW?" << std::endl;
+    }
+    if (pca[0][idx] < 0) {
+        return { -1, 1 };
+    } else if (pca[1][idx] >= cell_shape()[idx]) {
+        return { -1, 0 };
+    } else if (I.size() == 1 && I.begin()->size() == (1 << (D - 1))) {//should always be a grid cell!
+        int pi = cell_index(pca[0]);
+        int ni = cell_index(pca[1]);
+        bool pa = m_active_grid_cell_mask.get(pi);
+        bool na = m_active_grid_cell_mask.get(ni);
+        if (na ^ pa) {//active inactive boundary
+            if (pa) {
+                return { pi, 1 };
+            } else {
+                return { ni, 0 };
+            }
+        }
+    }
+    return {};
+}
+*/
+
 
 }// namespace mandoline::construction

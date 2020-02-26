@@ -50,14 +50,6 @@ struct CutEdgeBase : public CoordMaskedEdge<D> {
     CutEdgeBase &operator=(const CutEdgeBase &) = default;
     CutEdgeBase &operator=(CutEdgeBase &&) = default;
 
-    //a tuple where the first entry is the cell-grid index of hte external cell, and the bool is whether it is below it or not
-    //  i.e given two cells cm cp bounded by f,
-    //  [cm] f [cp], if [cm] is not part of the staggered grid then we store
-    //  cm,1
-    //  otherwise we store
-    //  cp,0
-    // this sign is with respect to "the boundary operator of hte cell is of positive sign", which may be backwards
-    std::optional<std::tuple<int, bool>> external_boundary = {};
     bool is_mesh_edge() const;
     bool is_axial_edge() const;
     // when this face comes from a mesh,  as_edge_id returns the face index in the mesh
@@ -100,6 +92,14 @@ struct CutEdge<2> : public CutEdgeBase<2> {
 
     Vec N;
 
+    //a tuple where the first entry is the cell-grid index of hte external cell, and the bool is whether it is below it or not
+    //  i.e given two cells cm cp bounded by f,
+    //  [cm] f [cp], if [cm] is not part of the staggered grid then we store
+    //  cm,1
+    //  otherwise we store
+    //  cp,0
+    // this sign is with respect to "the boundary operator of hte cell is of positive sign", which may be backwards
+    std::optional<std::tuple<int, bool>> external_boundary = {};
     // TODO:
     //void  serialize(protobuf::CutEdge& edge) const ;
 };

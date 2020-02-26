@@ -16,9 +16,11 @@ struct CutCellMesh<2> : public CutCellMeshBase<2, CutCellMesh<2>> {
     int cell_index(const VecCRef &) const;
     ColVecs dual_vertices() const;
     mtao::ColVectors<int, 3> faces() const;
-    std::vector<int> cell(int index) const;
+    std::set<std::vector<int>> cell(int index) const;
 
     int nearest_edge_index(const VecCRef &) const;
+    bool in_cell(const VecCRef &, int idx) const;
+    bool in_cell(const ColVecs& V, const VecCRef &, int idx) const;
     VecX volumes() const;
     VecX dual_edge_volumes() const;
     Eigen::SparseMatrix<double> boundary(bool dirichlet_boundary) const;

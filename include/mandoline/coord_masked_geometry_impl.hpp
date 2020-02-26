@@ -56,7 +56,7 @@ auto CoordMaskedGeometry<D, IndexContainerType>::get_min_coord(const IndexContai
     if constexpr (std::is_integral_v<S>) {
         coord = f(*it);
     } else {
-        coord = get_min_coord(*it, f);
+        coord = CoordMaskedGeometry<D,S>::get_min_coord(*it, f);
     }
     ++it;
     for (; it != C.end(); ++it) {
@@ -77,9 +77,7 @@ auto CoordMaskedGeometry<D, IndexContainerType>::get_min_coord(const IndexContai
 
 template<int D, typename IndexContainerType>
 auto CoordMaskedGeometry<D, IndexContainerType>::get_min_coord(const mtao::vector<Vertex<D>> &verts) const -> coord_type {
-    return get_min_coord(indices, [&](size_t idx) -> coord_type {
-        return verts.at(idx).coord;
-    });
+    return get_min_coord(indices, verts);
     /*
             using S = std::decay_t<typename IndexContainerType::value_type>;
             coord_mask<D> mask;
@@ -109,12 +107,15 @@ auto CoordMaskedGeometry<D, IndexContainerType>::get_min_coord(const mtao::vecto
 template<int D, typename IndexContainerType>
 auto CoordMaskedGeometry<D, IndexContainerType>::get_min_coord(const IndexContainerType &indices, const mtao::vector<Vertex<D>> &vertices) -> coord_type {
 
-    return get_min_coord(indices, vertices);
+    return get_min_coord(indices, [&](size_t idx) -> coord_type {
+        return vertices.at(idx).coord;
+    });
 }
 
 template<int D, typename IndexContainerType>
 auto CoordMaskedGeometry<D, IndexContainerType>::possible_cells(const mtao::vector<Vertex<D>> &vertices) const -> std::set<coord_type> {
-    return mask().possible_cells(get_min_coord(vertices));
+    // pick out the bottom left corner to help the mask have a reference
+    return mask().possible_cells(get_min_coord(indices, vertices));
 }
 
 template<int D, typename IndexContainerType>

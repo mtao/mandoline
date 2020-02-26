@@ -24,6 +24,8 @@ class CutCellMesh;
 
 namespace mandoline::construction {
 
+//template<int D, typename IndexContainerType>
+//std::optional<std::tuple<int, bool>> make_boundary_pair(const std::vector<Vertex<D>> &V, const CoordMaskedGeometry<D, IndexContainerType> &boundary_facet);
 
 std::array<int, 2> smallest_ordered_edge(const std::vector<int> &v);
 //ASSUMES SIMPLICIAL INPUTS
@@ -82,6 +84,7 @@ class CutCellEdgeGenerator : public mtao::geometry::grid::StaggeredGrid<double, 
     virtual void bake_edges();
     virtual void bake_faces() {}
     virtual void bake_cells() {}
+
 
     virtual void clear();
 
@@ -204,6 +207,8 @@ class CutCellEdgeGenerator : public mtao::geometry::grid::StaggeredGrid<double, 
     ColVecs all_GV() const;
     VecVector stl_V() const;
 
+
+    std::vector<Vertex<D>> all_vertices() const;
     size_t Vsize() const { return newV().size(); }
     Vec V(int i) const;
     VType GV(int i) const;//vertices with grid masks
@@ -258,6 +263,9 @@ class CutCellEdgeGenerator : public mtao::geometry::grid::StaggeredGrid<double, 
     bool is_in_cell(const std::set<std::vector<int>> &face) const;
 
     static VecVector colvecs_to_vecvector(const ColVecs &V);
+
+  protected:
+    // helper for assigning boundary information to
 
   private:
     using crossing_store_type = mtao::map<CoordType, std::set<EdgeCrossing<D>>>;

@@ -2,6 +2,20 @@
 #include "mandoline/coord_mask.hpp"
 
 namespace mandoline {
+
+    // bind only a single coordinate (represents a plane)
+   template <int D, typename T>
+    coord_mask<D,T>::coord_mask(int idx, int coord) {
+        reset(idx,coord);
+    }
+
+    // bind everything (this is for grid vertices)
+   template <int D, typename T>
+    coord_mask<D,T>::coord_mask(const coord_type &o) {
+        reset(o);
+    }
+
+
 template<int D, typename T>
 void coord_mask<D, T>::reset() { *this = {}; }
 template<int D, typename T>
