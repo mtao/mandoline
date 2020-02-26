@@ -14,6 +14,9 @@ ADD_CATCHTEST(face_collapser
     face_collapser_test.cpp
     )
 
+ADD_CATCHTEST(exterior_domain
+    exterior_domain_test.cpp
+    )
 
 
 

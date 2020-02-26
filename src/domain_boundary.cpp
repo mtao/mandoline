@@ -11,16 +11,23 @@ bool DomainBoundary::is_boundary_facet(int idx) const {
 std::vector<Eigen::Triplet<double>> DomainBoundary::boundary_triplets(bool use_domain_boundaries) const {
     std::vector<Eigen::Triplet<double>> trips;
     auto include = [use_domain_boundaries](int idx) -> bool {
-        if (idx == -2) return false;
+
+        if (use_domain_boundaries) {
+            return idx >= 0 || idx == -2;
+        } else {
+            return (idx >= 0);
+        }
     };
     for (auto &&[idx, pr] : mtao::iterator::enumerate(boundary_facet_pairs())) {
         auto [p, n] = pr;
         assert(n != -1 && p != -1);
-        if (use_domain_boundaries || p == -2) {
-            trips.emplace_back(n, idx, 1);
+        if (include(p) && n >= 0) {
+            assert(n >= 0);
+            trips.emplace_back(idx,n, 1);
         }
-        if (use_domain_boundaries || n == -2) {
-            trips.emplace_back(p, idx, -1);
+        if (include(n) && p >= 0) {
+            assert(p >= 0);
+            trips.emplace_back(idx,p, -1);
         }
     }
     return trips;

@@ -28,6 +28,7 @@ ExteriorGrid<D>::ExteriorGrid(const GridDatab &cell_mask) : Base(cell_mask.shape
     for (int i = 0; i < D; ++i) {
         coord_type s = cell_shape();
         s[i] = 1;
+        // goes from -1 to 0
         utils::multi_loop(s, [&](auto v) {
             int pi = m_cell_indices(v);
             if (pi >= 0) {
@@ -36,22 +37,23 @@ ExteriorGrid<D>::ExteriorGrid(const GridDatab &cell_mask) : Base(cell_mask.shape
             }
         });
         s = cell_shape();
-        s[i] -= 2;
+        s[i] -= 1;
         if (s[i] < 1) continue;
+        // goes from 0 to s[i]-1
         utils::multi_loop(s, [&](auto v) {
             auto v2 = v;
-            v[i] += 1;
-            v2[i] += 2;
+            v2[i] += 1;
             int ni = m_cell_indices(v);
             int pi = m_cell_indices(v2);
-            if (ni == -1 && pi == -1) {
-                return;
+            if (ni == -1 || pi == -1) {
+            return;
             } else {
                 m_boundary_facet_pairs.emplace_back(std::array<int, 2>{ { ni, pi } });
                 m_boundary_facet_axes.emplace_back(i);
             }
         });
         s[i] = 1;
+        // goes from s[i]-1 to s[i]
         utils::multi_loop(s, [&](auto v) {
             v[i] = cell_shape()[i] - 1;
             int ni = m_cell_indices(v);

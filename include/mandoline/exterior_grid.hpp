@@ -27,6 +27,7 @@ class ExteriorGrid : public mtao::geometry::grid::StaggeredGrid<double, D>
     friend class CutCellMesh<D>;
     friend class construction::CutCellGenerator<D>;
     using DomainBoundary::boundary_facet_pairs;
+    using DomainBoundary::boundary_triplets;
 
 
     ExteriorGrid() = default;
