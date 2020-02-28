@@ -10,32 +10,26 @@
 
 namespace mandoline {
 int CutCellMesh<2>::num_cutcells() const {
-    return m_faces.size();
+    return num_cutfaces();
 }
 int CutCellMesh<2>::num_cells() const {
-    return exterior_grid.num_cells() + num_cutcells();
+    return num_faces();
+}
+
+int CutCellMesh<2>::num_cutfaces() const {
+    return m_faces.size();
+}
+int CutCellMesh<2>::num_faces() const {
+    return exterior_grid.num_cells() + num_cutfaces();
+}
+int CutCellMesh<2>::num_cutedges() const {
+    return cut_edges().size();
+}
+int CutCellMesh<2>::num_edges() const {
+    return exterior_grid.num_faces() + num_cutedges();
 }
 
 mtao::ColVectors<int, 3> CutCellMesh<2>::faces() const {
-    std::cout << "True cutfaces: " << std::endl;
-    for (auto &&[i, c] : mtao::iterator::enumerate(m_faces)) {
-        std::cout << i << ")): ";
-        for (auto &&v : c.indices) {
-            for (auto &&v : v) {
-                std::cout << v << ",";
-            }
-            std::cout << " ";
-        }
-        std::cout << std::endl;
-    }
-    std::cout << "HEM cutfaces: " << std::endl;
-    for (auto &&[i, c] : mtao::iterator::enumerate(hem.cells())) {
-        std::cout << i << ")): ";
-        for (auto &&v : c) {
-            std::cout << v << ",";
-        }
-        std::cout << std::endl;
-    }
     std::vector<std::vector<int>> mycells;
     for (int i = 0; i < num_cells(); ++i) {
         for (auto &&c : cell(i)) {
@@ -216,5 +210,40 @@ int CutCellMesh<2>::nearest_edge_index(const VecCRef &p) const {
         }
     }
     return retind;
+}
+
+Eigen::SparseMatrix<double> CutCellMesh<2>::boundary(bool dirichlet_boundary) const {
+    auto triplets = exterior_grid.boundary_triplets(dirichlet_boundary);
+    int num_cedges = this->cut_edges().size();
+    int num_cfaces = this->cut_faces().size();
+    std::transform(triplets.begin(),triplets.end(), triplets.begin(), [&](const Eigen::Triplet<double>& trip) {
+            return Eigen::Triplet<double>{num_cedges+trip.row(), num_cfaces+trip.col(),trip.value()};
+            });
+
+    for(auto&& [fidx, emap]: m_face_boundary_map) {
+
+        for(auto&& [eidx,sgn]: emap) {
+            auto& e = cut_edges()[eidx];
+            // if we have dirichlet condition then we DO NOT want boundaries taht connect to nothing
+            if(!(dirichlet_boundary && (e.external_boundary && std::get<0>(*e.external_boundary) == -1))) {
+                auto ee = e.indices;
+                triplets.emplace_back(eidx,fidx,sgn?-1:1);
+            }
+        }
+    }
+    for(auto&& [idx,e]: mtao::iterator::enumerate(cut_edges())) {
+        if(e.external_boundary) {
+            auto [of,sgn] = *e.external_boundary;
+            if(of >= 0) {
+                triplets.emplace_back(idx,exterior_grid.cell_indices().get(of),sgn?-1:1);
+            }
+        }
+    }
+
+    Eigen::SparseMatrix<double>  A(num_edges(),num_faces());
+    A.setFromTriplets(triplets.begin(),triplets.end());
+    return A;
+
+
 }
 }// namespace mandoline

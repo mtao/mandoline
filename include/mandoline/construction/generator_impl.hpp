@@ -22,7 +22,7 @@ namespace mandoline::construction {
     }
 template<int D>
 auto CutCellEdgeGenerator<D>::colvecs_to_vecvector(const ColVecs &V) -> VecVector {
-    mtao::vector<mtao::Vec3d> stlp(V.cols());
+    mtao::vector<mtao::Vector<double,D>> stlp(V.cols());
     for (auto &&[i, v] : mtao::iterator::enumerate(stlp)) {
         v = V.col(i);
     }
@@ -657,6 +657,7 @@ void CutCellEdgeGenerator<D>::reset(const mtao::vector<VType> &gvs) {
 template<int D>
 void CutCellEdgeGenerator<D>::bake_active_grid_cell_mask() {
 
+    auto s = StaggeredGrid::cell_shape();
     m_active_grid_cell_mask = GridDatab::Constant(true, StaggeredGrid::cell_shape());
 
 

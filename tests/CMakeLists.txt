@@ -18,6 +18,9 @@ ADD_CATCHTEST(exterior_domain
     exterior_domain_test.cpp
     )
 
+ADD_CATCHTEST(2d_boundary
+    2d_boundary_test.cpp
+    )
 
 
 # not real tests, just binaries for testing functionality

@@ -12,6 +12,10 @@ struct CutCellMesh<2> : public CutCellMeshBase<2, CutCellMesh<2>> {
 
     int num_cells() const;
     int num_cutcells() const;
+    int num_faces() const;
+    int num_cutfaces() const;
+    int num_edges() const;
+    int num_cutedges() const;
     std::array<int, 2> dual_edge(int idx) const;
     int cell_index(const VecCRef &) const;
     ColVecs dual_vertices() const;
@@ -24,10 +28,12 @@ struct CutCellMesh<2> : public CutCellMeshBase<2, CutCellMesh<2>> {
     VecX volumes() const;
     VecX dual_edge_volumes() const;
     Eigen::SparseMatrix<double> boundary(bool dirichlet_boundary) const;
+    const std::vector<CutFace<2>>& cut_faces() const { return m_faces; } 
     //bool is_cutface_index(int index) const { return index >= StaggeredGrid::template form_size<D>(); }
     Edges halfedges_per_edge;//halfedge indices
 
     std::vector<CutFace<2>> m_faces;
+    std::map<int,std::map<int,bool>> m_face_boundary_map;
     mtao::geometry::mesh::HalfEdgeMesh hem;
     ExteriorGrid<2> exterior_grid;
     VecX halfedge_orientations;

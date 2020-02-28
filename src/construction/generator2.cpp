@@ -124,7 +124,7 @@ CutCellMesh<2> CutCellEdgeGenerator<2>::generate_faces() const {
         ret.cell_grid_ownership[grid_cell].insert(idx);
     }
 
-    auto make_boundary_pair = [&](auto &&boundary_facet) -> std::tuple<int, bool> {
+    auto make_boundary_pair = [&](auto &&boundary_facet) -> std::optional<std::tuple<int, bool>> {
         auto pc = boundary_facet.possible_cells(AV);
         if (pc.size() != 2) {
             return {};
@@ -142,9 +142,9 @@ CutCellMesh<2> CutCellEdgeGenerator<2>::generate_faces() const {
             std::cout << "SET WASNT LEXICOGRAPHICAL ORDER SOMEHOW?" << std::endl;
         }
         if (pca[0][idx] < 0) {
-            return { -1, 1 };
+            return {{ -1, 1 }};
         } else if (pca[1][idx] >= cell_shape()[idx]) {
-            return { -1, 0 };
+            return {{ -1, 0 }};
         } else {
             int pi = cell_index(pca[0]);
             int ni = cell_index(pca[1]);
@@ -152,17 +152,47 @@ CutCellMesh<2> CutCellEdgeGenerator<2>::generate_faces() const {
             bool na = m_active_grid_cell_mask.get(ni);
             if (na ^ pa) {//active inactive boundary
                 if (pa) {
-                    return { pi, 1 };
+                    return {{ pi, 0 }};
                 } else {
-                    return { ni, 0 };
+                    return {{ ni, 1 }};
                 }
             }
         }
         return {};
     };
     mtao::logging::debug() << "Making cut-edge boundaries";
+    std::map<Edge,std::pair<int,bool>> diredge_to_edge_orientation;
     for (auto &&[idx, e] : mtao::iterator::enumerate(ret.m_cut_edges)) {
         e.external_boundary = make_boundary_pair(e);
+
+        auto c = e.indices;
+        diredge_to_edge_orientation[c] = {idx,false};
+        std::swap(c[0],c[1]);
+        diredge_to_edge_orientation[c] = {idx,true};
+    }
+    for(auto&& [eidx,e]: mtao::iterator::enumerate(ret.m_cut_edges)) {
+        auto [eidx2,sgn]= diredge_to_edge_orientation.at(e.indices);
+        std::cout << e.indices[0] << ":" << e.indices[1] << " => ";
+        std::cout << eidx << ":" << eidx2 << ": " << (sgn?-1:1) << std::endl;
+    }
+    for (auto &&[idx, f] : mtao::iterator::enumerate(ret.m_faces)) {
+        std::cout << "FAce: " << idx <<std::endl;
+        for(auto&& c: f.indices) {
+            std::cout << "Loop: ";
+            std::copy(c.begin(),c.end(),std::ostream_iterator<int>(std::cout,","));
+            std::cout << std::endl;
+            auto& fm = ret.m_face_boundary_map[idx];
+            for(int j = 0; j < c.size(); ++j) {
+                int k = (j+1)%c.size();
+                Edge me{{c[j],c[k]}};
+                auto pr = diredge_to_edge_orientation.at(me);
+                auto [eidx,sgn] = pr;
+                auto e = ret.m_cut_edges[eidx].indices;
+                std::cout << me[0] << ":" << me[1] << " => " << (sgn?-1:1) << " => ";
+                std::cout << e[0] << ":" << e[1] << std::endl;
+                fm.emplace(pr);
+            }
+        }
     }
 
     mtao::logging::debug() << "Original vertices";
