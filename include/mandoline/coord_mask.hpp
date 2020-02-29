@@ -1,5 +1,6 @@
 #pragma once
 #include <bitset>
+#include <set>
 #include <array>
 #include <sstream>
 #include <algorithm>
@@ -10,188 +11,98 @@
 
 
 namespace mandoline {
-    template <int D>
-       struct Vertex;
-    template <int D, typename T=int>
-        struct coord_mask: public std::array<std::optional<T>,D> {
-            coord_mask() = default;
-            coord_mask(const coord_mask&) = default;
-            coord_mask(coord_mask&&) = default;
-            coord_mask& operator=(const coord_mask&) = default;
-            coord_mask& operator=(coord_mask&&) = default;
+template<int D>
+struct Vertex;
+template<int D, typename T = int>
+struct coord_mask : public std::array<std::optional<T>, D> {
+    // coord mask partial ordering has all possible PO cases
+    enum class PartialOrdering { Less,
+                                 Greater,
+                                 Equal,
+                                 Unknown };
+    using coord_type = std::array<T, D>;
 
-            coord_mask(int idx, int coord) { (*this)[idx] = coord; }
-            coord_mask(const std::array<T,D>& o) { reset(o); }
+    // rule of 5
+    coord_mask() = default;
+    coord_mask(const coord_mask &) = default;
+    coord_mask(coord_mask &&) = default;
+    coord_mask &operator=(const coord_mask &) = default;
+    coord_mask &operator=(coord_mask &&) = default;
+
+    // bind only a single coordinate (represents a plane)
+    coord_mask(int idx, int coord);
+
+    // bind everything (this is for grid vertices)
+    coord_mask(const coord_type &o);
 
 
-            void reset() { *this = {}; }
-            void reset(int idx, int coord) {
-                reset();
-                (*this)[idx] = coord;
-            }
-            void reset(const std::array<T,D>& o) {
-                std::copy(o.begin(),o.end(),this->begin());
-            }
+    void reset();
+    // set to be a plane
+    void reset(int idx, int coord);
+    // set to be a grid vertex
+    void reset(const coord_type &o);
 
-            int unbound_axis() const {
-                assert(count() == D-1);
-                for(int i = 0; i < D; ++i) {
-                    if(!(*this)[i]) {
-                        return i;
-                    }
-                }
-                return -1;
-            }
+    // returns true if the axis is bound
+    bool is_bound(size_t idx) const;
 
-            int bound_axis() const {
-                assert(count() == 1);
-                for(int i = 0; i < D; ++i) {
-                    if((*this)[i]) {
-                        return i;
-                    }
-                }
-                return -1;
-            }
-            std::array<int,D> as_array() const {
-                std::array<int,D> m;
-                std::transform(this->begin(),this->end(),m.begin(),[](auto&& a) {
-                        return *a;
-                        });
-                return m;
-            }
-            size_t count() const {
-                return std::count_if(this->begin(),this->end(),[](const std::optional<T>& v) -> bool {return bool(v);});
-            }
+    // if we're sure we have D-1 elements bound we can pick out the one unbound one
+    // this selects the axis that an axis-aligned edge lies on
+    int unbound_axis() const;
 
-            bool all() const {
-                return std::all_of(this->begin(),this->end(),[](const std::optional<T>& v) -> bool {return bool(v);});
-            }
-            bool active() const {
-                return std::any_of(this->begin(),this->end(),[](const std::optional<T>& v) -> bool {return bool(v);});
-            }
-            coord_mask& operator&=(const coord_mask& o) {
-                for(auto&& [a,b]: mtao::iterator::zip(*this,o)) {
-                    if(a && b && (*a == *b)) {
-                    } else {
-                        a = {};
-                    }
-                }
-                return *this;
-            }
+    // if we're sure we have one bound axis (i.e we have a plane)
+    // this selects the axis the plane lies on
+    int bound_axis() const;
 
-            coord_mask operator&(const coord_mask& o) const {
-                coord_mask ret = *this;
-                ret &= o;
-                return ret;
-            }
-            coord_mask& operator|=(const coord_mask& o) {
-                for(auto&& [a,b]: mtao::iterator::zip(*this,o)) {
-                    if(a && b && (*a == *b)) {
-                    } else {
-                        a = {};
-                    }
-                }
-                return *this;
-            }
+    // for a grid vertex we may want to pull the vertex coord out
+    coord_type as_array() const;
 
-            coord_mask operator|(const coord_mask& o) const {
-                coord_mask ret = *this;
-                ret |= o;
-                return ret;
-            }
-            coord_mask operator-=(const coord_mask& o){
-                for(auto&& [a,b]: mtao::iterator::zip(*this,o)) {
-                    if(b) {
-                        a = {};
-                    }
-                }
-                return *this;
-            }
-            coord_mask operator-(const coord_mask& o) const {
-                coord_mask ret = *this;
-                ret -= o;
-                return ret;
-            }
+    // the number of bound coordinates (0 = arbitrary position, D = grid vertex)
+    size_t count() const;
 
-            enum class PartialOrdering { Less, Greater, Equal, Unknown };
-            //integer lattice partial ordering
-            PartialOrdering partial_ordering(const coord_mask& other) const {
-                //*this > other
-                PartialOrdering po = PartialOrdering::Equal;
-                for(auto&& [a,b]: mtao::iterator::zip(*this,other)) {
-                    if(a && b) {
-                        if(*a != *b) {
-                            return PartialOrdering::Unknown;
-                        }
-                    } else if(a) {//but ont b  i.e (a > b)
-                        switch(po) {
-                            case PartialOrdering::Greater: continue;
-                            case PartialOrdering::Less: return PartialOrdering::Unknown;
-                            case PartialOrdering::Equal: po = PartialOrdering::Greater; continue;
-                            case PartialOrdering::Unknown: return PartialOrdering::Unknown;
-                        }
-                    } else if(b) {//but ont b  i.e (a < b)
-                        switch(po) {
-                            case PartialOrdering::Less: continue;
-                            case PartialOrdering::Greater: return PartialOrdering::Unknown;
-                            case PartialOrdering::Equal:po = PartialOrdering::Less; continue;
-                            case PartialOrdering::Unknown: return PartialOrdering::Unknown;
-                        }
-                    }
-                }
-                return po;
-            }
-            bool subsumes(const coord_mask& other) const {
-                PartialOrdering po = partial_ordering(other);
-                return po == PartialOrdering::Greater || po == PartialOrdering::Equal;
-            }
-            bool strict_subsumes(const coord_mask& other) const {
-                PartialOrdering po = partial_ordering(other);
-                return po == PartialOrdering::Greater;
-            }
+    // returns if every is grid-aligned; i.e this is a vertex
+    bool all() const;
 
-            operator std::string() const {
-                std::stringstream ss;
-                ss << "(";
-                for(int i = 0; i < D-1; ++i) {
-                    if((*this)[i]) {
-                        ss << *(*this)[i] <<",";
-                    } else {
-                        ss << "_.";
-                    }
-                }
-                if((*this)[D-1]) {
-                    ss << *(*this)[D-1];
-                } else {
-                    ss << "_";
-                }
-                ss << ")";
-                return ss.str();
+    // this lies on some grid plane
+    bool active() const;
 
-            }
-            void clamp(std::array<T,D>& vec) const {
-                for(auto&& [v,t]: mtao::iterator::zip(vec,*this)) {
-                    if(t) {
-                        v = *t;
-                    }
-                }
-            }
-            void clamp(Vertex<D>& vec) const {
-                for(auto&& [v,q,t]:
-                        mtao::iterator::zip(vec.coord,mtao::eigen::iterable(vec.quot),*this)) {
-                    if(t) {
-                        v = *t;
-                        q = 0;
-                    }
-                }
-                vec.clamped_indices |= as_bitset();
-            }
-            std::bitset<D> as_bitset() const {
-                std::bitset<D> bs;
-                for(auto&& [i,t]: mtao::iterator::enumerate(*this)) {
-                    bs[i] = bool(t);
-                }
-                return bs;
-            }
-        };
-}
+
+    // return the planes shared by two masks
+    coord_mask &operator&=(const coord_mask &o);
+    coord_mask operator&(const coord_mask &o) const;
+
+    // return the planes that either plane has (not sure why this would geometrically make sense)
+    coord_mask &operator|=(const coord_mask &o);
+    coord_mask operator|(const coord_mask &o) const;
+
+    // get unshared planes; useful when comparing partial ordered elements when we dont care about some axes
+    coord_mask &operator-=(const coord_mask &o);
+    coord_mask operator-(const coord_mask &o) const;
+
+    // check the integer lattice partial ordering
+    // checks *this < other
+    PartialOrdering partial_ordering(const coord_mask &other) const;
+    // checks *this <= other
+    bool subsumes(const coord_mask &other) const;
+    // checks *this < other
+    bool strict_subsumes(const coord_mask &other) const;
+
+    // string for visualization
+    operator std::string() const;
+
+    // if we know this mask applies to vec, we may want to make sure vec is assigned properly
+    // this sets the bound entries in vec to match up with the mask (i.e set q to 0, make sure integer parts are set right)
+    // integer part might be wrong if something is set to (N-1,.99999999999) -> (N,0)
+    void clamp(Vertex<D> &vec) const;
+    // mostly a helper for the prior
+    void clamp(coord_type &vec) const;
+
+    // returns which entries are masked
+    std::bitset<D> as_bitset() const;
+
+    // Given a fully specified coordinate from a vertex (or
+    // coord-masked polygon), returns the grid cells that the object can be considered to be part of
+    std::set<coord_type> possible_cells(const coord_type &coord) const;
+};
+}// namespace mandoline
+
+#include "mandoline/coord_mask_impl.hpp"

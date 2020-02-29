@@ -1,6 +1,26 @@
 include(FetchContent REQUIRED)
 
 
+function(fetch_dep REPO_NAME GIT_REPO GIT_TAG ADD_SUBDIR)
+    FetchContent_Declare(
+        ${REPO_NAME}
+        GIT_REPOSITORY ${GIT_REPO}
+        #GIT_TAG f6b406427400ed7ddb56cfc2577b6af571827c8c
+        GIT_TAG ${GIT_TAG}
+        )
+    if(ADD_SUBDIR)
+        if(${CMAKE_VERSION} VERSION_LESS 3.14)
+            FetchContent_Populate(${REPO_NAME})
+            add_subdirectory(${${REPO_NAME}_SOURCE_DIR} ${${REPO_NAME}_BINARY_DIR})
+        else()
+            FetchContent_MakeAvailable(${REPO_NAME})
+        endif()
+    else()
+        FetchContent_Populate(${REPO_NAME})
+    endif()
+    set(${REPO_NAME}_SOURCE_DIR ${${REPO_NAME}_SOURCE_DIR} PARENT_SCOPE)
+    set(${REPO_NAME}_BINARY_DIR ${${REPO_NAME}_BINARY_DIR} PARENT_SCOPE)
+endfunction()
 
 OPTION(MTAO_USE_ELTOPO "Should we build the el topo submodule" OFF)
 OPTION(MTAO_USE_LOSTOPOS "Should we build the LOS Topos submodule" OFF)
@@ -12,17 +32,9 @@ if(MTAO_PATH)
     set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${MTAO_PATH}/cmake")
 else()
 
-    FetchContent_Declare(
-        mtao
-        GIT_REPOSITORY https://github.com/mtao/core.git
-        GIT_TAG 827beaa
-        )
-    if(${CMAKE_VERSION} VERSION_LESS 3.14)
-        FetchContent_Populate(mtao)
-        add_subdirectory(${mtao_SOURCE_DIR} ${mtao_BINARY_DIR} EXCLUDE_FROM_ALL)
-    else()
-        FetchContent_MakeAvailable(mtao)
-    endif()
+    fetch_dep(mtao https://github.com/mtao/core.git 
+        c8c41ca
+        ON)
     set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${mtao_SOURCE_DIR}/cmake")
 endif()
 
@@ -54,19 +66,7 @@ option(LIBIGL_SKIP_DOWNLOAD "Skip downloading external libraries" ON)
 if(LIBIGL_PATH)
     ADD_SUBDIRECTORY("${LIBIGL_PATH}" ${CMAKE_BINARY_DIR}/libigl EXCLUDE_FROM_ALL)
 else()
-    FetchContent_Declare(
-        libigl
-        GIT_REPOSITORY https://github.com/libigl/libigl.git
-        #GIT_TAG f6b406427400ed7ddb56cfc2577b6af571827c8c
-        GIT_TAG v2.1.0
-        )
-
-    if(${CMAKE_VERSION} VERSION_LESS 3.14)
-        FetchContent_Populate(libigl)
-        add_subdirectory(${libigl_SOURCE_DIR} ${libigl_BINARY_DIR} EXCLUDE_FROM_ALL)
-    else()
-        FetchContent_MakeAvailable(libigl)
-    endif()
+    fetch_dep(libigl https://github.com/libigl/libigl.git v2.1.0 ON)
 endif()
 
 if(USE_OPENGL)
@@ -77,14 +77,7 @@ endif()
 find_package(Protobuf)
 if(NOT Protobuf_FOUND)
     option(protobuf_BUILD_TESTS "PROTOBUF BUILD TESTS" OFF)
-    FetchContent_Declare(
-        protobuf
-        GIT_REPOSITORY https://github.com/protocolbuffers/protobuf.git
-        #GIT_TAG f6b406427400ed7ddb56cfc2577b6af571827c8c
-        GIT_TAG v3.11.3
-        )
-        FetchContent_Populate(protobuf)
-        add_subdirectory(${protobuf_SOURCE_DIR}/cmake ${protobuf_BINARY_DIR} EXCLUDE_FROM_ALL)
+    fetch_dep(protobuf https://github.com/protocolbuffers/protobuf.git v3.11.3 ON)
 
 endif()
 if(HANDLE_SELF_INTERSECTIONS)
@@ -94,19 +87,13 @@ if(HANDLE_SELF_INTERSECTIONS)
     endif()
     if(NOT CGAL_FOUND)
         #because its required we will never get here
-        FetchContent_Declare(
+        fetch_dep(
             CGAL
-            GIT_REPOSITORY https://github.com/CGAL/cgal.git
-            #GIT_TAG f6b406427400ed7ddb56cfc2577b6af571827c8c
-            GIT_TAG releases/CGAL-5.0.1
+            https://github.com/CGAL/cgal.git
+            releases/CGAL-5.0.1
+            ON
             )
 
-        if(${CMAKE_VERSION} VERSION_LESS 3.14)
-            FetchContent_Populate(CGAL)
-            add_subdirectory(${CGAL_SOURCE_DIR} ${CGAL_BINARY_DIR} EXCLUDE_FROM_ALL)
-        else()
-            FetchContent_MakeAvailable(CGAL)
-        endif()
     endif(NOT CGAL_FOUND)
     FIND_PACKAGE(Boost COMPONENTS thread)
 #if(NOT Boost_FOUND)
@@ -127,3 +114,17 @@ if(HANDLE_SELF_INTERSECTIONS)
 
 #ENDIF()
 endif(HANDLE_SELF_INTERSECTIONS)
+
+if(MANDOLINE_BUILD_TESTING)
+    if(NOT Catch2_FOUND)
+        if(NOT TARGET Catch2::Catch2)
+        fetch_dep(
+            catch2
+            https://github.com/catchorg/Catch2.git
+            v2.9.1
+            ON
+            )
+    endif()
+
+    endif()
+endif()
