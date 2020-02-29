@@ -15,12 +15,12 @@ message Vec3d {
 }
 
 
-// An integer vector in Z^2
+// An integer vector in Z^2, also may be an edge
 message Vec2i {
     int64 x = 1;
     int64 y = 2;
 }
-// An integer vector in Z^3
+// An integer vector in Z^3, also may be a triangle
 message Vec3i {
     int64 x = 1;
     int64 y = 2;
@@ -34,8 +34,9 @@ message AxialPlane {
 }
 
 
+
 // The indices of the vertices of a polygon defined by a single boundary loop
-message SimplePolygon {
+message BoundaryLoop {
     repeated int64 indices = 1;
 }
 
@@ -52,13 +53,30 @@ message StencilBoundary {
 message CutEdge {
     // The boundary loops for the polygon
     Vec2i indices = 1;
-    Vec2d normal = 2;
     // the parent geometory that this is cut from
     oneof id {
         int64 edge_id = 3;
-        AxialPlane plane_id = 4;
+        AxialPlane plane_id = 4; // this can only be set in a 2D mesh
+        AxialEdge3 _id = 5; // this can only be set in a 3D mesh
     }
 
-    StencilBoundary edge_boundary = 5;
+}
+
+
+// lists off the boundaries in terms of staggered-grid edge indices
+message ExteriorGrid {
+    // Adaptive grid structure stuff
+    // each is these is represented by a staggered-grid index and a width
+    map<int64,Vec2i> cells = 1;
+    map<int64,Vec2i> faces = 2;
+    map<int64,Vec2i> edges = 3;
+
+    map<int64,Vec2i> cell_boundary = 4;
+    map<int64,Vec2i> face_boundary = 5;
+
+    // the region ids for the cube-cells, they're aligned with the regions used for cut-cells
+    map<int64,int64> square_regions = 14;
+
+    bool adaptive = 2;
 }
 

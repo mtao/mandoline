@@ -36,6 +36,11 @@ message Square2 {
     int64 radius = 2;
 }
 
+message CutEdge2 {
+    CutEdge edge = 1;
+    Vec2d normal = 2;
+}
+
 // A representation of a cut-edge in terms of barycentric
 // coordinates on teh edge that created it. 
 // Should be aligned to a cut-edge's indices
