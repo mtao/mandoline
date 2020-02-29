@@ -12,7 +12,7 @@
 #include "mandoline/diffgeo_utils.hpp"
 #include "mandoline/proto_util.hpp"
 #include "mandoline/operators/interpolation.hpp"
-#include "mandoline/operators/boundary.hpp"
+#include "mandoline/operators/boundary3.hpp"
 #include "mandoline/operators/volume.hpp"
 #include "mandoline/operators/masks.hpp"
 
@@ -666,8 +666,8 @@ Eigen::SparseMatrix<double> CutCellMesh<3>::barycentric_matrix() const {
 Eigen::SparseMatrix<double> CutCellMesh<3>::face_barycentric_volume_matrix() const {
     return operators::face_barycentric_volume_matrix(*this);
 }
-Eigen::SparseMatrix<double> CutCellMesh<3>::boundary() const {
-    return operators::boundary(*this);
+Eigen::SparseMatrix<double> CutCellMesh<3>::boundary(bool include_grid_boundary_faces) const {
+    return operators::boundary(*this, include_grid_boundary_faces);
 }
 Eigen::SparseMatrix<double> CutCellMesh<3>::face_boundary() const {
     Eigen::SparseMatrix<double> B(edge_size(), face_size());

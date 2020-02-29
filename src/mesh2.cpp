@@ -7,6 +7,7 @@
 #include <mtao/iterator/range.hpp>
 #include "mandoline/diffgeo_utils.hpp"
 #include "mandoline/line.hpp"
+#include "mandoline/operators/boundary2.hpp"
 
 namespace mandoline {
 int CutCellMesh<2>::num_cutcells() const {
@@ -212,37 +213,8 @@ int CutCellMesh<2>::nearest_edge_index(const VecCRef &p) const {
     return retind;
 }
 
-Eigen::SparseMatrix<double> CutCellMesh<2>::boundary(bool dirichlet_boundary) const {
-    auto triplets = exterior_grid.boundary_triplets(dirichlet_boundary);
-    int num_cedges = this->cut_edges().size();
-    int num_cfaces = this->cut_faces().size();
-    std::transform(triplets.begin(),triplets.end(), triplets.begin(), [&](const Eigen::Triplet<double>& trip) {
-            return Eigen::Triplet<double>{num_cedges+trip.row(), num_cfaces+trip.col(),trip.value()};
-            });
-
-    for(auto&& [fidx, emap]: m_face_boundary_map) {
-
-        for(auto&& [eidx,sgn]: emap) {
-            auto& e = cut_edges()[eidx];
-            // if we have dirichlet condition then we DO NOT want boundaries taht connect to nothing
-            if(!(dirichlet_boundary && (e.external_boundary && std::get<0>(*e.external_boundary) == -1))) {
-                auto ee = e.indices;
-                triplets.emplace_back(eidx,fidx,sgn?-1:1);
-            }
-        }
-    }
-    for(auto&& [idx,e]: mtao::iterator::enumerate(cut_edges())) {
-        if(e.external_boundary) {
-            auto [of,sgn] = *e.external_boundary;
-            if(of >= 0) {
-                triplets.emplace_back(idx,exterior_grid.cell_indices().get(of),sgn?-1:1);
-            }
-        }
-    }
-
-    Eigen::SparseMatrix<double>  A(num_edges(),num_faces());
-    A.setFromTriplets(triplets.begin(),triplets.end());
-    return A;
+Eigen::SparseMatrix<double> CutCellMesh<2>::boundary(bool include_domain_boundary_faces) const {
+    return operators::boundary(*this,include_domain_boundary_faces);
 
 
 }

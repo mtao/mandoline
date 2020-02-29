@@ -70,7 +70,7 @@ struct CutCellMesh<3> : public CutCellMeshBase<3, CutCellMesh<3>> {
 
     //Differential geometry info
     //cell -> face boundary operator
-    Eigen::SparseMatrix<double> boundary() const;
+    Eigen::SparseMatrix<double> boundary(bool include_domain_boundary_faces = false) const;
     //face -> edge boundary operator
     Eigen::SparseMatrix<double> face_boundary() const;
     mtao::ColVecs3d face_centroids() const;

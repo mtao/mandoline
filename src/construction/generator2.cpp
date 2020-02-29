@@ -106,7 +106,6 @@ CutCellMesh<2> CutCellEdgeGenerator<2>::generate_faces() const {
                 for (auto &&v : F.indices) {
                     vol += mtao::geometry::curve_volume(VV, v);
                 }
-                std::cout << "Vol: " << i << ": " << vol << std::endl;
                 if (vol > 0) {
                     ret.m_faces.emplace_back(std::move(F));
                 }
@@ -118,7 +117,6 @@ CutCellMesh<2> CutCellEdgeGenerator<2>::generate_faces() const {
 
     for (auto &&[idx, f] : mtao::iterator::enumerate(ret.m_faces)) {
         auto c = f.possible_cells(AV);
-        std::cout << "Done" << std::endl;
         assert(c.size() == 1);
         int grid_cell = StaggeredGrid::cell_index(*c.begin());
         ret.cell_grid_ownership[grid_cell].insert(idx);
@@ -139,7 +137,7 @@ CutCellMesh<2> CutCellEdgeGenerator<2>::generate_faces() const {
             }
         }
         if (pca[0][idx] + 1 != pca[1][idx]) {
-            std::cout << "SET WASNT LEXICOGRAPHICAL ORDER SOMEHOW?" << std::endl;
+            mtao::logging::error() << "SET WASNT LEXICOGRAPHICAL ORDER SOMEHOW?";
         }
         if (pca[0][idx] < 0) {
             return {{ -1, 1 }};
@@ -150,11 +148,12 @@ CutCellMesh<2> CutCellEdgeGenerator<2>::generate_faces() const {
             int ni = cell_index(pca[1]);
             bool pa = m_active_grid_cell_mask.get(pi);
             bool na = m_active_grid_cell_mask.get(ni);
+            bool sign = (idx%2==1);
             if (na ^ pa) {//active inactive boundary
                 if (pa) {
-                    return {{ pi, 0 }};
+                    return {{ pi, sign }};
                 } else {
-                    return {{ ni, 1 }};
+                    return {{ ni, !sign }};
                 }
             }
         }
@@ -170,17 +169,8 @@ CutCellMesh<2> CutCellEdgeGenerator<2>::generate_faces() const {
         std::swap(c[0],c[1]);
         diredge_to_edge_orientation[c] = {idx,true};
     }
-    for(auto&& [eidx,e]: mtao::iterator::enumerate(ret.m_cut_edges)) {
-        auto [eidx2,sgn]= diredge_to_edge_orientation.at(e.indices);
-        std::cout << e.indices[0] << ":" << e.indices[1] << " => ";
-        std::cout << eidx << ":" << eidx2 << ": " << (sgn?-1:1) << std::endl;
-    }
     for (auto &&[idx, f] : mtao::iterator::enumerate(ret.m_faces)) {
-        std::cout << "FAce: " << idx <<std::endl;
         for(auto&& c: f.indices) {
-            std::cout << "Loop: ";
-            std::copy(c.begin(),c.end(),std::ostream_iterator<int>(std::cout,","));
-            std::cout << std::endl;
             auto& fm = ret.m_face_boundary_map[idx];
             for(int j = 0; j < c.size(); ++j) {
                 int k = (j+1)%c.size();
@@ -188,14 +178,12 @@ CutCellMesh<2> CutCellEdgeGenerator<2>::generate_faces() const {
                 auto pr = diredge_to_edge_orientation.at(me);
                 auto [eidx,sgn] = pr;
                 auto e = ret.m_cut_edges[eidx].indices;
-                std::cout << me[0] << ":" << me[1] << " => " << (sgn?-1:1) << " => ";
-                std::cout << e[0] << ":" << e[1] << std::endl;
                 fm.emplace(pr);
             }
         }
     }
 
-    mtao::logging::debug() << "Original vertices";
+    mtao::logging::debug() << "Original vertices: " << origV().size();
     //extra_metadata(ret);
     ret.m_origV.resize(2, origV().size());
     for (int i = 0; i < origV().size(); ++i) {

@@ -27,7 +27,7 @@ class DomainBoundary {
 
     size_t boundary_facet_size() const;
     bool is_boundary_facet(int idx) const;
-    static bool is_boundary_facet(const std::array<int, 2> &pr) { return pr[0] == -2 || pr[1] == -1; }
+    static bool is_boundary_facet(const std::array<int, 2> &pr) { return pr[0] == -2 || pr[1] == -2; }
 
   protected:
     std::vector<std::array<int, 2>> m_boundary_facet_pairs;

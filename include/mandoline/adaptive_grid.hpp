@@ -91,7 +91,7 @@ class AdaptiveGrid : public mtao::geometry::grid::StaggeredGrid<double, 3> {
     mtao::VecXd dual_edge_lengths() const;
     mtao::VecXd face_volumes(bool mask_boundary = false) const;
     mtao::VecXd cell_volumes() const;
-    std::vector<Eigen::Triplet<double>> boundary_triplets(int offset) const;
+    std::vector<Eigen::Triplet<double>> boundary_triplets(int offset, bool grid_boundary=false) const;
     // computes the boundary of the adaptive grid, including the interior boundaries
     mtao::VecXd boundary_face_mask() const;
     // includes the boundary of hte adaptive grid, ignoring hte interior boundaries
@@ -110,6 +110,9 @@ class AdaptiveGrid : public mtao::geometry::grid::StaggeredGrid<double, 3> {
 
     int get_cell_index(const Vec &p) const;
 
+    bool is_boundary_face(int cut_face_index) const;
+    // for use exclusively with dual edges of cutfaces 
+    static bool is_boundary_face(const std::array<int, 2> &dual_edge) { return dual_edge[0] == -2 || dual_edge[1] == -2; }
     inline bool is_valid_edge(const Edge &e) const {
         auto [a, b] = e;
         return a != b && m_cells.find(a) != m_cells.end() && m_cells.find(b) != m_cells.end();

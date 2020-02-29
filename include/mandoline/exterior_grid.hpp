@@ -16,7 +16,7 @@ namespace construction {
 
 template<int D>
 class ExteriorGrid : public mtao::geometry::grid::StaggeredGrid<double, D>
-  , DomainBoundary {
+  , public DomainBoundary {
   public:
     using Base = mtao::geometry::grid::StaggeredGrid<double, D>;
     using GridDatai = mtao::geometry::grid::GridDataD<int, D>;

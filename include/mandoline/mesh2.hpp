@@ -27,7 +27,7 @@ struct CutCellMesh<2> : public CutCellMeshBase<2, CutCellMesh<2>> {
     bool in_cell(const ColVecs& V, const VecCRef &, int idx) const;
     VecX volumes() const;
     VecX dual_edge_volumes() const;
-    Eigen::SparseMatrix<double> boundary(bool dirichlet_boundary) const;
+    Eigen::SparseMatrix<double> boundary(bool include_domain_boundary_faces) const;
     const std::vector<CutFace<2>>& cut_faces() const { return m_faces; } 
     //bool is_cutface_index(int index) const { return index >= StaggeredGrid::template form_size<D>(); }
     Edges halfedges_per_edge;//halfedge indices

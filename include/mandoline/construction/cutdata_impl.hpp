@@ -162,7 +162,6 @@ void CutData<D, Indexer>::bake(const std::optional<SGType> &grid, bool fuse) {
                     add_edge(ei_mask, E, EI.edge_index);
                 }
             }
-            //std::cout << "Face intersections: " << FI.edge_index << std::endl;
         }
     }
     if constexpr (D == 3) {
@@ -218,7 +217,6 @@ void CutData<D, Indexer>::bake(const std::optional<SGType> &grid, bool fuse) {
                     add_face(fi_mask, F, FI.triangle_index);
                 }
             }
-            //std::cout << "Face intersections: " << FI.face_index << std::endl;
         }
     }
 }
@@ -328,7 +326,6 @@ void CutData<D, Indexer>::reset() {
 }
 template<int D, typename Indexer>
 void CutData<D, Indexer>::reset_topology() {
-    std::cout << m_V.size() << std::endl;
     mtao::vector<Vertex<D>> V = std::move(m_V);
     ;
     reset();
@@ -438,7 +435,6 @@ auto CutData<D, Indexer>::compute_crossings(bool fuse) const -> std::vector<Cros
 }
 template<int D, typename Indexer>
 auto CutData<D, Indexer>::vertex_crossings() const -> std::vector<Crossing<D>> {
-    std::cout << "vertex crossings: " << m_V.size() << std::endl;
     std::vector<Crossing<D>> ret;
     auto e = mtao::iterator::enumerate(m_V);
     int grid_size = this->grid_size();

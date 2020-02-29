@@ -281,11 +281,12 @@ void CutCellGenerator<3>::compute_faces() {
                     int ni = cell_index(pca[1]);
                     bool pa = m_active_grid_cell_mask.get(pi);
                     bool na = m_active_grid_cell_mask.get(ni);
+                    bool sign = (idx%2==1);
                     if (na ^ pa) {//active inactive boundary
                         if (pa) {
-                            f.external_boundary = { pi, 1 };
+                            f.external_boundary = { pi, sign };
                         } else {
-                            f.external_boundary = { ni, 0 };
+                            f.external_boundary = { ni, !sign };
                         }
                     }
                 }

@@ -1,4 +1,5 @@
 #include "mandoline/adaptive_grid.hpp"
+#include "mandoline/operators/boundary3.hpp"
 #include <mtao/eigen/stl2eigen.hpp>
 #include <set>
 #include "mandoline/proto_util.hpp"
@@ -38,6 +39,9 @@ void print_grid(const GridB &g) {
             std::cout << std::endl;
         }
     }
+}
+bool AdaptiveGrid::is_boundary_face(int idx) const {
+    return AdaptiveGrid::is_boundary_face(m_faces.at(idx).dual_edge);
 }
 
 void AdaptiveGrid::Cell::serialize(protobuf::Cube &c) const {
@@ -199,33 +203,11 @@ auto AdaptiveGrid::grid_boundary_face_mask() const -> mtao::VecXd {
 }
 
 std::set<int> AdaptiveGrid::grid_boundary_faces(int fidx_offset) const {
-    std::set<int> ret;
-    for (auto &&[fidx_, f] : mtao::iterator::enumerate(faces())) {
-        int fidx = fidx_ + fidx_offset;
-        int dim = f.dimension();
-        int val = f.corner()[dim];
-        if (val == 0) {
-            ret.insert(fidx);
-        } else if (val == vertex_shape()[dim] - 1) {
-            ret.insert(fidx);
-        }
-    }
-    return ret;
+    return operators::grid_boundary_faces(*this,fidx_offset);
 }
 
-auto AdaptiveGrid::boundary_triplets(int offset) const -> std::vector<Eigen::Triplet<double>> {
-    std::vector<Eigen::Triplet<double>> trips;
-    for (auto &&[i, face] : mtao::iterator::enumerate(m_faces)) {
-        auto &e = face.dual_edge;
-        auto [l, h] = face.dual_edge;
-        if (l >= 0) {
-            trips.emplace_back(offset + i, l, -1);
-        }
-        if (h >= 0) {
-            trips.emplace_back(offset + i, h, 1);
-        }
-    }
-    return trips;
+auto AdaptiveGrid::boundary_triplets(int offset, bool domain_boundary) const -> std::vector<Eigen::Triplet<double>> {
+    return operators::boundary_triplets(*this,offset,domain_boundary);
 }
 auto AdaptiveGrid::faces(const GridData3i &grid) const -> std::vector<Face> {
     auto myless = [](const Face &a, const Face &b) {

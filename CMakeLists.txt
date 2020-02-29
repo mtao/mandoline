@@ -54,12 +54,14 @@ SET(COMMON_SRCS
     #src/diffgeo_utils.cpp
     src/vertex.cpp
     src/domain_boundary.cpp
+    src/operators/boundary.cpp
     )
 
 
 SET(CUTMESH2_SRCS
     ${COMMON_SRCS}
     src/mesh2.cpp
+    src/operators/boundary2.cpp
     )
 SET(CUTMESH3_SRCS
     ${COMMON_SRCS}
@@ -69,7 +71,7 @@ SET(CUTMESH3_SRCS
     src/barycentric_triangle_face.cpp
     src/cutface.cpp
     src/adaptive_grid.cpp
-    src/operators/boundary.cpp
+    src/operators/boundary3.cpp
     src/operators/interpolation.cpp
     src/operators/masks.cpp
     src/operators/volume.cpp
@@ -94,6 +96,7 @@ SET(CUTMESH_HDRS
 SET(CUTMESH2_HDRS
     ${CUTMESH_HDRS}
     include/mandoline/mesh2.hpp
+    include/mandoline/operators/boundary2.hpp
     )
 SET(CUTMESH3_HDRS
     ${CUTMESH_HDRS}
@@ -103,7 +106,7 @@ SET(CUTMESH3_HDRS
     include/mandoline/barycentric_triangle_face.hpp
     include/mandoline/mesh3.hpp
     include/mandoline/cutcell.hpp
-    include/mandoline/operators/boundary.hpp
+    include/mandoline/operators/boundary3.hpp
     include/mandoline/operators/interpolation.hpp
     include/mandoline/operators/masks.hpp
     include/mandoline/operators/volume.hpp
