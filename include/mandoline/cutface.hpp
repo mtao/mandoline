@@ -92,6 +92,14 @@ struct CutFace<3> : public CutFaceBase<3> {
     using Base::mask;
     using Base::indices;
     using Base::Base;
+
+    template<typename Derived, typename VecType>
+    double solid_angle(const Eigen::MatrixBase<Derived> &V, const Eigen::MatrixBase<VecType> &v) const;
+
+    void serialize(protobuf::CutFace &face) const;
+    static CutFace<3> from_proto(const protobuf::CutFace &face);
+
+
     std::optional<mtao::ColVecs3d> triangulated_vertices;
     std::optional<mtao::ColVecs3i> triangulation;
 
@@ -101,11 +109,6 @@ struct CutFace<3> : public CutFaceBase<3> {
     template<typename Derived>
     double brep_volume(const Eigen::MatrixBase<Derived> &V, bool use_triangulation = false) const;
 
-    template<typename Derived, typename VecType>
-    double solid_angle(const Eigen::MatrixBase<Derived> &V, const Eigen::MatrixBase<VecType> &v) const;
-
-    void serialize(protobuf::CutFace &face) const;
-    static CutFace<3> from_proto(const protobuf::CutFace &face);
     mtao::ColVecs3i triangulate_fan() const;
     mtao::ColVecs3i triangulate_earclipping(const mtao::ColVecs2d &V) const;
     std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> triangulate_triangle(const mtao::ColVecs2d &V, bool add_vertices = false) const;
@@ -181,6 +184,23 @@ struct CutFace<2> : public CutFaceBase<2> {
     using Base::mask;
     using Base::indices;
     using Base::Base;
+
+    std::optional<mtao::ColVecs2d> triangulated_vertices;
+    std::optional<mtao::ColVecs3i> triangulation;
+
+    template<typename Derived>
+    mtao::Vec2d brep_centroid(const Eigen::MatrixBase<Derived> &V, bool use_triangulation = false) const;
+
+    template<typename Derived>
+    double brep_volume(const Eigen::MatrixBase<Derived> &V, bool use_triangulation = false) const;
+
+    mtao::ColVecs3i triangulate_fan() const;
+    mtao::ColVecs3i triangulate_earclipping(const mtao::ColVecs2d &V) const;
+    std::tuple<mtao::ColVecs2d, mtao::ColVecs3i> triangulate_triangle(const mtao::ColVecs2d &V, bool add_vertices = false) const;
+    std::tuple<mtao::ColVecs2d, mtao::ColVecs3i> triangulate(const mtao::ColVecs2d &V, bool add_vertices) const;
+    void cache_triangulation(const mtao::ColVecs3i &F);
+    void cache_triangulation(const mtao::ColVecs2d &V, const mtao::ColVecs3i &F);
+    void cache_triangulation(const std::array<mtao::ColVecs2d, 3> &V, bool add_verts);
 };
 
 }// namespace mandoline

@@ -79,7 +79,7 @@ auto CutCellMeshBase<D, Derived>::edge_volumes() const -> VecX {
     auto ceV = V.bottomRows(cut_edge_size());
     for (int i = 0; i < cut_edge_size(); ++i) {
         auto e = cut_edge(i);
-        ceV(i) = (vertex(e(1)) - vertex(e(0))).norm();
+        ceV(i) = (vertex(e.indices[1]) - vertex(e.indices[0])).norm();
     }
     return V;
 }

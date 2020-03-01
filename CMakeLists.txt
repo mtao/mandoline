@@ -62,6 +62,9 @@ SET(CUTMESH2_SRCS
     ${COMMON_SRCS}
     src/mesh2.cpp
     src/operators/boundary2.cpp
+    src/operators/interpolation2.cpp
+    src/operators/volume2.cpp
+    src/cutface2.cpp
     )
 SET(CUTMESH3_SRCS
     ${COMMON_SRCS}
@@ -69,7 +72,7 @@ SET(CUTMESH3_SRCS
     src/cutcell.cpp
     src/proto_util.cpp
     src/barycentric_triangle_face.cpp
-    src/cutface.cpp
+    src/cutface3.cpp
     src/adaptive_grid.cpp
     src/operators/boundary3.cpp
     src/operators/interpolation3.cpp

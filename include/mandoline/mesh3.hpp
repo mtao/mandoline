@@ -33,10 +33,10 @@ struct CutCellMesh<3> : public CutCellMeshBase<3, CutCellMesh<3>> {
 
     //Inherited edges() function doesn't take advantage of the staggered grid
     Edges edges() const;
-    const auto &faces() const { return m_faces; }
+    const std::vector<CutFace<3>>&faces() const { return m_faces; }
+    const std::vector<CutFace<3>>&cut_faces() const { return m_faces; }
     const auto &cells() const { return m_cells; }
     const AdaptiveGrid &adaptive_grid() const { return m_adaptive_grid; }
-    const mtao::ColVecs3d &origV() const { return m_origV; }
     const mtao::ColVecs3i &origF() const { return m_origF; }
     const mtao::map<int, BarycentricTriangleFace> &mesh_faces() const { return m_mesh_faces; }
 
@@ -155,7 +155,6 @@ struct CutCellMesh<3> : public CutCellMeshBase<3, CutCellMesh<3>> {
     mtao::map<int, BarycentricTriangleFace> m_mesh_faces;
 
     //Original mesh
-    mtao::ColVecs3d m_origV;
     mtao::ColVecs2i m_origE;
     mtao::ColVecs3i m_origF;
 

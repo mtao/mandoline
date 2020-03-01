@@ -115,13 +115,20 @@ struct CutCellMeshBase : public mtao::geometry::grid::StaggeredGrid<double, D> {
     Vec get_world_vertex(const Vertex &p) const;
 
     const std::vector<Vertex> &cut_vertices() const { return m_cut_vertices; }
+    const Vertex &cut_vertex(size_t idx) const { return m_cut_vertices.at(idx); }
 
     const GridDatab &active_grid_cell_mask() const { return m_active_grid_cell_mask; }
     const std::vector<CutEdge<D>> &cut_edges() const { return m_cut_edges; }
     Edges cut_edges_eigen() const;
+    const ColVecs &origV() const { return m_origV; }
+    const mtao::ColVecs2i &origE() const { return m_origE; }
+    const mtao::map<int, InterpolatedEdge> &mesh_edges() const { return m_mesh_edges; }
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   protected:
+    //Original mesh
+    ColVecs m_origV;
+    mtao::ColVecs2i m_origE;
     std::vector<Vertex> m_cut_vertices;
 
     GridDatab m_active_grid_cell_mask;

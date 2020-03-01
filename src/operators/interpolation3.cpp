@@ -11,7 +11,7 @@ Eigen::SparseMatrix<double> barycentric_matrix(const CutCellMesh<3> &ccm) {
     std::vector<Eigen::Triplet<double>> trips;
     std::map<std::array<int, 2>, double> mp;
     for (auto &&[fid, btf] : ccm.mesh_faces()) {
-        auto t = btf.sparse_matrix_entries(ccm.faces()[fid], ccm.origF());
+        auto t = btf.sparse_matrix_entries(ccm.cut_faces()[fid], ccm.origF());
         std::copy(t.begin(), t.end(), std::inserter(mp, mp.end()));
     }
     trips.reserve(mp.size());
@@ -31,7 +31,7 @@ Eigen::SparseMatrix<double> face_barycentric_volume_matrix(const CutCellMesh<3> 
     int face_size = 0;
     //artifact from before i passed in m_origF
     if (ccm.origF().size() == 0) {
-        for (auto &&f : ccm.faces()) {
+        for (auto &&f : ccm.cut_faces()) {
             if (f.is_mesh_face()) {
                 face_size = std::max<int>(face_size, f.as_face_id());
             }
@@ -86,7 +86,7 @@ Eigen::SparseMatrix<double> trilinear_matrix(const CutCellMesh<3> &ccm) {
 }
 //grid face -> cut face
 Eigen::SparseMatrix<double> face_grid_volume_matrix(const CutCellMesh<3> &ccm) {
-    auto trips = ccm.adaptive_grid().grid_face_projection(ccm.faces().size());
+    auto trips = ccm.adaptive_grid().grid_face_projection(ccm.cut_faces().size());
     auto FV = ccm.face_volumes();
     auto &dx = ccm.dx();
     mtao::Vec3d gfv;
@@ -98,7 +98,7 @@ Eigen::SparseMatrix<double> face_grid_volume_matrix(const CutCellMesh<3> &ccm) {
         const int row = t.row();
         const int col = t.col();
     }
-    for (auto &&[i, face] : mtao::iterator::enumerate(ccm.faces())) {
+    for (auto &&[i, face] : mtao::iterator::enumerate(ccm.cut_faces())) {
         if (face.count() == 1) {
             int axis = face.bound_axis();
             constexpr static int maxval = std::numeric_limits<int>::max();

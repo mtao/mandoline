@@ -84,4 +84,31 @@ mtao::VecXd ExteriorGrid<D>::face_volumes(bool mask_boundary) const {
     }
     return R;
 }
+
+template <int D>
+std::vector<Eigen::Triplet<double>> ExteriorGrid<D>::boundary_facet_to_staggered_grid(int offset) const {
+    std::vector<Eigen::Triplet<double>> trips;
+    trips.reserve(boundary_facet_pairs().size());
+    for(auto&& [row,pr,axis]: mtao::iterator::enumerate(boundary_facet_pairs(), boundary_facet_axes())) {
+        auto [ai,bi] = pr;
+        auto a = cell_coord(ai);
+        auto b = cell_coord(bi);
+        assert(b[axis] - 1 == a[axis]);
+        int col = Base::template staggered_index<D-1>(b,axis);
+        trips.emplace_back(row,col,1);
+    }
+    return trips;
+}
+template <int D>
+mtao::VecXd ExteriorGrid<D>::boundary_facet_volumes() const {
+    auto& A = boundary_facet_axes();
+    mtao::VecXd ret(A.size());
+    auto vols = Base::template form_volumes<D-1>();
+
+    for(auto&& [row,axis]: mtao::iterator::enumerate(boundary_facet_axes())) {
+        ret(row) = vols[axis];
+    }
+    return ret;
+}
+
 }// namespace mandoline

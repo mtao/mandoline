@@ -43,8 +43,5 @@ struct CutCellMesh<2> : public CutCellMeshBase<2, CutCellMesh<2>> {
     std::map<Edge, int> edge_vertices_to_edge_index;
     VecX active_cell_mask;
 
-    //Original mesh
-    mtao::ColVecs2d m_origV;
-    mtao::ColVecs2i m_origE;
 };
 }// namespace mandoline

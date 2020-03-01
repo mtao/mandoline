@@ -10,8 +10,8 @@ Eigen::SparseMatrix<double> barycentric_matrix(const CutCellMesh<2> &ccm) {
     Eigen::SparseMatrix<double> A(ccm.vertex_size(), ccm.origV().cols());
     std::vector<Eigen::Triplet<double>> trips;
     std::map<std::array<int, 2>, double> mp;
-    for (auto &&[fid, btf] : ccm.mesh_faces()) {
-        auto t = btf.sparse_entries(ccm.faces()[fid], ccm.origF());
+    for (auto &&[eid, btf] : ccm.mesh_edges()) {
+        auto t = btf.sparse_matrix_entries(ccm.cut_edges()[eid], ccm.origE());
         std::copy(t.begin(), t.end(), std::inserter(mp, mp.end()));
     }
     trips.reserve(mp.size());
@@ -27,24 +27,24 @@ Eigen::SparseMatrix<double> barycentric_matrix(const CutCellMesh<2> &ccm) {
 }
 
 //mesh face -> cut face
-Eigen::SparseMatrix<double> face_barycentric_volume_matrix(const CutCellMesh<2> &ccm) {
-    int face_size = 0;
+Eigen::SparseMatrix<double> edge_barycentric_volume_matrix(const CutCellMesh<2> &ccm) {
+    int edge_size = 0;
     //artifact from before i passed in m_origF
-    if (ccm.origF().size() == 0) {
-        for (auto &&f : ccm.faces()) {
-            if (f.is_mesh_face()) {
-                face_size = std::max<int>(face_size, f.as_face_id());
+    if (ccm.origE().size() == 0) {
+        for (auto &&f : ccm.cut_edges()) {
+            if (f.is_mesh_edge()) {
+                edge_size = std::max<int>(edge_size, f.as_edge_id());
             }
         }
-        face_size++;
+        edge_size++;
     } else {
-        face_size = ccm.origF().cols();
+        edge_size = ccm.origE().cols();
     }
-    Eigen::SparseMatrix<double> A(ccm.face_size(), face_size);
+    Eigen::SparseMatrix<double> A(ccm.edge_size(), edge_size);
     std::vector<Eigen::Triplet<double>> trips;
-    for (auto &&[fid, btf] : ccm.mesh_faces()) {
-        double vol = btf.volume() * 2;//proportion of 2 is required because barycentric coordinates live in a unit triangle
-        trips.emplace_back(fid, btf.parent_fid, vol);
+    for (auto &&[eid, btf] : ccm.mesh_edges()) {
+        double vol = btf.volume() * 2;
+        trips.emplace_back(eid, btf.parent_eid, vol);
     }
     A.setFromTriplets(trips.begin(), trips.end());
     //for(int i = 0; i < A.cols(); ++i) {
@@ -56,7 +56,7 @@ Eigen::SparseMatrix<double> face_barycentric_volume_matrix(const CutCellMesh<2> 
 Eigen::SparseMatrix<double> trilinear_matrix(const CutCellMesh<2> &ccm) {
     Eigen::SparseMatrix<double> A(ccm.vertex_size(), ccm.StaggeredGrid::vertex_size());
     std::vector<Eigen::Triplet<double>> trips;
-    trips.reserve(ccm.StaggeredGrid::vertex_size() + 8 * ccm.cut_vertex_size());
+    trips.reserve(ccm.StaggeredGrid::vertex_size() + 4 * ccm.cut_vertex_size());
 
     //emplace the identity map for grid vertices
     for (int i = 0; i < ccm.StaggeredGrid::vertex_size(); ++i) {
@@ -73,11 +73,7 @@ Eigen::SparseMatrix<double> trilinear_matrix(const CutCellMesh<2> &ccm) {
             for (int j = 0; j < 2; ++j) {
                 a[1] = v.coord[1] + j;
                 double vij = vi * (j == 0 ? (1 - v.quot(1)) : v.quot(1));
-                for (int k = 0; k < 2; ++k) {
-                    a[2] = v.coord[2] + k;
-                    double vijk = vij * (k == 0 ? (1 - v.quot(2)) : v.quot(2));
-                    trips.emplace_back(index, ccm.vertex_index(a), vijk);
-                }
+                trips.emplace_back(index, ccm.vertex_index(a), vij);
             }
         }
     }
@@ -85,35 +81,20 @@ Eigen::SparseMatrix<double> trilinear_matrix(const CutCellMesh<2> &ccm) {
     return A;
 }
 //grid face -> cut face
-Eigen::SparseMatrix<double> face_grid_volume_matrix(const CutCellMesh<2> &ccm) {
-    auto trips = ccm.adaptive_grid().grid_face_projection(ccm.faces().size());
-    auto FV = ccm.face_volumes();
-    auto &dx = ccm.dx();
-    mtao::Vec2d gfv;
-    gfv(0) = dx(1) * dx(2);
-    gfv(1) = dx(0) * dx(2);
-    gfv(2) = dx(0) * dx(1);
-    Eigen::SparseMatrix<double> A(ccm.face_size(), ccm.form_size<2>());
-    for (auto &&t : trips) {
-        const int row = t.row();
-        const int col = t.col();
-    }
-    for (auto &&[i, face] : mtao::iterator::enumerate(ccm.faces())) {
-        if (face.count() == 1) {
-            int axis = face.bound_axis();
-            constexpr static int maxval = std::numeric_limits<int>::max();
-            coord_type c{ { maxval, maxval, maxval } };
-            for (auto &&ind : face.indices) {
-                for (auto &&i : ind) {
-                    auto v = ccm.masked_vertex(i).coord;
-                    for (auto &&[a, b] : mtao::iterator::zip(c, v)) {
-                        a = std::min(a, b);
-                    }
-                }
-            }
+Eigen::SparseMatrix<double> edge_grid_volume_matrix(const CutCellMesh<2> &ccm) {
+    auto trips = ccm.exterior_grid.boundary_facet_to_staggered_grid(ccm.cut_edges().size());
+    auto EV = ccm.edge_volumes();
+    double vol = ccm.dx().prod();
+    Eigen::SparseMatrix<double> A(ccm.edge_size(), ccm.form_size<1>());
+
+    for (auto &&[i, edge] : mtao::iterator::enumerate(ccm.cut_edges())) {
+        // extract the lowest coordinate 
+        if(edge.count() == 1) {
+            int axis = edge.bound_axis();
+            coord_type c = edge.get_min_coord(ccm.cut_vertices());
             const int row = i;
-            const int col = ccm.staggered_index<2>(c, axis);
-            double value = FV(i) / gfv(axis) * face.N(axis);//face.N(axis) should be a unit vector either facing up or down....
+            const int col = ccm.StaggeredGrid::staggered_index<2>(c, axis);
+            double value = EV(i) / vol;//face.N(axis) should be a unit vector either facing up or down....
             trips.emplace_back(row, col, value);
         }
     }
