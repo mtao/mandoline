@@ -11,9 +11,9 @@
 #include <igl/winding_number.h>
 #include "mandoline/diffgeo_utils.hpp"
 #include "mandoline/proto_util.hpp"
-#include "mandoline/operators/interpolation.hpp"
+#include "mandoline/operators/interpolation3.hpp"
 #include "mandoline/operators/boundary3.hpp"
-#include "mandoline/operators/volume.hpp"
+#include "mandoline/operators/volume3.hpp"
 #include "mandoline/operators/masks.hpp"
 
 

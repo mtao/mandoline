@@ -147,6 +147,13 @@ struct EdgeIntersections : public IntersectionsBase<D, EdgeIntersections<D>> {
         coord_mask<D>::clamp(is);
         return is;
     }
+    double get_coord(const VType& v) const {
+        Vec a = vptr_edge[0]->p();
+        Vec b = vptr_edge[1]->p();
+        Vec ba = (b-a).eval();
+        return (v.p() - a).dot(ba) / ba.squaredNorm();
+    }
+
     std::set<VPtrEdge> vptr_edges() const {
         std::set<VPtrEdge> ret;
         auto gv = gvertices();

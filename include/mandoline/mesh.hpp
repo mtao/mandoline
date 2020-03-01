@@ -14,10 +14,10 @@
 #include <mtao/geometry/grid/grid_data.hpp>
 #include <mtao/geometry/grid/staggered_grid.hpp>
 #include <mtao/eigen/stack.h>
-#include "mandoline/barycentric_triangle_face.hpp"
 #include "mandoline/vertex.hpp"
 #include "mandoline/cutedge.hpp"
 #include "mandoline/cutface.hpp"
+#include "mandoline/interpolated_edge.hpp"
 
 namespace mandoline {
 namespace construction {
@@ -126,6 +126,7 @@ struct CutCellMeshBase : public mtao::geometry::grid::StaggeredGrid<double, D> {
 
     GridDatab m_active_grid_cell_mask;
     std::vector<CutEdge<D>> m_cut_edges;
+    std::map<int, InterpolatedEdge> m_mesh_edges;
 };
 template<int D>
 struct CutCellMesh;

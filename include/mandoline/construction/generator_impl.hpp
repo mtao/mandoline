@@ -9,6 +9,7 @@
 #include <iterator>
 #include <algorithm>
 #include "mandoline/construction/cutdata.hpp"
+#include "mandoline/interpolated_edge.hpp"
 #include <spdlog/spdlog.h>
 
 namespace mandoline::construction {
@@ -809,6 +810,20 @@ CutCellMesh<D> CutCellEdgeGenerator<D>::generate_edges() const {
     } else {
         std::copy(m_cut_edges.begin(), m_cut_edges.end(), std::back_inserter(ret.m_cut_edges));
         std::copy(m_grid_edges.begin(), m_grid_edges.end(), std::back_inserter(ret.m_cut_edges));
+    }
+
+    for(auto&& [eidx, ce]: mtao::iterator::enumerate(m_cut_edges)) {
+
+        mtao::Vec2d ts;
+        for(auto&& [i,vi,t]: mtao::iterator::enumerate(ce.indices,mtao::iterator::shell(ts.data(),ts.data()+ts.size()))) {
+
+            if(vi < grid_vertex_size()) {
+                t = data().get_edge_coord(ce.parent_eid,grid_vertex(vi));
+            } else {
+                t = data().get_edge_coord(ce.parent_eid,crossing(vi));
+            }
+        }
+        ret.m_mesh_edges[eidx] = InterpolatedEdge{ ts, ce.parent_eid };
     }
     return ret;
 }

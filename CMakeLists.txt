@@ -72,9 +72,9 @@ SET(CUTMESH3_SRCS
     src/cutface.cpp
     src/adaptive_grid.cpp
     src/operators/boundary3.cpp
-    src/operators/interpolation.cpp
+    src/operators/interpolation3.cpp
     src/operators/masks.cpp
-    src/operators/volume.cpp
+    src/operators/volume3.cpp
     )
 
 
@@ -107,9 +107,9 @@ SET(CUTMESH3_HDRS
     include/mandoline/mesh3.hpp
     include/mandoline/cutcell.hpp
     include/mandoline/operators/boundary3.hpp
-    include/mandoline/operators/interpolation.hpp
+    include/mandoline/operators/interpolation3.hpp
     include/mandoline/operators/masks.hpp
-    include/mandoline/operators/volume.hpp
+    include/mandoline/operators/volume3.hpp
     )
 
 SET(CONSTRUCTION_SRCS

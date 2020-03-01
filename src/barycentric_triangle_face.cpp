@@ -2,7 +2,7 @@
 #include <iostream>
 #include <mtao/geometry/volume.h>
 namespace mandoline {
-std::map<std::array<int, 2>, double> BarycentricTriangleFace::sparse_entries(const std::vector<int> &indices, const mtao::ColVecs3i &F) const {
+std::map<std::array<int, 2>, double> BarycentricTriangleFace::sparse_matrix_entries(const std::vector<int> &indices, const mtao::ColVecs3i &F) const {
     auto f = F.col(parent_fid);
     std::map<std::array<int, 2>, double> ret;
     assert(indices.size() == barys.cols());

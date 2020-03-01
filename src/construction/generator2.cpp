@@ -6,6 +6,7 @@
 namespace mandoline::construction {
 template<>
 CutCellMesh<2> CutCellEdgeGenerator<2>::generate() const {
+
     return generate_edges();
 }
 

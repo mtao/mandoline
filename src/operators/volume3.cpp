@@ -1,5 +1,5 @@
-#include "mandoline/operators/volume.hpp"
-#include "mandoline/operators/interpolation.hpp"
+#include "mandoline/operators/volume3.hpp"
+#include "mandoline/operators/interpolation3.hpp"
 
 
 namespace mandoline::operators {

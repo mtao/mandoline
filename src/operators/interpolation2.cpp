@@ -1,12 +1,12 @@
-#include "mandoline/operators/interpolation.hpp"
+#include "mandoline/operators/interpolation2.hpp"
 
 
 namespace mandoline::operators {
-using coord_type = CutCellMesh<3>::coord_type;
+using coord_type = CutCellMesh<2>::coord_type;
 
 
 //mesh vertex -> cut vertex
-Eigen::SparseMatrix<double> barycentric_matrix(const CutCellMesh<3> &ccm) {
+Eigen::SparseMatrix<double> barycentric_matrix(const CutCellMesh<2> &ccm) {
     Eigen::SparseMatrix<double> A(ccm.vertex_size(), ccm.origV().cols());
     std::vector<Eigen::Triplet<double>> trips;
     std::map<std::array<int, 2>, double> mp;
@@ -27,7 +27,7 @@ Eigen::SparseMatrix<double> barycentric_matrix(const CutCellMesh<3> &ccm) {
 }
 
 //mesh face -> cut face
-Eigen::SparseMatrix<double> face_barycentric_volume_matrix(const CutCellMesh<3> &ccm) {
+Eigen::SparseMatrix<double> face_barycentric_volume_matrix(const CutCellMesh<2> &ccm) {
     int face_size = 0;
     //artifact from before i passed in m_origF
     if (ccm.origF().size() == 0) {
@@ -53,7 +53,7 @@ Eigen::SparseMatrix<double> face_barycentric_volume_matrix(const CutCellMesh<3> 
     return A;
 }
 //grid vertex -> cut vertex
-Eigen::SparseMatrix<double> trilinear_matrix(const CutCellMesh<3> &ccm) {
+Eigen::SparseMatrix<double> trilinear_matrix(const CutCellMesh<2> &ccm) {
     Eigen::SparseMatrix<double> A(ccm.vertex_size(), ccm.StaggeredGrid::vertex_size());
     std::vector<Eigen::Triplet<double>> trips;
     trips.reserve(ccm.StaggeredGrid::vertex_size() + 8 * ccm.cut_vertex_size());
@@ -85,11 +85,11 @@ Eigen::SparseMatrix<double> trilinear_matrix(const CutCellMesh<3> &ccm) {
     return A;
 }
 //grid face -> cut face
-Eigen::SparseMatrix<double> face_grid_volume_matrix(const CutCellMesh<3> &ccm) {
+Eigen::SparseMatrix<double> face_grid_volume_matrix(const CutCellMesh<2> &ccm) {
     auto trips = ccm.adaptive_grid().grid_face_projection(ccm.faces().size());
     auto FV = ccm.face_volumes();
     auto &dx = ccm.dx();
-    mtao::Vec3d gfv;
+    mtao::Vec2d gfv;
     gfv(0) = dx(1) * dx(2);
     gfv(1) = dx(0) * dx(2);
     gfv(2) = dx(0) * dx(1);

@@ -222,7 +222,7 @@ void CutData<D, Indexer>::bake(const std::optional<SGType> &grid, bool fuse) {
 }
 
 template<int D, typename Indexer>
-auto CutData<D, Indexer>::get_bary(int face_index, const Crossing<D> &crossing) const -> mtao::Vec3d {
+auto CutData<D, Indexer>::get_face_bary(int face_index, const Crossing<D> &crossing) const -> mtao::Vec3d {
     static_assert(D == 3);
     auto &FI = m_triangle_intersections[face_index];
     return std::visit(
@@ -246,6 +246,28 @@ auto CutData<D, Indexer>::get_bary(int face_index, const Crossing<D> &crossing) 
       crossing.vv);
 }
 
+template<int D, typename Indexer>
+double CutData<D, Indexer>::get_edge_coord(int edge_index, const Crossing<D> &crossing) const {
+    auto &EI = m_edge_intersections[edge_index];
+    return std::visit(
+      [&](auto &&v) -> double {
+          using T = typename std::decay_t<decltype(v)>;
+          if constexpr (std::is_same_v<T, VType const *>) {
+              //try to find it on the vertices
+              for (auto &&[i, ptr] : mtao::iterator::enumerate(EI.vptr_edge)) {
+                  if (ptr == v) {
+                  // i == 0 => 1; i == 1 => 0
+                      return i;
+                  }
+              }
+          } else if constexpr (std::is_same_v<T, EdgeIsect const *>) {
+              auto &&EI = m_edge_intersections[v->edge_index];
+              return v->edge_coord;
+          }
+          return EI.get_coord(*v);
+      },
+      crossing.vv);
+}
 
 template<int D, typename Indexer>
 auto CutData<D, Indexer>::cut_vertices() const -> ColVecs {

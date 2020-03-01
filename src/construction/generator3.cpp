@@ -57,20 +57,23 @@ CutCellMesh<3> CutCellGenerator<3>::generate() const {
     for (auto &&[i, f] : m_faces) {
         ccm.m_faces[reindexer.at(i)] = f;
     }
+
+    // reindex a full set of indices
     auto redx = [&](const std::set<int> &i) {
         std::set<int> ret;
         std::transform(i.begin(), i.end(), std::inserter(ret, ret.end()), [&](int idx) -> int { return reindexer.at(idx); });
         return ret;
     };
+
     for (auto &&mfi : mesh_face_indices) {
         int idx = reindexer.at(mfi);
         auto &&cutface = m_cut_faces[mfi];
         mtao::ColVecs3d B(3, cutface.size());
         for (auto &&[idx, i] : mtao::iterator::enumerate(cutface.indices)) {
             if (i < grid_vertex_size()) {
-                B.col(idx) = data().get_bary(cutface.parent_fid, grid_vertex(i));
+                B.col(idx) = data().get_face_bary(cutface.parent_fid, grid_vertex(i));
             } else {
-                B.col(idx) = data().get_bary(cutface.parent_fid, crossing(i));
+                B.col(idx) = data().get_face_bary(cutface.parent_fid, crossing(i));
             }
         }
         ccm.m_mesh_faces[idx] = BarycentricTriangleFace{ std::move(B), cutface.parent_fid };

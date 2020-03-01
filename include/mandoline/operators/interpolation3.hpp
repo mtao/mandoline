@@ -12,5 +12,4 @@ Eigen::SparseMatrix<double> trilinear_matrix(const CutCellMesh<3> &ccm);
 //grid face -> cut face
 Eigen::SparseMatrix<double> face_grid_volume_matrix(const CutCellMesh<3> &ccm);
 
-std::set<int> grid_boundary_faces(const CutCellMesh<3> &ccm);//for removing mesh faces
 }// namespace mandoline::operators

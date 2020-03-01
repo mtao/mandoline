@@ -1,5 +1,6 @@
 #pragma once
 #include "mandoline/cutcell.hpp"
+#include "mandoline/barycentric_triangle_face.hpp"
 #include "mesh.hpp"
 namespace mandoline {
 namespace construction {
@@ -150,7 +151,7 @@ struct CutCellMesh<3> : public CutCellMeshBase<3, CutCellMesh<3>> {
     std::vector<CutCell> m_cells;
     AdaptiveGrid m_adaptive_grid;
 
-    //support for mapping
+    // a map from cut-faces to their intrinsic representation on a mesh face
     mtao::map<int, BarycentricTriangleFace> m_mesh_faces;
 
     //Original mesh

@@ -93,7 +93,10 @@ struct CutData : public Indexer_ {
 
     std::map<std::vector<int>, int> triangle_index_ownership() const;
     std::map<Edge, int> edge_index_ownership() const;
-    mtao::Vec3d get_bary(int face_index, const Crossing<D> &crossing) const;
+    // get the barycentric coordinates of a crossing along an edge
+    mtao::Vec3d get_face_bary(int face_index, const Crossing<D> &crossing) const;
+    // get the coordinate over an edge
+    double get_edge_coord(int edge_index, const Crossing<D> &crossing) const;
 
 
     int index(const VType *v) const { return m_vertex_indexer.at(v); }
