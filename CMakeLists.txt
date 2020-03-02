@@ -64,6 +64,7 @@ SET(CUTMESH2_SRCS
     src/operators/boundary2.cpp
     src/operators/interpolation2.cpp
     src/operators/volume2.cpp
+    src/operators/diffgeo2.cpp
     src/cutface2.cpp
     )
 SET(CUTMESH3_SRCS
@@ -75,6 +76,7 @@ SET(CUTMESH3_SRCS
     src/cutface3.cpp
     src/adaptive_grid.cpp
     src/operators/boundary3.cpp
+    src/operators/diffgeo3.cpp
     src/operators/interpolation3.cpp
     src/operators/masks.cpp
     src/operators/volume3.cpp
