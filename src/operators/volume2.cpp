@@ -2,6 +2,7 @@
 #include "mandoline/operators/interpolation2.hpp"
 #include "mandoline/operators/volume_impl.hpp"
 
+#include <iostream>
 
 namespace mandoline::operators {
 
@@ -41,11 +42,12 @@ mtao::VecXd edge_lengths(const CutCellMesh<2> &ccm) {
         for (auto &&[i, e] : mtao::iterator::enumerate(ccm.cut_edges())) {
             if (e.is_axial_edge()) {
                 auto [dim, coord] = e.as_axial_id();
-                auto a = ccm.cut_vertex(e.indices[0]);
-                auto b = ccm.cut_vertex(e.indices[1]);
-                int coff = a.coord[dim] - b.coord[dim];
+                dim = 1 - dim;// reverse the dim to be the unbound axis
+                auto a = ccm.masked_vertex(e.indices[0]);
+                auto b = ccm.masked_vertex(e.indices[1]);
+                int coff = b.coord[dim] - a.coord[dim];
 
-                EV(i) = ccm.dx()(dim) * ((a.quot - b.quot)(dim) + coff);
+                EV(i) = ccm.dx()(dim) * ((b.quot - a.quot)(dim) + coff);
             }
             if (!std::isfinite(EV(i))) {
                 EV(i) = 0;
@@ -68,7 +70,7 @@ mtao::VecXd dual_edge_lengths(const CutCellMesh<2> &ccm) {
                 DL(i) = ccm.dx()(axis);
             }
         }
-        return mtao::eigen::vstack(DL, face_volumes(ccm.exterior_grid));
+        return mtao::eigen::vstack(DL, boundary_facet_volumes(ccm.exterior_grid));
     } else {
         return face_volumes(ccm.exterior_grid);
     }

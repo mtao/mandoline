@@ -22,6 +22,9 @@ ADD_CATCHTEST(2d_boundary
     2d_boundary_test.cpp
     )
 
+ADD_CATCHTEST(diffgeo
+    diffgeo_tests.cpp
+    )
 
 # not real tests, just binaries for testing functionality
 

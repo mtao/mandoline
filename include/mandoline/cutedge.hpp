@@ -124,4 +124,4 @@ struct CutEdge<3> : public CutEdgeBase<3> {
 }// namespace mandoline
 
 
-#include "mandoline/cutface_impl.hpp"
+#include "mandoline/cutedge_impl.hpp"

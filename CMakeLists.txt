@@ -55,6 +55,7 @@ SET(COMMON_SRCS
     src/vertex.cpp
     src/domain_boundary.cpp
     src/operators/boundary.cpp
+    src/interpolated_edge.cpp
     )
 
 
@@ -95,6 +96,8 @@ SET(CUTMESH_HDRS
     include/mandoline/adaptive_grid.hpp
     include/mandoline/exterior_grid.hpp
     include/mandoline/exterior_grid_impl.hpp
+    include/mandoline/cutedge.hpp
+    include/mandoline/cutedge_impl.hpp
     $<TARGET_OBJECTS:cutmesh_proto>
     )
 

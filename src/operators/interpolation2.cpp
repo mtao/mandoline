@@ -43,7 +43,7 @@ Eigen::SparseMatrix<double> edge_barycentric_volume_matrix(const CutCellMesh<2> 
     Eigen::SparseMatrix<double> A(ccm.edge_size(), edge_size);
     std::vector<Eigen::Triplet<double>> trips;
     for (auto &&[eid, btf] : ccm.mesh_edges()) {
-        double vol = btf.volume() * 2;
+        double vol = btf.volume();
         trips.emplace_back(eid, btf.parent_eid, vol);
     }
     A.setFromTriplets(trips.begin(), trips.end());
@@ -88,8 +88,8 @@ Eigen::SparseMatrix<double> edge_grid_volume_matrix(const CutCellMesh<2> &ccm) {
     Eigen::SparseMatrix<double> A(ccm.edge_size(), ccm.form_size<1>());
 
     for (auto &&[i, edge] : mtao::iterator::enumerate(ccm.cut_edges())) {
-        // extract the lowest coordinate 
-        if(edge.count() == 1) {
+        // extract the lowest coordinate
+        if (edge.count() == 1) {
             int axis = edge.bound_axis();
             coord_type c = edge.get_min_coord(ccm.cut_vertices());
             const int row = i;
