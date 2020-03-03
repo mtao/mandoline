@@ -5,6 +5,7 @@
 #include <mandoline/operators/diffgeo2.hpp>
 #include <mandoline/operators/volume2.hpp>
 #include <iterator>
+#include <random>
 
 using E = std::array<int, 2>;
 using namespace mandoline::construction;
@@ -32,22 +33,70 @@ TEST_CASE("2D", "[boundary,exterior_grid]") {
 
 
     {
-        std::cout << mandoline::operators::edge_lengths(ccm).transpose() << std::endl;
-        std::cout << mandoline::operators::dual_edge_lengths(ccm).transpose() << std::endl;
-        std::cout << mandoline::operators::dual_hodge1(ccm).transpose() << std::endl;
-        auto D = mandoline::operators::divergence(ccm);
-        auto L = mandoline::operators::laplacian(ccm);
-        std::cout << "Divergence: \n"
-                  << D << std::endl;
-        std::cout << "Laplacian: \n"
-                  << L << std::endl;
+        //std::cout << mandoline::operators::edge_lengths(ccm).transpose() << std::endl;
+        //std::cout << mandoline::operators::dual_edge_lengths(ccm).transpose() << std::endl;
+        //std::cout << mandoline::operators::dual_hodge1(ccm).transpose() << std::endl;
+        Eigen::SparseMatrix<double> D = mandoline::operators::divergence(ccm);
+        Eigen::SparseMatrix<double> L = mandoline::operators::laplacian(ccm);
+        //std::cout << "Divergence: \n"
+        //          << D << std::endl;
+        //std::cout << "Laplacian: \n"
+        //          << L << std::endl;
 
         Eigen::MatrixXd LL = L;
         Eigen::MatrixXd LSL = LL - LL.transpose();
         Eigen::VectorXd B = L * Eigen::VectorXd::Ones(L.cols());
 
-        std::cout << B.transpose() << std::endl;
         REQUIRE((LSL).norm() == Approx(0));
         REQUIRE(B.norm() == Approx(0));
+
+        std::mt19937 gen(0);
+        std::uniform_real_distribution<> dis(-10., 10.);
+
+
+        // some example pressure solves
+        for (int k = 0; k < 50; ++k) {
+            mtao::VecXd u(ccm.num_edges());
+            for (auto &&[eidx, edge] : mtao::iterator::enumerate(ccm.cut_edges())) {
+                if (edge.is_axial_edge()) {
+                    u(eidx) = dis(gen);
+                } else {// boundary faces are not allowed to emit anything
+                    u(eidx) = 0;
+                }
+            }
+            for (auto &&[idx, bfp] : mtao::iterator::enumerate(ccm.exterior_grid.boundary_facet_pairs())) {
+                if (!ccm.exterior_grid.is_boundary_facet(idx)) {
+                    u(idx + ccm.cut_edges().size()) = dis(gen);
+                } else {
+                    u(idx + ccm.cut_edges().size()) = 0;// grid domain boundaries are not allowed to emit anything
+                }
+            }
+
+            mtao::VecXd b = D * u;
+            //Eigen::ConjugateGradient<Eigen::SparseMatrix<double>, Eigen::Lower | Eigen::Upper, Eigen::IncompleteCholesky<double, Eigen::Upper | Eigen::Lower>> cg;
+            //Eigen::ConjugateGradient<Eigen::SparseMatrix<double>, Eigen::Lower, Eigen::IncompleteCholesky<double>> cg;
+            Eigen::ConjugateGradient<Eigen::SparseMatrix<double>, Eigen::Lower> cg;
+            cg.compute(L);
+            mtao::VecXd x = cg.solve(b);
+            REQUIRE(cg.info() == Eigen::Success);
+            //switch (cg.info()) {
+            //case Eigen::Success:
+            //    std::cout << "Success" << std::endl;
+            //    break;
+            //case Eigen::NumericalIssue:
+            //    std::cout << "NumericalIssue" << std::endl;
+            //    break;
+            //case Eigen::NoConvergence:
+            //    std::cout << "NoConvergence" << std::endl;
+            //    break;
+            //case Eigen::InvalidInput:
+            //    std::cout << "InvalidInput" << std::endl;
+            //    break;
+            //}
+
+            mtao::VecXd pg = ccm.boundary(false) * x;
+            double err = (D * (u - pg)).norm();
+            REQUIRE(err == Approx(0.).margin(1e-6));
+        }
     }
 }
