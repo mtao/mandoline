@@ -1,4 +1,6 @@
 #include "mandoline/operators/interpolation2.hpp"
+#include "mandoline/operators/volume2.hpp"
+#include <iostream>
 
 
 namespace mandoline::operators {
@@ -40,7 +42,7 @@ Eigen::SparseMatrix<double> edge_barycentric_volume_matrix(const CutCellMesh<2> 
     } else {
         edge_size = ccm.origE().cols();
     }
-    Eigen::SparseMatrix<double> A(ccm.edge_size(), edge_size);
+    Eigen::SparseMatrix<double> A(ccm.num_edges(), edge_size);
     std::vector<Eigen::Triplet<double>> trips;
     for (auto &&[eid, btf] : ccm.mesh_edges()) {
         double vol = btf.volume();
@@ -83,21 +85,29 @@ Eigen::SparseMatrix<double> trilinear_matrix(const CutCellMesh<2> &ccm) {
 //grid face -> cut face
 Eigen::SparseMatrix<double> edge_grid_volume_matrix(const CutCellMesh<2> &ccm) {
     auto trips = ccm.exterior_grid.boundary_facet_to_staggered_grid(ccm.cut_edges().size());
-    auto EV = ccm.edge_volumes();
+    auto EV = edge_lengths(ccm);
     double vol = ccm.dx().prod();
-    Eigen::SparseMatrix<double> A(ccm.edge_size(), ccm.form_size<1>());
+    Eigen::SparseMatrix<double> A(ccm.num_edges(), ccm.form_size<1>());
 
-    for (auto &&[i, edge] : mtao::iterator::enumerate(ccm.cut_edges())) {
+    for (auto &&[row, edge] : mtao::iterator::enumerate(ccm.cut_edges())) {
+        //std::cout << "CE: " << row << "/" << ccm.cut_edges().size() << std::endl;
         // extract the lowest coordinate
         if (edge.count() == 1) {
-            int axis = edge.bound_axis();
-            coord_type c = edge.get_min_coord(ccm.cut_vertices());
-            const int row = i;
-            const int col = ccm.StaggeredGrid::staggered_index<2>(c, axis);
-            double value = EV(i) / vol;//face.N(axis) should be a unit vector either facing up or down....
+            int axis = edge.unbound_axis();
+            auto [a, b] = edge.indices;
+            auto A = ccm.masked_vertex(a);
+            auto B = ccm.masked_vertex(b);
+            coord_type c = edge.get_min_coord([&](int idx) { return ccm.masked_vertex(idx).coord; });
+            const int col = ccm.StaggeredGrid::staggered_index<1>(c, axis);
+            double value = EV(row) / vol;//face.N(axis) should be a unit vector either facing up or down....
+            //std::cout << "Entry: " << row << "," << col << ": " << value<< std::endl;
             trips.emplace_back(row, col, value);
         }
     }
+    //std::cout << "Full triplets" << std::endl;
+    //for(auto&& t: trips) {
+    //    std::cout << t.row() << "," << t.col() << "=" << t.value() << "/" << A.rows() << "," << A.cols() << std::endl;
+    //}
     A.setFromTriplets(trips.begin(), trips.end());
     //mtao::VecXd sums = A * mtao::VecXd::Zero(A.cols());
     //sums = (sums.array().abs() > 1e-10).select(1.0 / sums.array(), 0);

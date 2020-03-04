@@ -72,31 +72,44 @@ TEST_CASE("2D", "[boundary,exterior_grid]") {
                 }
             }
 
-            mtao::VecXd b = D * u;
             //Eigen::ConjugateGradient<Eigen::SparseMatrix<double>, Eigen::Lower | Eigen::Upper, Eigen::IncompleteCholesky<double, Eigen::Upper | Eigen::Lower>> cg;
             //Eigen::ConjugateGradient<Eigen::SparseMatrix<double>, Eigen::Lower, Eigen::IncompleteCholesky<double>> cg;
-            Eigen::ConjugateGradient<Eigen::SparseMatrix<double>, Eigen::Lower> cg;
-            cg.compute(L);
-            mtao::VecXd x = cg.solve(b);
-            REQUIRE(cg.info() == Eigen::Success);
-            //switch (cg.info()) {
-            //case Eigen::Success:
-            //    std::cout << "Success" << std::endl;
-            //    break;
-            //case Eigen::NumericalIssue:
-            //    std::cout << "NumericalIssue" << std::endl;
-            //    break;
-            //case Eigen::NoConvergence:
-            //    std::cout << "NoConvergence" << std::endl;
-            //    break;
-            //case Eigen::InvalidInput:
-            //    std::cout << "InvalidInput" << std::endl;
-            //    break;
-            //}
+            {
+                mtao::VecXd b = D * u;
+                Eigen::ConjugateGradient<Eigen::SparseMatrix<double>, Eigen::Lower> cg;
+                cg.compute(L);
+                mtao::VecXd x = cg.solve(b);
+                REQUIRE(cg.info() == Eigen::Success);
 
-            mtao::VecXd pg = ccm.boundary(false) * x;
-            double err = (D * (u - pg)).norm();
-            REQUIRE(err == Approx(0.).margin(1e-6));
+                mtao::VecXd pg = ccm.boundary(false) * x;
+                double err = (D * (u - pg)).norm();
+                REQUIRE(err == Approx(0.).margin(1e-6));
+            }
+            //{
+            //    Eigen::ConjugateGradient<Eigen::SparseMatrix<double>, Eigen::Lower> cg;
+            //    Eigen::SparseMatrix<double> B = L + mandoline::operators::surface_laplacian(ccm);
+            //    cg.compute(B);
+            //    mtao::VecXd x = cg.solve(b);
+            //    REQUIRE(cg.info() == Eigen::Success);
+
+            //    mtao::VecXd pg = ccm.boundary(false) * x;
+            //    double err = (D * (u - pg)).norm();
+            //    REQUIRE(err == Approx(0.).margin(1e-6));
+            //}
         }
     }
 }
+//switch (cg.info()) {
+//case Eigen::Success:
+//    std::cout << "Success" << std::endl;
+//    break;
+//case Eigen::NumericalIssue:
+//    std::cout << "NumericalIssue" << std::endl;
+//    break;
+//case Eigen::NoConvergence:
+//    std::cout << "NoConvergence" << std::endl;
+//    break;
+//case Eigen::InvalidInput:
+//    std::cout << "InvalidInput" << std::endl;
+//    break;
+//}

@@ -39,6 +39,7 @@ mtao::VecXd edge_lengths(const CutCellMesh<2> &ccm) {
     if (mesh_edge_vols.size() > 0) {
         // handles all of the mesh cut-edges, gotta do the others differently
         EV = edge_barycentric_volume_matrix(ccm) * mesh_edge_vols;
+        EV.resize(ccm.num_edges());
         for (auto &&[i, e] : mtao::iterator::enumerate(ccm.cut_edges())) {
             if (e.is_axial_edge()) {
                 auto [dim, coord] = e.as_axial_id();
