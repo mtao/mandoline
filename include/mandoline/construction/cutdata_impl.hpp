@@ -12,6 +12,9 @@ namespace mandoline::construction {
 template<int D, typename Indexer>
 CutData<D, Indexer>::CutData(const Indexer &indexer, const mtao::vector<VType> &V, const Faces &F) : Indexer(indexer), m_V(V) {
     assert(*std::min_element(indexer.shape().begin(), indexer.shape().end()) > 0);
+    if(F.size() == 0) {
+        return;
+    }
     assert(F.size() > 0);
     set_topology(F);
 }
@@ -21,6 +24,9 @@ CutData<D, Indexer>::CutData(const Indexer &indexer, const mtao::vector<VType> &
 }
 template<int D, typename Indexer>
 void CutData<D, Indexer>::set_topology(const Faces &F) {
+    if(F.size() == 0) {
+        return;
+    }
     auto E = mtao::geometry::mesh::boundary_facets(F);
     assert(F.size() > 0);
     assert(E.size() > 0);
