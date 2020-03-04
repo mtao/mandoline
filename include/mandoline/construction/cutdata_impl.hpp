@@ -303,20 +303,25 @@ int CutData<D, Indexer>::cut_vertex_size() const {
 }
 template<int D, typename Indexer>
 void CutData<D, Indexer>::set_topology(const Edges &E, const Faces &F, const Faces &FEA) {
-    assert(m_V.size() > 0);
-    m_E = E;
-    if constexpr (D == 3) {
-        assert(F.size() > 0);
-        assert(F.maxCoeff() < m_V.size());
-        m_F = F;
-        m_FE = FEA;
+    if(nV() == 0) {
+        m_E = E;
+        if constexpr (D == 3) {
+            assert(F.size() > 0);
+            assert(F.maxCoeff() < nV());
+            m_F = F;
+            m_FE = FEA;
+        }
+    } else {
+        m_E = {};
+        m_F = {};
+        m_FE = {};
     }
     reset_intersections();
 }
 
 template<int D, typename Indexer>
 void CutData<D, Indexer>::update_vertices(const mtao::vector<VType> &V) {
-    assert(V.size() == m_V.size());
+    assert(V.size() == nV());
     std::copy(V.begin(), V.end(), m_V.begin());
     clear();
     update_topology_masks();
@@ -363,8 +368,8 @@ template<int D, typename Indexer>
 void CutData<D, Indexer>::reset_intersections() {
     m_edge_intersections.clear();
     m_triangle_intersections.clear();
-    m_edge_intersections.reserve(m_E.size());
-    m_triangle_intersections.reserve(m_F.size());
+    m_edge_intersections.reserve(nE());
+    m_triangle_intersections.reserve(nF());
     for (int i = 0; i < m_E.cols(); ++i) {
         m_edge_intersections.emplace_back(m_V, m_E, i);
     }
