@@ -25,10 +25,6 @@ int CutCellMeshBase<D, Derived>::vertex_size() const {
     return StaggeredGrid::vertex_size() + cut_vertex_size();
 }
 template<int D, typename Derived>
-int CutCellMeshBase<D, Derived>::edge_size() const {
-    return StaggeredGrid::edge_size() + cut_edge_size();
-}
-template<int D, typename Derived>
 auto CutCellMeshBase<D, Derived>::vertex(int idx) const -> Vec {
     return get_world_vertex(masked_vertex(idx));
 }
@@ -55,13 +51,8 @@ auto CutCellMeshBase<D, Derived>::grid_boundary(bool dirichlet_boundary) const -
 template<int D, typename Derived>
 auto CutCellMeshBase<D, Derived>::edge(int idx) const -> Edge {
 
-    if (is_grid_edge(idx)) {
-        return grid_edge(idx);
-    } else {
-        Edge e;
-        IVecMap(e.data()) = cut_edge(idx - StaggeredGrid::edge_size());
-        return e;
-    }
+    //TODO: Implement
+    return {};
 }
 
 template<int D, typename Derived>
@@ -69,20 +60,6 @@ int CutCellMeshBase<D, Derived>::grid_edge_type(int idx) const {
     return StaggeredGrid::form_type<1>(idx);
 }
 
-template<int D, typename Derived>
-auto CutCellMeshBase<D, Derived>::edge_volumes() const -> VecX {
-    VecX V(edge_size());
-    auto offsets = StaggeredGrid::template offsets<1>();
-    for (int i = 0; i < D; ++i) {
-        V.segment(offsets[i], StaggeredGrid::template staggered_size<1>(i)).array() = dx()(i);
-    }
-    auto ceV = V.bottomRows(cut_edge_size());
-    for (int i = 0; i < cut_edge_size(); ++i) {
-        auto e = cut_edge(i);
-        ceV(i) = (vertex(e.indices[1]) - vertex(e.indices[0])).norm();
-    }
-    return V;
-}
 template<int D, typename Derived>
 auto CutCellMeshBase<D, Derived>::vertices() const -> ColVecs {
     return mtao::eigen::hstack(StaggeredGrid::vertices(), cut_vertices_colvecs());

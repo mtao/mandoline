@@ -81,13 +81,11 @@ struct CutCellMeshBase : public mtao::geometry::grid::StaggeredGrid<double, D> {
     //Vec dual_vertex(int vertex) const;
     int vertex_size() const;
     int cut_vertex_size() const;
-    int edge_size() const;
 
 
     VecX volumes() const { return derived().volumes(); }
     VecX dual_edge_volumes() const { return derived().dual_edge_volumes(); }
     SpMat grid_boundary(bool dirichlet_boundary) const;
-    VecX edge_volumes() const;
 
     Edge grid_edge(int idx) const;
     int grid_edge_type(int idx) const;
