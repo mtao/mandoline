@@ -35,16 +35,20 @@ struct CoordMaskedGeometry : public coord_mask<D> {
     //Func is an object that retuns the mask of an index
     template<typename Func>
     static coord_mask<D> get_container_mask(const IndexContainerType &C, Func &&f);
-    static coord_mask<D> get_container_mask(const IndexContainerType &C, const mtao::vector<Vertex<D>> &vertices);
+    //static coord_mask<D> get_container_mask(const IndexContainerType &C, const mtao::vector<Vertex<D>> &vertices);
     template<typename Func>
     static coord_type get_min_coord(const IndexContainerType &C, Func &&f);
 
 
     //coord_mask<D> get_container_mask(const IndexContainerType& C, const mtao::vector<Vertex<D>>& vertices);
-    static coord_type get_min_coord(const IndexContainerType &C, const mtao::vector<Vertex<D>> &vertices);
-    coord_type get_min_coord(const mtao::vector<Vertex<D>> &vertices) const;
+    //static coord_type get_min_coord(const IndexContainerType &C, const mtao::vector<Vertex<D>> &vertices);
+    //coord_type get_min_coord(const mtao::vector<Vertex<D>> &vertices) const;
+    template<typename Func>
+    coord_type get_min_coord(Func &&f) const;
 
-    std::set<coord_type> possible_cells(const mtao::vector<Vertex<D>> &vertices) const;
+    template<typename Func>
+    std::set<coord_type> possible_cells(Func &&f) const;
+    //std::set<coord_type> possible_cells(const mtao::vector<Vertex<D>> &vertices) const;
 
     bool operator<(const CoordMaskedGeometry &other) const;
 
