@@ -4,7 +4,8 @@
 
 namespace mandoline {
 template<int D>
-ExteriorGrid<D>::ExteriorGrid(const GridDatab &cell_mask) : Base(cell_mask.shape()), m_cell_indices(cell_mask.shape()) {
+ExteriorGrid<D>::ExteriorGrid(const Base &g, const GridDatab &cell_mask) : Base(g), m_cell_indices(cell_mask.shape()) {
+    assert(g.cell_shape() == cell_mask.shape());
     using namespace mtao::geometry::grid;
     int counter = 0;
     std::transform(cell_mask.begin(), cell_mask.end(), m_cell_indices.begin(), [&counter](bool outside) -> int {
@@ -33,11 +34,7 @@ ExteriorGrid<D>::ExteriorGrid(const GridDatab &cell_mask) : Base(cell_mask.shape
             int pi = m_cell_indices(v);
             if (pi >= 0) {
                 m_boundary_facet_pairs.emplace_back(std::array<int, 2>{ { -2, pi } });
-                if constexpr (D == 2) {
-                    m_boundary_facet_axes.emplace_back(1 - i);
-                } else {
-                    m_boundary_facet_axes.emplace_back(i);
-                }
+                m_boundary_facet_axes.emplace_back(i);
             }
         });
         s = cell_shape();
@@ -63,30 +60,14 @@ ExteriorGrid<D>::ExteriorGrid(const GridDatab &cell_mask) : Base(cell_mask.shape
             int ni = m_cell_indices(v);
             if (ni >= 0) {
                 m_boundary_facet_pairs.emplace_back(std::array<int, 2>{ { ni, -2 } });
+                //if constexpr (D == 2) {
+                //    m_boundary_facet_axes.emplace_back(1 - i);
+                //} else {
                 m_boundary_facet_axes.emplace_back(i);
+                //}
             }
         });
     }
-}
-template<int D>
-mtao::VecXd ExteriorGrid<D>::face_volumes(bool mask_boundary) const {
-    mtao::VecXd R(num_faces());
-    auto &dx = Base::dx();
-    mtao::Vec3d dws = mtao::Vec3d::Ones();
-    for (int i = 0; i < D; ++i) {
-        for (int j = 0; j < D - 1; ++j) {
-            dws(i) *= dx((j + i) % D);
-        }
-    }
-
-
-    R.setZero();
-    for (int i = 0; i < R.size(); ++i) {
-        if (!(mask_boundary && is_boundary_facet(i))) {
-            R(i) = dws(boundary_facet_axis(i));
-        }
-    }
-    return R;
 }
 
 template<int D>
@@ -94,23 +75,43 @@ std::vector<Eigen::Triplet<double>> ExteriorGrid<D>::boundary_facet_to_staggered
     std::vector<Eigen::Triplet<double>> trips;
     trips.reserve(boundary_facet_pairs().size());
     for (auto &&[row, pr, axis] : mtao::iterator::enumerate(boundary_facet_pairs(), boundary_facet_axes())) {
+        const int gaxis = (D == 2) ? 1 - axis : axis;
         auto [ai, bi] = pr;
-        auto a = cell_coord(ai);
-        auto b = cell_coord(bi);
-        assert(b[axis] - 1 == a[axis]);
-        int col = Base::template staggered_index<D - 1>(b, axis);
-        trips.emplace_back(row + offset, col, 1);
+        if (ai == -2) {
+            auto b = cell_coord(bi);
+            assert(b[axis] == 0);
+            int col = Base::template staggered_index<D - 1>(b, gaxis);
+            auto g = Base::template grid<1>(axis);
+            trips.emplace_back(row + offset, col, 1);
+        } else if (bi == -2) {
+            auto a = cell_coord(ai);
+            a[axis] += 1;
+            assert(a[axis] <= vertex_shape()[axis]);
+            int col = Base::template staggered_index<D - 1>(a, gaxis);
+            auto g = Base::template grid<1>(axis);
+            trips.emplace_back(row + offset, col, 1);
+        } else if (ai >= 0 && bi >= 0) {
+            auto a = cell_coord(ai);
+            auto b = cell_coord(bi);
+            assert(b[axis] - 1 == a[axis]);
+            auto g = Base::template grid<1>(axis);
+            int col = Base::template staggered_index<D - 1>(b, gaxis);
+            trips.emplace_back(row + offset, col, 1);
+        }
     }
     return trips;
 }
 template<int D>
-mtao::VecXd ExteriorGrid<D>::boundary_facet_volumes() const {
+mtao::VecXd ExteriorGrid<D>::boundary_facet_volumes(bool make_boundary) const {
     auto &A = boundary_facet_axes();
     mtao::VecXd ret(A.size());
-    auto vols = Base::template form_volumes<D - 1>();
+    ret.setZero();
+    auto vols = Base::template form_volumes<D - 0>();
 
     for (auto &&[row, axis] : mtao::iterator::enumerate(boundary_facet_axes())) {
-        ret(row) = vols[axis];
+        if (make_boundary || !is_boundary_facet(row)) {
+            ret(row) = vols[axis];
+        }
     }
     return ret;
 }

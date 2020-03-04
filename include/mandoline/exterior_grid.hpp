@@ -32,13 +32,11 @@ class ExteriorGrid : public mtao::geometry::grid::StaggeredGrid<double, D>
 
     ExteriorGrid() = default;
     // takes in a cell that indicates true for cells inside the stencil
-    ExteriorGrid(const GridDatab &cell_mask);
+    ExteriorGrid(const Base& sg, const GridDatab &cell_mask);
     ExteriorGrid(const ExteriorGrid &) = default;
     ExteriorGrid(ExteriorGrid &&) = default;
     ExteriorGrid &operator=(const ExteriorGrid &) = default;
     ExteriorGrid &operator=(ExteriorGrid &&) = default;
-    mtao::VecXd face_volumes(bool mask_boundary = false) const;
-    mtao::VecXd cell_volumes() const;
     int num_faces() const { return DomainBoundary::boundary_facet_size(); }
     int num_cells() const { return m_cell_coords.size(); }
     void make_faces();
@@ -56,7 +54,7 @@ class ExteriorGrid : public mtao::geometry::grid::StaggeredGrid<double, D>
 
     int get_face_axis(int face_index) const;
     std::vector<Eigen::Triplet<double>> boundary_facet_to_staggered_grid(int offset = 0) const;
-    mtao::VecXd boundary_facet_volumes() const;
+    mtao::VecXd boundary_facet_volumes(bool make_boundary = true) const;
 
   private:
     GridDatai m_cell_indices;// acts as a hash map for cell indexing based off a grid
