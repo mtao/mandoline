@@ -217,11 +217,11 @@ class MeshViewer: public mtao::opengl::Window3 {
                         mapped_edges.clear();
                         for(int i = 0; i < ccm->cut_edge_size(); ++i) {
                             auto e = ccm->cut_edge(i);
-                            auto va = ccm->masked_vertex(e(0));
-                            auto vb = ccm->masked_vertex(e(1));
+                            auto va = ccm->masked_vertex(e.indices[0]);
+                            auto vb = ccm->masked_vertex(e.indices[1]);
                             auto mask = va.mask() & vb.mask();
                             if(mask.active()) {
-                                edges.emplace_back(E{{e(0),e(1)}});
+                                edges.emplace_back(e.indices);
                                 for(int i = 0; i < 3; ++i) {
                                     if(mask[i]) {
                                         mapped_edges[E{{i,*mask[i]}}].emplace_back(edges.back());
