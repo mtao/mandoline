@@ -153,7 +153,7 @@ auto CutCellEdgeGenerator<2>::compute_planar_hem(const ColVecs &V, const Edges &
         }
         std::cout << ")";
     };
-    {
+    { // create the boundary edge data
 
         if (!adaptive) {
             //auto t = mtao::logging::timer("actual looping in mask");
@@ -182,51 +182,5 @@ auto CutCellEdgeGenerator<2>::compute_planar_hem(const ColVecs &V, const Edges &
     return { ehem, boundary_edges };
 }
 
-template<>
-std::vector<CutFace<2>> CutCellEdgeGenerator<2>::compute_planar_cut_faces(const std::vector<VType> &GV, const ColVecs &V) const {
-
-    // per_cell_edges[ dimension ] [ cell coordinate ] = list of edges in a cell
-    std::array<std::map<coord_type, std::tuple<std::set<Edge>, Edge>>, 2> per_cell_edges;
-    std::vector<CutFace<2>> ret;
-    /*
-
-        for(auto&& [idx, ce]: mtao::iterator::enumerate(m_cut_edges)) {
-            for(auto&& pc:  ce.possible_cells(GV)) {
-                std::get<0>(per_cell_edges[d][pc]).emplace(ce.indices);
-            }
-        }
-        for(auto&& [idx, ce]: mtao::iterator::enumerate(m_grid_edges)) {
-            int be = ce.bound_index();
-            if(be == 0 && is_grid_vertex(ce.indices[0])) {
-                auto& e = std::get<1>(per_cell_edges[be][pc]);
-                e[0] = ce.indices[1];
-                e[1] = ce.indices[0];
-            }
-            for(auto&& pc:  ce.possible_cells(GV)) {
-                std::get<0>(per_cell_edges[be][pc]).emplace(ce.indices);
-            }
-        }
-
-        std::vector<CutFace<2>> faces;
-
-        for(auto&& [dim, axial_cell_edges]: mtao::iterator::enumerate(per_cell_edges)) {
-            for(auto&& [cell, pr]: axial_cell_edges) {
-                auto&& [edges, boundary_edge]: pr;
-                FaceCollapser fc(edges);
-                fc.set_edge_for_removal(boundary_edge);
-                fc.bake(GV);
-                for(auto&& [cid,fs]: fc.faces(GV)) {
-                    ret.emplace_back({},std::move(fs),{});
-                }
-
-
-            }
-
-        }
-        */
-
-
-    return ret;
-}
 
 }// namespace mandoline::construction

@@ -71,12 +71,12 @@ class CutCellEdgeGenerator : public mtao::geometry::grid::StaggeredGrid<double, 
 
 
     //returns a new mesh and a set of boundary vertices
-    std::tuple<mtao::geometry::mesh::HalfEdgeMesh, std::set<Edge>> compute_planar_hem(const ColVecs &V, const Edges &E, const GridDatab &interior_cell_mask, int cell_size) const;
-    //returns a new mesh and a set of boundary vertices
-    std::tuple<mtao::geometry::mesh::HalfEdgeMesh, std::set<Edge>> compute_planar_hem(const std::vector<VType> &GV, const Edges &E, const GridDatab &interior_cell_mask, int cell_size) const;
     std::tuple<mtao::geometry::mesh::HalfEdgeMesh, std::set<Edge>> compute_planar_hem(const std::vector<VType> &GV, const ColVecs &V, const Edges &E, const GridDatab &interior_cell_mask, int cell_size) const;
+    // auxilliary call for if we haven't created t
+    std::tuple<mtao::geometry::mesh::HalfEdgeMesh, std::set<Edge>> compute_planar_hem(const std::vector<VType> &GV, const Edges &E, const GridDatab &interior_cell_mask, int cell_size) const;
+    // internal call that has no awareness of grid vertices / grid pruning
+    std::tuple<mtao::geometry::mesh::HalfEdgeMesh, std::set<Edge>> compute_planar_hem(const ColVecs &V, const Edges &E, const GridDatab &interior_cell_mask, int cell_size) const;
 
-    std::vector<CutFace<D>> compute_planar_cut_faces(const std::vector<VType> &GV, const ColVecs &V) const;
 
     virtual void bake();
     virtual void bake_vertices();

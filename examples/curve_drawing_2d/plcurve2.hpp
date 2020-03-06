@@ -15,6 +15,7 @@ class PLCurve2 {
         void clear() { pts.clear(); }
         void pop_back() { pts.pop_back(); }
         void toggle_closed() { closed = !closed; }
+        bool is_closed() const { return closed; }
         size_t size() const { return pts.size(); }
         bool empty() const { return pts.empty(); }
 

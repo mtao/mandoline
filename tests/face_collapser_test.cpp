@@ -228,7 +228,7 @@ TEST_CASE("Polygon with hole", "[face_collapser]") {
             mtao::VecXd ang = mtao::VecXd::LinSpaced(N, 0, 2 * M_PI * (N - 1.) / N);
             V.row(0).head(N) = 3 * ang.array().cos().transpose();
             V.row(1).head(N) = 3 * ang.array().sin().transpose();
-            ang = mtao::VecXd::LinSpaced(N, 0, 2 * M_PI * (M - 1.) / M);
+            ang = mtao::VecXd::LinSpaced(M, 0, 2 * M_PI * (M - 1.) / M);
             V.row(0).tail(M) = ang.array().cos().transpose();
             V.row(1).tail(M) = ang.array().sin().transpose();
 

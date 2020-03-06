@@ -94,7 +94,22 @@ CutCellMesh<2> CutCellEdgeGenerator<2>::generate_faces() const {
     ret.active_cell_mask.topRows(m_active_grid_cell_mask.size()) = m_active_grid_cell_mask.as_eigen_vector().cast<double>();
 
 
+    mtao::logging::debug() << "Making cut-faces";
+    auto AV = all_vertices();
     {
+        auto is_boundary_facet = [&](const CutFace<2>& f) {
+            
+            auto c = f.possible_cells([&](int idx) { return AV.at(idx).coord; } );
+            if(c.empty() ) {
+                return true;
+            } else if(c.size() == 1) {
+                coord_type a = *c.begin();
+                assert(m_active_grid_cell_mask.valid_index(a));
+
+                return m_active_grid_cell_mask(a);
+            }
+            return false;
+        };
 
         auto VV = all_GV();
         auto vols = ret.hem.signed_areas(VV);
@@ -107,15 +122,14 @@ CutCellMesh<2> CutCellEdgeGenerator<2>::generate_faces() const {
                 for (auto &&v : F.indices) {
                     vol += mtao::geometry::curve_volume(VV, v);
                 }
-                if (vol > 0) {
+                if (vol > 0 && !is_boundary_facet(F)) {
                     ret.m_faces.emplace_back(std::move(F));
                 }
             }
         }
     }
-    mtao::logging::debug() << "Making cut-faces";
-    auto AV = all_vertices();
 
+    mtao::logging::debug() << "Filling cell-grid ownership";
     for (auto &&[idx, f] : mtao::iterator::enumerate(ret.m_faces)) {
         auto c = f.possible_cells([&](int idx) { return AV.at(idx).coord; } );
         assert(c.size() == 1);

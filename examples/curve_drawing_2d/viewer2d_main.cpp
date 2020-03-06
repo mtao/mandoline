@@ -161,6 +161,13 @@ void MeshViewer::gui() {
         update_bbox();
     }
 
+    {
+        bool value = curve.is_closed();
+        if(ImGui::Checkbox("Closed",&value)) {
+            curve.toggle_closed();
+        }
+    }
+
     ImGui::Text("Cursor position (%f,%f)", cursor.x(),cursor.y());
 }
 
@@ -235,38 +242,8 @@ void MeshViewer::update_curve() {
         for(int i = 0; i < ccm->StaggeredGrid::vertex_size(); ++i) {
             ccg_cols.col(i).setConstant(.7);
         }
-        //for(int i: ccm.face_vertices) {
-        //    ccg_cols(2,i + ccg.vertex_size()) = 1;
-        //}
-        //for(int i: ccm.edge_vertices) {
-        //    ccg_cols(1,i + ccg.vertex_size()) = 1;
-        //}
-        //for(int i: ccm.original_vertices) {
-        //    ccg_cols(0,i + ccg.vertex_size()) = 1;
-        //}
-        //for(int i: ccm.original_vertices) {
-        //    ccg_cols(2,i) = 1;
-        //}
-        //for(int i: ccm.new_vertices) {
-        //    ccg_cols(0,i) = 1;
-        //}
         cutcell_mesh.setEdgeBuffer(V.cast<float>().eval(),E.cast<unsigned int>().eval());
         cutcell_drawable->activate_edges();
-        //cutedge_renderer->setVertices(V.cast<float>());
-        //cutedge_renderer->setEdges(E.cast<unsigned int>());
-        //cutedge_renderer->setColor(ccg_cols_edge);
-        //auto F = ccm->faces();
-        //std::cout << "F size: " << F.rows() << "," << F.cols()  << std::endl;
-        //cutmesh_renderer->setVertices(V.cast<float>());
-        //cutcell_mesh.setTriangleBuffer(F.cast<unsigned int>());
-        //cutcell_drawable->activate_triangles();
-        //cutmesh_renderer->setColor(ccg_cols);
-        //point_renderer->setVertices(ccm.dual_vertices().rightCols(ccm.cell_size() - ccm.StaggeredGrid::cell_size()).cast<float>());
-        //point_renderer->setVertices(ccg.compact_vertices().cast<float>().colwise() - mtao::Vec2f(.5,.5));
-        //point_renderer->setVertices(ccm.new_vertices.cast<float>().colwise() - mtao::Vec2f(.5,.5));
-        //cutedge_renderer->set_vertex_style(renderers::MeshRenderer::VertexStyle::Flat);
-        //cutedge_renderer->set_face_style();
-        //cutedge_renderer->set_edge_style(renderers::MeshRenderer::EdgeStyle::Mesh);
 
         ccm->faces();
         grid_mesh.set(ccm->vertex_grid());

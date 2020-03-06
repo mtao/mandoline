@@ -86,7 +86,7 @@ std::vector<Eigen::Triplet<double>> ExteriorGrid<D>::boundary_facet_to_staggered
         } else if (bi == -2) {
             auto a = cell_coord(ai);
             a[axis] += 1;
-            assert(a[axis] <= vertex_shape()[axis]);
+            assert(a[axis] <= Base::vertex_shape()[axis]);
             int col = Base::template staggered_index<D - 1>(a, gaxis);
             auto g = Base::template grid<1>(axis);
             trips.emplace_back(row + offset, col, 1);
