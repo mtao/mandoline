@@ -25,7 +25,7 @@ void CutCellGenerator<2>::add_boundary_elements(const BoundaryElements &E) {
 
 void CutCellGenerator<2>::bake_faces() {
 
-    std::tie(hem, std::ignore) = compute_planar_hem(all_GV(), mtao::eigen::stl2eigen(edges()), m_active_grid_cell_mask, StaggeredGrid::cell_size());
+    std::tie(hem, std::ignore) = compute_planar_hem(all_GV(), mtao::eigen::stl2eigen(edges()), m_active_grid_cell_mask);
 
     std::vector<bool> active(data().nE());// edges that sit on an axis
     auto &&ti = data().edge_intersections();
@@ -50,8 +50,17 @@ CutCellMesh<2> CutCellEdgeGenerator<2>::generate_faces() const {
     auto ret = generate_edges();
 
 
+    auto eE = mtao::eigen::stl2eigen(edges());
+    if(eE.size() == 0) {
+        return ret;
+    }
+#if defined(_DEBUG)
+    assert(eE.minCoeff() >= 0);
+    assert(eE.maxCoeff() < total_vertex_size());
+#endif
+
     // make a halfedge mesh and store it
-    std::tie(ret.hem, std::ignore) = compute_planar_hem(all_V(), mtao::eigen::stl2eigen(edges()), m_active_grid_cell_mask, 0);
+    std::tie(ret.hem, std::ignore) = compute_planar_hem(all_V(), eE , m_active_grid_cell_mask);
 
 
     {

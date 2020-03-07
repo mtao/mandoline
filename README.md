@@ -1,6 +1,5 @@
 # Mandoline
 [![CircleCI](https://circleci.com/gh/mtao/mandoline/tree/master.svg?style=svg)](https://circleci.com/gh/mtao/mandoline/tree/master)
-currently dosen't work, working on fixing it
 A robust cut-cell mesh generator for arbitrary triangle-mesh inputs
 
 ## Dependencies

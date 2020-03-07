@@ -30,9 +30,9 @@ CutCellMesh<2> CutCellEdgeGenerator<2>::generate_faces() const;
 template<>
 CutCellMesh<2> CutCellEdgeGenerator<2>::generate() const;
 template<>
-auto CutCellEdgeGenerator<2>::compute_planar_hem(const ColVecs &V, const Edges &E, const GridDatab &interior_cell_mask, int cell_size) const -> std::tuple<mtao::geometry::mesh::HalfEdgeMesh, std::set<Edge>>;
+auto CutCellEdgeGenerator<2>::compute_planar_hem(const ColVecs &V, const Edges &E, const GridDatab &interior_cell_mask) const -> std::tuple<mtao::geometry::mesh::HalfEdgeMesh, std::set<Edge>>;
 template<>
-auto CutCellEdgeGenerator<2>::compute_planar_hem(const std::vector<VType> &V, const Edges &E, const GridDatab &interior_cell_mask, int cell_size) const -> std::tuple<mtao::geometry::mesh::HalfEdgeMesh, std::set<Edge>>;
+auto CutCellEdgeGenerator<2>::compute_planar_hem(const std::vector<VType> &V, const Edges &E, const GridDatab &interior_cell_mask) const -> std::tuple<mtao::geometry::mesh::HalfEdgeMesh, std::set<Edge>>;
 template<>
-auto CutCellEdgeGenerator<2>::compute_planar_hem(const std::vector<VType> &GV, const ColVecs &V, const Edges &E, const GridDatab &interior_cell_mask, int cell_size) const -> std::tuple<mtao::geometry::mesh::HalfEdgeMesh, std::set<Edge>>;
+auto CutCellEdgeGenerator<2>::compute_planar_hem(const std::vector<VType> &GV, const ColVecs &V, const Edges &E, const GridDatab &interior_cell_mask) const -> std::tuple<mtao::geometry::mesh::HalfEdgeMesh, std::set<Edge>>;
 }// namespace mandoline::construction

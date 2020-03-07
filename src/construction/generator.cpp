@@ -13,18 +13,18 @@ std::array<int, 2> smallest_ordered_edge(const std::vector<int> &v) {
     return min;
 }
 template<>
-auto CutCellEdgeGenerator<2>::compute_planar_hem(const std::vector<VType> &GV, const Edges &E, const GridDatab &interior_cell_mask, int cell_size) const -> std::tuple<mtao::geometry::mesh::HalfEdgeMesh, std::set<Edge>> {
+auto CutCellEdgeGenerator<2>::compute_planar_hem(const std::vector<VType> &GV, const Edges &E, const GridDatab &interior_cell_mask) const -> std::tuple<mtao::geometry::mesh::HalfEdgeMesh, std::set<Edge>> {
     ColVecs V(2, GV.size());
     for (int i = 0; i < GV.size(); ++i) {
         auto v = V.col(i);
         v = GV[i].p();
     }
-    return compute_planar_hem(GV, V, E, interior_cell_mask, cell_size);
+    return compute_planar_hem(GV, V, E, interior_cell_mask);
 }
 template<>
-auto CutCellEdgeGenerator<2>::compute_planar_hem(const std::vector<VType> &GV, const ColVecs &V, const Edges &E, const GridDatab &interior_cell_mask, int cell_size) const -> std::tuple<mtao::geometry::mesh::HalfEdgeMesh, std::set<Edge>> {
+auto CutCellEdgeGenerator<2>::compute_planar_hem(const std::vector<VType> &GV, const ColVecs &V, const Edges &E, const GridDatab &interior_cell_mask) const -> std::tuple<mtao::geometry::mesh::HalfEdgeMesh, std::set<Edge>> {
     bool adaptive = interior_cell_mask.empty();
-    auto ret = compute_planar_hem(V, E, interior_cell_mask, cell_size);
+    auto ret = compute_planar_hem(V, E, interior_cell_mask);
     //the cells that vertices belong to
     std::vector<std::set<CoordType>> vertex_cells(GV.size());
     for (auto &&[v, cs] : mtao::iterator::zip(GV, vertex_cells)) {
@@ -112,7 +112,7 @@ auto CutCellEdgeGenerator<2>::compute_planar_hem(const std::vector<VType> &GV, c
 
 
 template<>
-auto CutCellEdgeGenerator<2>::compute_planar_hem(const ColVecs &V, const Edges &E, const GridDatab &interior_cell_mask, int cell_size) const -> std::tuple<mtao::geometry::mesh::HalfEdgeMesh, std::set<Edge>> {
+auto CutCellEdgeGenerator<2>::compute_planar_hem(const ColVecs &V, const Edges &E, const GridDatab &interior_cell_mask) const -> std::tuple<mtao::geometry::mesh::HalfEdgeMesh, std::set<Edge>> {
 
     auto t = mtao::logging::profiler("computing planar hem", false, "profiler");
     using namespace mtao::geometry::mesh;
@@ -142,7 +142,6 @@ auto CutCellEdgeGenerator<2>::compute_planar_hem(const ColVecs &V, const Edges &
         ehem.make_topology();
     }
 
-    ehem.cell_indices().array() += cell_size;//make sure cell indices dont overlap with the original cells
     std::set<Edge> boundary_edges;
 
 

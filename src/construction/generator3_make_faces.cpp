@@ -164,7 +164,7 @@ void CutCellGenerator<3>::bake_faces() {
                 std::cout << "AHD size: " << ahd.edges.size() << std::endl;
 
                 std::set<Edge> bedges;
-                std::tie(ahd.hem, bedges) = g.compute_planar_hem(subVV, mtao::eigen::stl2eigen(ahd.edges), ahd.active_grid_cell_mask, 0);
+                std::tie(ahd.hem, bedges) = g.compute_planar_hem(subVV, mtao::eigen::stl2eigen(ahd.edges), ahd.active_grid_cell_mask);
                 std::transform(bedges.begin(), bedges.end(), std::inserter(ahd.boundary_edges, ahd.boundary_edges.end()), [&, dim = dim](Edge e) -> Edge {
                     for (auto &&idx : e) {
 
