@@ -18,6 +18,7 @@
 #include "mandoline/construction/generator2.hpp"
 #include <Magnum/GL/Renderer.h>
 #include <mtao/geometry/mesh/stack_meshes.hpp>
+#include <mtao/solvers/linear/preconditioned_conjugate_gradient.hpp>
 
 #include <thread>
 #include "mandoline/mesh3.hpp"
@@ -50,6 +51,11 @@ class MeshViewer: public mtao::opengl::Window2 {
         mtao::ColVectors<int,2> cachedE;
 
         int face_index = -1;
+        enum ColorType: char {
+            Random, Regions, Harmonic
+        };
+
+        ColorType color_type = ColorType::Random;
 
         mtao::Vec2f origin = mtao::Vec2f::Zero(), direction = mtao::Vec2f::Unit(1);
 
@@ -345,19 +351,63 @@ void MeshViewer::update_faces() {
 
 }
 void MeshViewer::update_colors() {
-    mtao::VecXi R = ccm->regions();
-    int num_regions = R.maxCoeff()+1;
-    mtao::ColVecs4d C(4,num_regions);
-    C.setRandom();
-    C.noalias() = C.cwiseAbs();
-    C.row(3).setConstant(1);
-
     colors.resize(4,ccm->num_cells());
-    //colors.setRandom();
-    //colors.row(3).setConstant(1);
-    for(int i = 0; i < R.size(); ++i) {
-        colors.col(i) = C.col(R(i));
+    switch(color_type) {
+        case ColorType::Region:
+            mtao::VecXi R = ccm->regions();
+            int num_regions = R.maxCoeff()+1;
+            mtao::ColVecs4d C(4,num_regions);
+            C.setRandom();
+            C.row(3).setConstant(1);
+
+            for(int i = 0; i < R.size(); ++i) {
+                colors.col(i) = C.col(R(i));
+            }
+            break;
+        case ColorType::Random:
+            colors.setRandom();
+            break;
+        case ColorType::Harmonic:
+
+
+            mtao::Vec2d dir = mtao::Vec2d::Random();
+            mtao::VecXd u(ccm->num_edges());
+            for (auto &&[eidx, edge] : mtao::iterator::enumerate(ccm->cut_edges())) {
+                if(edge.external_boundary) {
+                    auto [oc,b] = *edge->external_boundary;
+                    if(oc == -2) {
+                        u(eidx) = (b?-1:1) * dir(edge.unbound_axis());
+                    }
+                } else {
+                    if (edge.is_axial_edge()) {
+                        u(eidx) = 0;
+                    } else {// boundary faces are not allowed to emit anything
+                        u(eidx) = 0;
+                    }
+                }
+            }
+            for (auto &&[idx, bfp] : mtao::iterator::enumerate(ccm.exterior_grid.boundary_facet_pairs())) {
+                if (!ccm.exterior_grid.is_boundary_facet(idx)) {
+                    int axis = ccm.exterior_grid.boundary_facet_axes()(idx);
+                    u(idx + ccm.cut_edges().size()) = dir(axis);
+                } else {
+                    u(idx + ccm.cut_edges().size()) = 0;// grid domain boundaries are not allowed to emit anything
+                }
+            }
+            Eigen::SparseMatrix<double> D = mandoline::operators::divergence(ccm);
+            Eigen::SparseMatrix<double> L = mandoline::operators::laplacian(ccm);
+            mtao::VecXd b = D * u;
+
+            mtao::VecXd x(b.rows());
+            x = mtao::solvers::linear::PCGSolve(L,b,x);
+            x /= x.cwiseAbs().maxCoeff();
+            colors.row(2) = x;
+            colors.row(1) = -x;
+            colors.row(0) = 0;
+            break;
     }
+    colors.noalias() = colors.cwiseAbs();
+    colors.row(3).setConstant(1);
 }
 
 MAGNUM_APPLICATION_MAIN(MeshViewer)
