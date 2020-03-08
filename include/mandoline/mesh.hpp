@@ -90,9 +90,7 @@ struct CutCellMeshBase : public mtao::geometry::grid::StaggeredGrid<double, D> {
     Edge grid_edge(int idx) const;
     int grid_edge_type(int idx) const;
     Edge grid_edge(coord_type edge_coord, int type) const;
-    Edge grid_dual_edge(int idx) const;
-    Edge edge(int idx) const;
-    Edge dual_edge(int idx) const;
+    mtao::ColVecs2i dual_edges() const;
     Edges edges() const;
 
     auto cut_edge(int idx) const { return m_cut_edges.at(idx); }
@@ -102,8 +100,6 @@ struct CutCellMeshBase : public mtao::geometry::grid::StaggeredGrid<double, D> {
     auto grid_vertex(int idx) const { return StaggeredGrid::vertex(idx); }
     auto vertex(const coord_type &coord) const { return StaggeredGrid::vertex(coord); }
     bool is_grid_vertex(int index) const { return index < StaggeredGrid::template form_size<0>(); }
-    bool is_grid_edge(int index) const { return index < StaggeredGrid::template form_size<1>(); }
-    bool is_grid_face(int index) const { return index < StaggeredGrid::template form_size<2>(); }
 
     int cell_index(const VecCRef &v) const { return derived().cell_index(v); }
 
@@ -128,6 +124,7 @@ struct CutCellMeshBase : public mtao::geometry::grid::StaggeredGrid<double, D> {
     ColVecs m_origV;
     mtao::ColVecs2i m_origE;
     std::vector<Vertex> m_cut_vertices;
+    std::map<int,std::set<int>> m_regions;
 
     GridDatab m_active_grid_cell_mask;
     std::vector<CutEdge<D>> m_cut_edges;

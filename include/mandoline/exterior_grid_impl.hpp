@@ -115,5 +115,20 @@ mtao::VecXd ExteriorGrid<D>::boundary_facet_volumes(bool make_boundary) const {
     }
     return ret;
 }
+template<int D>
+int ExteriorGrid<D>::cell_index(const coord_type& c) const  {
+    if(!cell_indices().valid_index(c)) {
+        return -1;
+    } else {
+        return cell_indices(c);
+    }
+}
+template <int D>
+template <typename Derived>
+int ExteriorGrid<D>::cell_index(const Eigen::MatrixBase<Derived>&p) const {
+    auto [c, q] = Base::coord(p);
+    return cell_index(c);
+
+}
 
 }// namespace mandoline

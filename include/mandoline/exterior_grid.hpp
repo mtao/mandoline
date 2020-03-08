@@ -42,10 +42,12 @@ class ExteriorGrid : public mtao::geometry::grid::StaggeredGrid<double, D>
     void make_faces();
     const coord_type &cell_shape() const { return m_cell_indices.shape(); }
 
-    int get_cell_index(const Vec &p) const;
 
 
     const GridDatai &cell_indices() const { return m_cell_indices; }
+    int cell_index(const coord_type& c) const;
+    template <typename Derived>
+    int cell_index(const Eigen::MatrixBase<Derived>&p) const;
 
     const std::vector<int> &boundary_facet_axes() const { return m_boundary_facet_axes; }
     int boundary_facet_axis(size_t idx) const { return m_boundary_facet_axes.at(idx); }

@@ -1,5 +1,6 @@
 #pragma once
 #include "mandoline/coord_masked_geometry.hpp"
+#include <mtao/geometry/winding_number.hpp>
 #include "mandoline/vertex.hpp"
 #include <mtao/geometry/grid/grid.h>
 #include <igl/solid_angle.h>
@@ -188,6 +189,10 @@ struct CutFace<2> : public CutFaceBase<2> {
     std::optional<mtao::ColVecs2d> triangulated_vertices;
     std::optional<mtao::ColVecs3i> triangulation;
 
+    template<typename Derived, typename PType>
+    double winding_number(const Eigen::MatrixBase<Derived> &V, const Eigen::MatrixBase<PType>& p) const;
+    template<typename Derived, typename PType>
+        bool is_inside(const Eigen::MatrixBase<Derived> &V, const Eigen::MatrixBase<PType>& p) const;
     template<typename Derived>
     mtao::Vec2d brep_centroid(const Eigen::MatrixBase<Derived> &V, bool use_triangulation = false) const;
 

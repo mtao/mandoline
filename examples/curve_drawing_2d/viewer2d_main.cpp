@@ -17,6 +17,7 @@
 #include "plcurve2.hpp"
 #include "mandoline/construction/generator2.hpp"
 #include <Magnum/GL/Renderer.h>
+#include <mtao/geometry/mesh/stack_meshes.hpp>
 
 #include <thread>
 #include "mandoline/mesh3.hpp"
@@ -80,15 +81,20 @@ class MeshViewer: public mtao::opengl::Window2 {
             curve_drawable= new mtao::opengl::Drawable<Magnum::Shaders::Flat2D>{curve_mesh,_flat_shader, curve_drawgroup};
             curve_mesh.setParent(&root());
             curve_drawable->deactivate();
-            cutcell_drawable= new mtao::opengl::Drawable<Magnum::Shaders::Flat2D>{cutcell_mesh,_flat_shader, background_drawgroup};
+            cutcell_drawable= new mtao::opengl::Drawable<Magnum::Shaders::VertexColor2D>{cutcell_mesh,vcolor_shader, background_drawgroup};
             cutcell_mesh.setParent(&root());
             cutcell_drawable->deactivate();
+
+            cutcell_face_drawable= new mtao::opengl::Drawable<Magnum::Shaders::Flat2D>{cutcell_face_mesh,_flat_shader, background_drawgroup};
+            cutcell_face_mesh.setParent(&root());
+            cutcell_face_drawable->deactivate();
 
 
             grid_mesh.setParent(&root());
             grid_drawable = new mtao::opengl::Drawable<Magnum::Shaders::Flat2D>(grid_mesh, _flat_shader, background_drawgroup);
             grid_drawable->deactivate();
 
+            reset_curve();
 
         }
 
@@ -100,6 +106,10 @@ class MeshViewer: public mtao::opengl::Window2 {
         void gui() override;
         void update_edges();
         void update_curve();
+        void reset_curve();
+        void clear_curve();
+        void update_faces();
+        void update_ccm();
 
         void mouseMoveEvent(MouseMoveEvent& event) override;
         void mousePressEvent(MouseEvent& event) override;
@@ -112,12 +122,14 @@ class MeshViewer: public mtao::opengl::Window2 {
         Magnum::Shaders::VertexColor2D vcolor_shader;
         mtao::opengl::objects::Mesh<2> curve_mesh;
         mtao::opengl::objects::Mesh<2> cutcell_mesh;
+        mtao::opengl::objects::Mesh<2> cutcell_face_mesh;
         mtao::opengl::objects::Grid<2> grid_mesh;
         mtao::opengl::objects::BoundingBox<2> bbox_mesh;
         mtao::opengl::Drawable<Magnum::Shaders::Flat2D>* bbox_drawable = nullptr;
         mtao::opengl::Drawable<Magnum::Shaders::Flat2D>* grid_drawable = nullptr;
         mtao::opengl::Drawable<Magnum::Shaders::Flat2D>* curve_drawable = nullptr;
-        mtao::opengl::Drawable<Magnum::Shaders::Flat2D>* cutcell_drawable = nullptr;
+        mtao::opengl::Drawable<Magnum::Shaders::VertexColor2D>* cutcell_drawable = nullptr;
+        mtao::opengl::Drawable<Magnum::Shaders::Flat2D>* cutcell_face_drawable = nullptr;
 
 };
 void MeshViewer::draw() {
@@ -145,11 +157,30 @@ void MeshViewer::mousePressEvent(MouseEvent& event) {
     }
 }
 
+void MeshViewer::clear_curve() {
+    curve.clear();
+}
+void MeshViewer::reset_curve() {
+
+    curve.clear();
+    if(!curve.is_closed()) {
+        curve.toggle_closed();
+    }
+    curve.add_point(mtao::Vec2d(-.3,-.3));
+    curve.add_point(mtao::Vec2d(-.3,.3));
+    curve.add_point(mtao::Vec2d(.3,.3));
+    curve.add_point(mtao::Vec2d(.3,-.3));
+}
+
 void MeshViewer::gui() {
     if(ImGui::InputInt2("N", N.data()))  {
         //update_bbox();
     }
     if(ImGui::InputInt("Face index", &face_index))  {
+        if(ccm) {
+            int nf = ccm->num_faces();
+            face_index = std::clamp<int>(face_index,0,nf-1);
+        }
         update_face(face_index);
     }
     if(ImGui::SliderFloat2("min", bbox.min().data(),-2,2))  {
@@ -165,6 +196,23 @@ void MeshViewer::gui() {
         bool value = curve.is_closed();
         if(ImGui::Checkbox("Closed",&value)) {
             curve.toggle_closed();
+            update_curve();
+        }
+    }
+    {
+        if(ImGui::Button("Make CCM")) {
+            update_ccm();
+
+            update_curve();
+        }
+        if(ImGui::Button("Clear Curve")) {
+            clear_curve();
+
+            update_curve();
+        }
+        if(ImGui::Button("Reset Curve")) {
+            reset_curve();
+            update_curve();
         }
     }
 
@@ -189,7 +237,10 @@ void MeshViewer::update_curve() {
             curve_drawable->activate_points();
         }
     }
+}
 
+void MeshViewer::update_ccm() {
+    auto E = curve.edges();
     auto stlp = curve.stl_points();
 
 
@@ -243,12 +294,13 @@ void MeshViewer::update_curve() {
             ccg_cols.col(i).setConstant(.7);
         }
         cutcell_mesh.setEdgeBuffer(V.cast<float>().eval(),E.cast<unsigned int>().eval());
-        cutcell_drawable->activate_edges();
+        cutcell_drawable->deactivate();
 
         ccm->faces();
         grid_mesh.set(ccm->vertex_grid());
         grid_drawable->activate_edges();
     }
+    update_faces();
 }
 
 
@@ -266,10 +318,33 @@ void MeshViewer::update_face(int idx) {
     auto d = *c.begin();
     if(d.size() < 3) return;
     auto F = mtao::geometry::mesh::earclipping(ccm->vertices(),d);
-    cutcell_mesh.setTriangleBuffer(F.cast<unsigned int>());
+    cutcell_face_mesh.setTriangleBuffer(F.cast<unsigned int>());
     cutcell_drawable->activate_triangles();
 }
 
+void MeshViewer::update_faces() {
+    if(!ccm) return;
+
+    if(colors.cols() != ccm->num_cells()) {
+        colors.resize(4,ccm->num_cells());
+        colors.setRandom();
+        colors.row(3).setConstant(1);
+    }
+    std::vector<std::tuple<mtao::ColVecs3i, mtao::Vec4d>> FCs;
+    for(int i = 0; i < ccm->num_cells(); ++i) {
+        FCs.reserve(ccm->num_cells());
+        auto c = ccm->cell(i);
+        auto&& d = *c.begin();
+        auto F = mtao::geometry::mesh::earclipping(ccm->vertices(),d);
+        FCs.emplace_back(std::move(F), colors.col(i));
+    }
+    auto [V,F,C] = mtao::geometry::mesh::stack_meshes(ccm->vertices(), FCs);
+
+    cutcell_mesh.setTriangleBuffer(V.cast<float>(),F.cast<unsigned int>());
+    cutcell_mesh.setColorBuffer(C.cast<float>().eval());
+    cutcell_drawable->activate_triangles();
+
+}
 
 MAGNUM_APPLICATION_MAIN(MeshViewer)
 

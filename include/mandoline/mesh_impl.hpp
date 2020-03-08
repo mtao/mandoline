@@ -48,12 +48,6 @@ auto CutCellMeshBase<D, Derived>::grid_boundary(bool dirichlet_boundary) const -
     return B;
 }
 
-template<int D, typename Derived>
-auto CutCellMeshBase<D, Derived>::edge(int idx) const -> Edge {
-
-    //TODO: Implement
-    return {};
-}
 
 template<int D, typename Derived>
 int CutCellMeshBase<D, Derived>::grid_edge_type(int idx) const {
@@ -101,15 +95,7 @@ auto CutCellMeshBase<D, Derived>::grid_edge(int idx) const -> Edge {
     auto coord = StaggeredGrid::template staggered_unindex<1>(idx, et);
     return grid_edge(coord, et);
 }
-template<int D, typename Derived>
-auto CutCellMeshBase<D, Derived>::grid_dual_edge(int idx) const -> Edge {
-    int et = StaggeredGrid::edge_type(idx);
-    auto coord = StaggeredGrid::template staggered_unindex<D - 1>(idx, et);
-    int fidx = StaggeredGrid::template staggered_index<D>(coord, et);
-    coord[et]--;
-    int nidx = StaggeredGrid::template staggered_index<D>(coord, et);
-    return Edge{ { et, nidx } };
-}
+
 template<int D, typename Derived>
 auto CutCellMeshBase<D, Derived>::edges() const -> Edges {
     return mtao::eigen::hstack(mtao::geometry::grid::GridTriangulator<GridType>(vertex_grid()).edges(), cut_edges_eigen());

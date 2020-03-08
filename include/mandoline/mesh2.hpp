@@ -16,9 +16,8 @@ struct CutCellMesh<2> : public CutCellMeshBase<2, CutCellMesh<2>> {
     int num_cutfaces() const;
     int num_edges() const;
     int num_cutedges() const;
-    std::array<int, 2> dual_edge(int idx) const;
     int cell_index(const VecCRef &) const;
-    ColVecs dual_vertices() const;
+    //ColVecs dual_vertices() const;
     mtao::ColVectors<int, 3> faces() const;
     std::set<std::vector<int>> cell(int index) const;
 

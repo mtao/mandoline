@@ -8,6 +8,7 @@
 #include "mandoline/diffgeo_utils.hpp"
 #include "mandoline/line.hpp"
 #include "mandoline/operators/boundary2.hpp"
+#include "mandoline/operators/volume2.hpp"
 
 namespace mandoline {
 int CutCellMesh<2>::num_cutcells() const {
@@ -40,32 +41,7 @@ mtao::ColVectors<int, 3> CutCellMesh<2>::faces() const {
     return mtao::geometry::mesh::earclipping(vertices(), mycells);
 }
 auto CutCellMesh<2>::volumes() const -> VecX {
-    VecX V(num_cells());
-    V.topRows(StaggeredGrid::cell_size()).array() = dx().prod();
-
-    auto C = hem.cell_halfedges();
-
-    for (auto &&c : hem.cell_halfedges()) {
-        int cell_index = hem.cell_index(c);
-        if (is_grid_face(cell_index)) continue;
-
-        double &a = V(cell_index) = 0;
-        mtao::geometry::mesh::cell_iterator(&hem, c)([&](auto &&e) {
-            auto u = vertex(e.vertex());
-            auto v = vertex(e.get_dual().vertex());
-            a += .5 * (u[0] * v[1] - v[0] * u[1]);
-        });
-        a = std::abs(a);
-    }
-    return V;
-}
-auto CutCellMesh<2>::dual_edge(int idx) const -> Edge {
-    if (is_grid_edge(idx)) {
-        return grid_dual_edge(idx);
-    } else {
-        auto he = halfedges_per_edge.col(idx);
-        return { { hem.cell_index(he(0)), hem.cell_index(he(1)) } };
-    }
+    return operators::face_volumes(*this);
 }
 auto CutCellMesh<2>::dual_edge_volumes() const -> VecX {
     VecX V(edge_size());
@@ -84,37 +60,41 @@ auto CutCellMesh<2>::dual_edge_volumes() const -> VecX {
 }
 
 
-auto CutCellMesh<2>::dual_vertices() const -> ColVecs {
-    ColVecs V = ColVecs::Zero(D, num_cells());
-    V.leftCols(StaggeredGrid::cell_size()) = StaggeredGrid::cell_vertices();
-
-    for (auto &&[i, c] : mtao::iterator::enumerate(hem.cell_halfedges())) {
-        int cell_index = hem.cell_index(c);
-        if (cell_index < StaggeredGrid::cell_size()) continue;
-
-        auto v = V.col(cell_index);
-        int count = 0;
-        mtao::geometry::mesh::cell_iterator(&hem, c)([&](auto &&e) {
-            auto u = vertex(e.vertex());
-            v += u;
-            ++count;
-        });
-        if (count > 0) {
-            v /= count;
-        }
-    }
-    return V;
-}
+//auto CutCellMesh<2>::dual_vertices() const -> ColVecs {
+//    ColVecs V = ColVecs::Zero(D, num_cells());
+//    V.leftCols(StaggeredGrid::cell_size()) = StaggeredGrid::cell_vertices();
+//
+//    for (auto &&[i, c] : mtao::iterator::enumerate(hem.cell_halfedges())) {
+//        int cell_index = hem.cell_index(c);
+//        if (cell_index < StaggeredGrid::cell_size()) continue;
+//
+//        auto v = V.col(cell_index);
+//        int count = 0;
+//        mtao::geometry::mesh::cell_iterator(&hem, c)([&](auto &&e) {
+//            auto u = vertex(e.vertex());
+//            v += u;
+//            ++count;
+//        });
+//        if (count > 0) {
+//            v /= count;
+//        }
+//    }
+//    return V;
+//}
 bool CutCellMesh<2>::in_cell(const VecCRef &p, int idx) const {
     auto V = vertices();
     return in_cell(V, p, idx);
 }
 bool CutCellMesh<2>::in_cell(const ColVecs &V, const VecCRef &p, int idx) const {
-    double wn = 0;
-    for (auto &&f : m_faces.at(idx).indices) {
-        wn += mtao::geometry::interior_winding_number(V, f, p);
+    if(idx < m_faces.size()) {
+        return m_faces.at(idx).is_inside(V,p);
+    } else {
+        int c = exterior_grid.cell_index(p);
+        if(c >= 0) {
+            return true;
+        }
     }
-    return std::abs(wn) > .5;
+    return false;
 }
 int CutCellMesh<2>::cell_index(const VecCRef &p) const {
     auto [c, q] = StaggeredGrid::coord(p);

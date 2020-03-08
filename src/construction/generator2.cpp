@@ -220,6 +220,28 @@ CutCellMesh<2> CutCellEdgeGenerator<2>::generate_faces() const {
 
 
 void CutCellGenerator<2>::extra_metadata(CutCellMesh<2> &mesh) const {
+        mtao::data_structures::DisjointSet<int> region_ds;
+        {
+            auto t = mtao::logging::profiler("region disjoint set construction", false, "profiler");
+            for (int i = 0; i < cells.size(); ++i) {
+                cell_ds.add_node(i);
+            }
+            for (auto &&[a, b] : m_faces) {
+                if (a >= 0) {
+                    cell_ds.add_node(max_cell_id + a);
+                }
+            }
+            if (adaptive) {
+                auto &ag = *adaptive_grid;
+                auto grid = ag.cell_ownership_grid();
+                auto ag_faces = ag.faces(grid);
+                for (auto &&[c, b] : ag.cells()) {
+                    cell_ds.add_node(c);
+                }
+                for (auto &&f : ag_faces) {
+                    auto &&[a, b] = f.dual_edge;
+                    if (a >= 0 && b >= 0) {
+                        cell_ds.join(a, b);
 }
 
 

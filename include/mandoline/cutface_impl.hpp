@@ -136,4 +136,19 @@ double CutFace<3>::brep_volume(const Eigen::MatrixBase<Derived> &V, bool use_tri
     }
     return vol;
 }
+
+template<typename Derived, typename PDerived>
+double CutFace<2>::winding_number(const Eigen::MatrixBase<Derived> &V, const Eigen::MatrixBase<PDerived>& p) const {
+
+    double wn = 0;
+        for (auto &&f : indices) {
+            wn += mtao::geometry::winding_number(V, f, p);
+        }
+        return wn;
+}
+template<typename Derived, typename PDerived>
+bool CutFace<2>::is_inside(const Eigen::MatrixBase<Derived> &V, const Eigen::MatrixBase<PDerived>& p) const {
+
+    return winding_number(V,p)  > .5;
+}
 }// namespace mandoline
