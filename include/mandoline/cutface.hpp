@@ -186,6 +186,8 @@ struct CutFace<2> : public CutFaceBase<2> {
     using Base::indices;
     using Base::Base;
 
+    int region = -1;
+
     std::optional<mtao::ColVecs2d> triangulated_vertices;
     std::optional<mtao::ColVecs3i> triangulation;
 

@@ -120,7 +120,7 @@ int ExteriorGrid<D>::cell_index(const coord_type& c) const  {
     if(!cell_indices().valid_index(c)) {
         return -1;
     } else {
-        return cell_indices(c);
+        return cell_indices()(c);
     }
 }
 template <int D>

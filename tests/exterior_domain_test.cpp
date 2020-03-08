@@ -36,7 +36,7 @@ TEST_CASE("2D", "[exterior_grid]") {
     GridDatab gb = GridDatab::Constant(true, N, M);
 
     auto eg = EG(std::array<int, 2>{ { N + 1, M + 1 } }, gb);
-    REQUIRE(eg.num_faces() == N * (M + 1) + (N + 1) * M);
+    REQUIRE(eg.num_boundary_facets() == N * (M + 1) + (N + 1) * M);
     REQUIRE(eg.num_cells() == N * M);
 
     {
@@ -44,7 +44,7 @@ TEST_CASE("2D", "[exterior_grid]") {
         REQUIRE(bt.size() == 2 * (N - 1) * M + 2 * N * (M - 1));
         for (auto &&t : bt) {
             REQUIRE(t.row() >= 0);
-            REQUIRE(t.row() < eg.num_faces());
+            REQUIRE(t.row() < eg.num_boundary_facets());
 
             REQUIRE(t.col() >= 0);
             REQUIRE(t.col() < eg.num_cells());
@@ -55,7 +55,7 @@ TEST_CASE("2D", "[exterior_grid]") {
         REQUIRE(bt.size() == 4 * eg.num_cells());
         for (auto &&t : bt) {
             REQUIRE(t.row() >= 0);
-            REQUIRE(t.row() < eg.num_faces());
+            REQUIRE(t.row() < eg.num_boundary_facets());
 
             REQUIRE(t.col() >= 0);
             REQUIRE(t.col() < eg.num_cells());
@@ -71,7 +71,7 @@ TEST_CASE("2D empty", "[exterior_grid]") {
     GridDatab gb = GridDatab::Constant(false, N, M);
 
     auto eg = EG(std::array<int, 2>{ { N + 1, M + 1 } }, gb);
-    REQUIRE(eg.num_faces() == 0);
+    REQUIRE(eg.num_boundary_facets() == 0);
     REQUIRE(eg.num_cells() == 0);
 
     {
@@ -90,7 +90,7 @@ TEST_CASE("2D single ", "[exterior_grid]") {
 
     auto eg = EG(std::array<int, 2>{ { N + 1, M + 1 } }, gb);
     print_eg_dual_edges(eg);
-    REQUIRE(eg.num_faces() == 2);
+    REQUIRE(eg.num_boundary_facets() == 2);
     REQUIRE(eg.num_cells() == 1);
 
     {

@@ -28,7 +28,7 @@ int CutCellMesh<2>::num_cutedges() const {
     return cut_edges().size();
 }
 int CutCellMesh<2>::num_edges() const {
-    return exterior_grid.num_faces() + num_cutedges();
+    return exterior_grid.num_boundary_facets() + num_cutedges();
 }
 
 mtao::ColVectors<int, 3> CutCellMesh<2>::faces() const {
@@ -40,6 +40,20 @@ mtao::ColVectors<int, 3> CutCellMesh<2>::faces() const {
     }
     return mtao::geometry::mesh::earclipping(vertices(), mycells);
 }
+
+
+
+mtao::VecXi CutCellMesh<2>::regions() const {
+    mtao::VecXi R(num_cells());
+    for(auto&& [cid,c]: mtao::iterator::enumerate(cut_faces())) {
+        R(cid) = c.region;
+    }
+
+    R.tail(exterior_grid.num_cells()) = mtao::eigen::stl2eigen(exterior_grid.regions());
+    return R;
+    
+}
+
 auto CutCellMesh<2>::volumes() const -> VecX {
     return operators::face_volumes(*this);
 }
@@ -99,22 +113,27 @@ bool CutCellMesh<2>::in_cell(const ColVecs &V, const VecCRef &p, int idx) const 
 int CutCellMesh<2>::cell_index(const VecCRef &p) const {
     auto [c, q] = StaggeredGrid::coord(p);
     if (!StaggeredGrid::cell_grid().valid_index(c)) {
-        return -1;
+        return -2;
     }
+
 
     auto V = vertices();
-    int grid_cell = StaggeredGrid::cell_index(c);
+    int exterior_cell_index = exterior_grid.cell_index(c);
+    if(exterior_cell_index == -1) {
+        int grid_cell = grid_cell_index(c);
 
-    if (auto it = cell_grid_ownership.find(grid_cell); it != cell_grid_ownership.end()) {
-        auto &[i, cs] = *it;
-        for (auto &&c : cs) {
-            if (in_cell(V, p, c)) {
-                int ret = c;
-                return ret;
+        if (auto it = cell_grid_ownership.find(grid_cell); it != cell_grid_ownership.end()) {
+            auto &[i, cs] = *it;
+            for (auto &&c : cs) {
+                if (in_cell(V, p, c)) {
+                    return c;
+                }
             }
         }
+    } else {
+        return exterior_cell_index;
     }
-    return grid_cell;
+    return -1;
 }
 
 std::set<std::vector<int>> CutCellMesh<2>::cell(int index) const {
@@ -138,13 +157,13 @@ std::set<std::vector<int>> CutCellMesh<2>::cell(int index) const {
 
 int CutCellMesh<2>::nearest_edge_index(const VecCRef &p) const {
     int cind = cell_index(p);
+    /*
 
     int retind = -1;
     auto distance = [&](auto &&e) {
-        int i = e.vertex();
-        int j = e.get_dual().vertex();
-        auto vi = vertex(i);
-        auto vj = vertex(j);
+
+        auto vi = vertex(e.indices[0]);
+        auto vj = vertex(e.indices[1]);
         Line<2> l(vi, vj);
         return (l.project(p) - p).cwiseQuotient(dx()).norm();
     };
@@ -156,7 +175,7 @@ int CutCellMesh<2>::nearest_edge_index(const VecCRef &p) const {
         }
     };
 
-    if (is_grid_face(cind)) {
+    if (!is_cutface_index(cind)) {
 
         auto [c, q] = coord(p);
         auto &&[i, j] = c;
@@ -190,7 +209,10 @@ int CutCellMesh<2>::nearest_edge_index(const VecCRef &p) const {
             update_min(distance(e), halfedge_to_edge_index.at(int(e)) + StaggeredGrid::edge_size());
         }
     }
+
     return retind;
+    */
+    return {};
 }
 
 Eigen::SparseMatrix<double> CutCellMesh<2>::boundary(bool include_domain_boundary_faces) const {

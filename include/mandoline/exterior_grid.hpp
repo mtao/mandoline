@@ -37,9 +37,8 @@ class ExteriorGrid : public mtao::geometry::grid::StaggeredGrid<double, D>
     ExteriorGrid(ExteriorGrid &&) = default;
     ExteriorGrid &operator=(const ExteriorGrid &) = default;
     ExteriorGrid &operator=(ExteriorGrid &&) = default;
-    int num_faces() const { return DomainBoundary::boundary_facet_size(); }
+    int num_boundary_facets() const { return DomainBoundary::boundary_facet_size(); }
     int num_cells() const { return m_cell_coords.size(); }
-    void make_faces();
     const coord_type &cell_shape() const { return m_cell_indices.shape(); }
 
 
@@ -57,11 +56,13 @@ class ExteriorGrid : public mtao::geometry::grid::StaggeredGrid<double, D>
     int get_face_axis(int face_index) const;
     std::vector<Eigen::Triplet<double>> boundary_facet_to_staggered_grid(int offset = 0) const;
     mtao::VecXd boundary_facet_volumes(bool make_boundary = true) const;
+    const std::vector<int>& regions() const { return m_regions; }
 
   private:
     GridDatai m_cell_indices;// acts as a hash map for cell indexing based off a grid
     std::vector<coord_type> m_cell_coords;// reporst the cell found in each index (inverts m_cell_indices)
     std::vector<int> m_boundary_facet_axes;// parallel with DomainBoundary::boundary_facet_pairs
+    std::vector<int> m_regions;// the separate regions of space 
 };
 
 

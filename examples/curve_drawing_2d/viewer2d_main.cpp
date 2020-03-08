@@ -110,6 +110,7 @@ class MeshViewer: public mtao::opengl::Window2 {
         void clear_curve();
         void update_faces();
         void update_ccm();
+        void update_colors(); // doesnt upload the colors to anything
 
         void mouseMoveEvent(MouseMoveEvent& event) override;
         void mousePressEvent(MouseEvent& event) override;
@@ -326,9 +327,7 @@ void MeshViewer::update_faces() {
     if(!ccm) return;
 
     if(colors.cols() != ccm->num_cells()) {
-        colors.resize(4,ccm->num_cells());
-        colors.setRandom();
-        colors.row(3).setConstant(1);
+        update_colors();
     }
     std::vector<std::tuple<mtao::ColVecs3i, mtao::Vec4d>> FCs;
     for(int i = 0; i < ccm->num_cells(); ++i) {
@@ -341,9 +340,23 @@ void MeshViewer::update_faces() {
     auto [V,F,C] = mtao::geometry::mesh::stack_meshes(ccm->vertices(), FCs);
 
     cutcell_mesh.setTriangleBuffer(V.cast<float>(),F.cast<unsigned int>());
-    cutcell_mesh.setColorBuffer(C.cast<float>().eval());
     cutcell_drawable->activate_triangles();
 
+}
+void MeshViewer::update_colors() {
+    mtao::VecXi R = ccm->regions();
+    int num_regions = R.maxCoeff()+1;
+    mtao::ColVecs4d C(4,num_regions);
+    C.setRandom();
+    C.noalias() = C.cwiseAbs();
+    C.row(3).setConstant(1);
+
+    colors.resize(4,ccm->num_cells());
+    //colors.setRandom();
+    //colors.row(3).setConstant(1);
+    for(int i = 0; i < R.size(); ++i) {
+        colors.col(i) = C.col(R(i));
+    }
 }
 
 MAGNUM_APPLICATION_MAIN(MeshViewer)

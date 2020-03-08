@@ -13,6 +13,7 @@ CutCellMesh<2> CutCellEdgeGenerator<2>::generate() const {
 
 CutCellMesh<2> CutCellGenerator<2>::generate() const {
     auto ccm = generate_faces();
+    extra_metadata(ccm);
     return ccm;
 }
 
@@ -209,7 +210,6 @@ CutCellMesh<2> CutCellEdgeGenerator<2>::generate_faces() const {
     }
 
     mtao::logging::debug() << "Original vertices: " << origV().size();
-    //extra_metadata(ret);
     ret.m_origV.resize(2, origV().size());
     for (int i = 0; i < origV().size(); ++i) {
         ret.m_origV.col(i) = origV()[i];
@@ -220,28 +220,105 @@ CutCellMesh<2> CutCellEdgeGenerator<2>::generate_faces() const {
 
 
 void CutCellGenerator<2>::extra_metadata(CutCellMesh<2> &mesh) const {
-        mtao::data_structures::DisjointSet<int> region_ds;
-        {
-            auto t = mtao::logging::profiler("region disjoint set construction", false, "profiler");
-            for (int i = 0; i < cells.size(); ++i) {
-                cell_ds.add_node(i);
+    mtao::data_structures::DisjointSet<int> cell_ds;
+    int num_cells = mesh.num_cells();
+    int num_cutfaces = mesh.num_cutfaces();
+    {
+        auto t = mtao::logging::profiler("region disjoint set construction", false, "profiler");
+
+
+        // exterior grid pairs
+        for (int i = 0; i < num_cells + mesh.num_cutedges(); ++i) {
+            cell_ds.add_node(i);
+        }
+        for (auto &&[a, b] : mesh.exterior_grid.boundary_facet_pairs()) {
+            if (a >= 0 && b >= 0) {
+                cell_ds.join(a +num_cutfaces ,b +num_cutfaces);
             }
-            for (auto &&[a, b] : m_faces) {
-                if (a >= 0) {
-                    cell_ds.add_node(max_cell_id + a);
+        }
+
+        for (auto [cid, edge_pairs] : mesh.face_boundary_map()) {
+            for (auto &&[eid, s] : edge_pairs) {
+                if (eid >= 0) {
+                    auto &&e = mesh.cut_edges()[eid];
+                    if (!e.is_mesh_edge()) {
+                        cell_ds.join(cid, eid + num_cells);
+                    }
+                }
+
+            }
+        }
+        // join boundary faces with teh exterior faces
+        for(auto&& [eidx,e]: mtao::iterator::enumerate(mesh.cut_edges())) {
+
+            if(e.external_boundary) {
+                auto [of,sgn] = *e.external_boundary;
+                if(of >= 0) {
+                    cell_ds.join(eidx+num_cells,mesh.exterior_grid.cell_indices().get(of)+num_cutfaces);
                 }
             }
-            if (adaptive) {
-                auto &ag = *adaptive_grid;
-                auto grid = ag.cell_ownership_grid();
-                auto ag_faces = ag.faces(grid);
-                for (auto &&[c, b] : ag.cells()) {
-                    cell_ds.add_node(c);
+        }
+
+        cell_ds.reduce_all();
+    }
+
+    int outside_root = -1;
+    {// find a grid-boundary cell. this is a substantial amount of computation to make the "outside" the "first region"
+        int boundary_idx = -1;// a boundary face
+        for (auto &&[a, b] : mesh.exterior_grid.boundary_facet_pairs()) {
+            if(a == -2) {
+                boundary_idx = b + num_cutfaces;
+            } else if(b == -2) {
+                boundary_idx = a + num_cutfaces;
+            }
+        }
+        if(boundary_idx == -1) {// try to find a boundary edge, and then a face from it
+            // search through cut-edges for something on the boundary
+            for(auto&& [eidx,e]: mtao::iterator::enumerate(mesh.cut_edges())) {
+
+                if(e.external_boundary) {
+                    auto [of,sgn] = *e.external_boundary;
+                    if(of == -2) {
+                        boundary_idx = eidx;
+                    }
                 }
-                for (auto &&f : ag_faces) {
-                    auto &&[a, b] = f.dual_edge;
-                    if (a >= 0 && b >= 0) {
-                        cell_ds.join(a, b);
+            }
+            for (auto [cid, edge_pairs] : mtao::iterator::enumerate(mesh.exterior_grid.boundary_facet_pairs())) {
+                auto &&[a,b] = edge_pairs;
+                if(a == -2 && b >= 0) {
+                    outside_root = b;
+                    break;
+                }
+                if(b == -2 && a >= 0) {
+                    outside_root = a;
+                    break;
+                }
+            }
+        } else {
+            outside_root = cell_ds.get_root(boundary_idx).data;
+        }
+    }
+    std::map<int, int> reindexer;
+    if(outside_root >= 0) {
+        reindexer[outside_root] = 0;
+    }
+    for (int i = 0; i < num_cells; ++i) {
+        int root = cell_ds.get_root(i).data;
+        if (root != outside_root && reindexer.find(root) == reindexer.end()) {
+            reindexer[root] = reindexer.size();
+        }
+    }
+
+
+    auto& eg_regions = mesh.exterior_grid.m_regions;
+    eg_regions.resize(mesh.exterior_grid.num_cells());
+    for (int i = 0; i < mesh.exterior_grid.num_cells(); ++i) {
+        eg_regions[i] = reindexer[cell_ds.get_root(mesh.num_cutfaces() + i).data];
+    }
+
+    for (int i = 0; i < num_cutfaces; ++i) {
+        mesh.m_faces[i].region = reindexer[cell_ds.get_root(i).data];
+    }
 }
 
 
