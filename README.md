@@ -2,6 +2,9 @@
 [![CircleCI](https://circleci.com/gh/mtao/mandoline/tree/master.svg?style=svg)](https://circleci.com/gh/mtao/mandoline/tree/master)
 A robust cut-cell mesh generator for arbitrary triangle-mesh inputs
 
+# NOTE:
+I've currently messed up the 3d code while updating some stuff and due to sloppy practices i don't have a great version to roll back to. 2D works nicely / exposes some functionality nicely (check out the curve_drawing_2d example).
+
 ## Dependencies
 
 
