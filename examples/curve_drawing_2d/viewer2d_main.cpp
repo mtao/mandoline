@@ -340,6 +340,7 @@ void MeshViewer::update_faces() {
     auto [V,F,C] = mtao::geometry::mesh::stack_meshes(ccm->vertices(), FCs);
 
     cutcell_mesh.setTriangleBuffer(V.cast<float>(),F.cast<unsigned int>());
+    cutcell_mesh.setColorBuffer(C.cast<float>().eval());
     cutcell_drawable->activate_triangles();
 
 }
