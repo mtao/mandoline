@@ -36,6 +36,7 @@ IF(HANDLE_SELF_INTERSECTIONS)
 
 
 ADD_EXECUTABLE(cutmesh_validation
+    validate_cutmesh.cpp
     validation/cutmesh_validation.cpp 
     validation/faces_fully_utilized.cpp validation/paired_boundary.cpp validation/pcwn_count.cpp validation/possible_cells.cpp
     validation/grid_cells.cpp
