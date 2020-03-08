@@ -8,6 +8,8 @@ bool pcwn_check(const mandoline::CutCellMesh<3>&);
 //surface area
 bool faces_fully_utilized(const mandoline::CutCellMesh<3>&);
 //grid volume
+// number of grid cells underutilized and number of grid cells completely mismatched (either empty or used despite not being masked)
+std::array<int,2> grid_cells_fully_utilized_count(const mandoline::CutCellMesh<3>& ccm);
 bool grid_cells_fully_utilized(const mandoline::CutCellMesh<3>&);
 //region counts {{mandoline regions, igl regions}}
 std::array<int,2> region_counts(const mandoline::CutCellMesh<3>&);
@@ -31,3 +33,8 @@ Eigen::VectorXd brep_region_volumes(const mtao::ColVecs3d& V, const mtao::ColVec
 Eigen::VectorXd brep_region_volumes(const mtao::ColVecs3d& V, const mtao::ColVecs3i& F, const mtao::ColVecs2i& C);
 //for a set of vertices that comprise a face, list the set of potential cells that it resides within
 std::set<std::array<int,3>> possible_cells(const mandoline::CutCellMesh<3>& ccm, const std::vector<int>& face);
+
+
+bool cut_normals_match_parents(const mandoline::CutCellMesh<3>& ccm);
+//bool cut_tangents_match_parents(const mandoline::CutCellMesh<2>& ccm);
+bool cut_tangents_match_parents(const mandoline::CutCellMesh<3>& ccm);

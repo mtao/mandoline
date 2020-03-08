@@ -44,13 +44,6 @@ void CutData<D, Indexer>::clean_edges() {
     for (auto &&eisect : m_edge_intersections) {
         eisect.clear();
     }
-    /*
-            m_edge_intersections.clear();
-            m_edge_intersections.reserve(m_E.size());
-            for(int i = 0; i < m_E.cols(); ++i) {
-                m_edge_intersections.emplace_back(m_V,m_E,i);
-            }
-            */
 }
 template<int D, typename Indexer>
 void CutData<D, Indexer>::clean_triangles() {
@@ -58,13 +51,6 @@ void CutData<D, Indexer>::clean_triangles() {
         tisect.clear();
     }
 
-    /*
-            m_triangle_intersections.clear();
-            m_triangle_intersections.reserve(m_F.size());
-            for(int i = 0; i < m_F.cols(); ++i) {
-                m_triangle_intersections.emplace_back(m_V,m_F,m_E,m_FE, m_edge_intersections,i);
-            }
-            */
 }
 
 
@@ -179,6 +165,7 @@ void CutData<D, Indexer>::bake(const std::optional<SGType> &grid, bool fuse) {
         std::mutex face_mutex;
         // function for adding a single face, with mutex lock for paralellism
         auto add_face = [&](const coord_mask<D> &m, const std::vector<int> &F, int fidx) {
+            //mtao::logging::debug() << "Nontrivial triangle face " << fidx << " of size " << F.size();
             std::scoped_lock lock(face_mutex);
             //cut_to_primal[m_cut_faces.size()] = fidx;
             m_cut_faces.emplace_back(m, F, fidx);
@@ -204,6 +191,7 @@ void CutData<D, Indexer>::bake(const std::optional<SGType> &grid, bool fuse) {
                 }
 
                 if (trivial) {
+                    //mtao::logging::debug() << "Trivial Cutface: " << i;
                     // generate the triangle, reindexed by m_crossings
                     std::vector<int> f(3);
                     auto fi = F(FI.triangle_index);

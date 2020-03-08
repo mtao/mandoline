@@ -23,6 +23,7 @@
 #include <mandoline/construction/construct_imgui.hpp>
 #include <mandoline/construction/remesh_self_intersections.hpp>
 #include <mandoline/mesh3.hpp>
+#include <mandoline/tools/cutmesh_info.hpp>
 
 
 using namespace mtao::opengl;
@@ -71,7 +72,7 @@ class MeshViewer: public mtao::opengl::Window3 {
             //std::tie(V,F) = mtao::geometry::mesh::read_objD(filename);
             V = VV.transpose();
             F = FF.transpose();
-                std::cout << "V/E/F " << V.cols() << "/" << mtao::geometry::mesh::boundary_facets(F).cols() << "/" << F.cols() << std::endl;
+            std::cout << "V/E/F " << V.cols() << "/" << mtao::geometry::mesh::boundary_facets(F).cols() << "/" << F.cols() << std::endl;
             mesh.setTriangleBuffer(V.cast<float>(),F.cast<unsigned int>());
             orig_bbox = bbox = mtao::geometry::bounding_box(V.cast<float>().eval());
             mtao::Vec3f trans_e= -((bbox.min() + bbox.max()) / 2).cast<float>();
@@ -165,6 +166,50 @@ class MeshViewer: public mtao::opengl::Window3 {
             }
             edge_boundary_drawable->set_visibility(false);
         }
+
+        void make_ccm() {
+            ccm = constructor->generate();
+            if(ccm) { mandoline::tools::print_region_info(*ccm);}
+            {
+                auto g = ccm->Base::vertex_grid();
+                auto s = g.shape();
+                std::cout << s[0] << ":" << s[1] << ":" << s[2] << std::endl;
+            }
+
+            std::vector<mtao::ColVecs3i> Fs;
+            mtao::ColVecs3f V = ccm->vertices().cast<float>();
+            for(auto&& f: ccm->faces()) {
+                if(f.is_mesh_face()) {
+                    Fs.push_back(f.triangulate_fan());
+                }
+            }
+            if(Fs.size() > 0) {
+                auto F = mtao::eigen::hstack_iter(Fs.begin(),Fs.end()).cast<unsigned int>().eval();
+                mesh.setTriangleBuffer(V,F);
+                edge_mesh.setVertexBuffer(V);
+
+
+                using E = std::array<int,2>;
+                edges.clear();
+                mapped_edges.clear();
+                for(int i = 0; i < ccm->cut_edge_size(); ++i) {
+                    auto e = ccm->cut_edge(i);
+                    auto va = ccm->masked_vertex(e.indices[0]);
+                    auto vb = ccm->masked_vertex(e.indices[1]);
+                    auto mask = va.mask() & vb.mask();
+                    if(mask.active()) {
+                        edges.emplace_back(e.indices);
+                        for(int i = 0; i < 3; ++i) {
+                            if(mask[i]) {
+                                mapped_edges[E{{i,*mask[i]}}].emplace_back(edges.back());
+                            }
+                        }
+                    }
+                }
+                update_edges();
+            }
+
+        }
         void gui() override {
 
             if(mv_drawable) {
@@ -192,46 +237,7 @@ class MeshViewer: public mtao::opengl::Window3 {
                     }
                 }
                 if(ImGui::Button("Make CCM")) {
-                    ccm = constructor->generate();
-                    {
-                        auto g = ccm->Base::vertex_grid();
-                        auto s = g.shape();
-                        std::cout << s[0] << ":" << s[1] << ":" << s[2] << std::endl;
-                    }
-
-                    std::vector<mtao::ColVecs3i> Fs;
-                    mtao::ColVecs3f V = ccm->vertices().cast<float>();
-                    for(auto&& f: ccm->faces()) {
-                        if(f.is_mesh_face()) {
-                            Fs.push_back(f.triangulate_fan());
-                        }
-                    }
-                    if(Fs.size() > 0) {
-                        auto F = mtao::eigen::hstack_iter(Fs.begin(),Fs.end()).cast<unsigned int>().eval();
-                        mesh.setTriangleBuffer(V,F);
-                        edge_mesh.setVertexBuffer(V);
-
-
-                        using E = std::array<int,2>;
-                        edges.clear();
-                        mapped_edges.clear();
-                        for(int i = 0; i < ccm->cut_edge_size(); ++i) {
-                            auto e = ccm->cut_edge(i);
-                            auto va = ccm->masked_vertex(e.indices[0]);
-                            auto vb = ccm->masked_vertex(e.indices[1]);
-                            auto mask = va.mask() & vb.mask();
-                            if(mask.active()) {
-                                edges.emplace_back(e.indices);
-                                for(int i = 0; i < 3; ++i) {
-                                    if(mask[i]) {
-                                        mapped_edges[E{{i,*mask[i]}}].emplace_back(edges.back());
-                                    }
-                                }
-                            }
-                        }
-                        update_edges();
-                    }
-
+                    make_ccm();
                 }
             }
             {

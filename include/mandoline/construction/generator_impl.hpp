@@ -940,6 +940,7 @@ auto CutCellEdgeGenerator<D>::possible_cells_cell(const std::set<int> &faces, co
         std::set_intersection(possibles.begin(), possibles.end(), s.begin(), s.end(), std::inserter(i, i.end()));
         possibles = std::move(i);
         if (possibles.empty()) {
+            spdlog::warn("No possible cell!");
             return {};
         }
     }

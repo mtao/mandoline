@@ -8,8 +8,17 @@ std::array<int,2> pcwn_count(const CutCellMesh<3>& ccm) {
     int is_pcwn = 0;
     int is_not_pcwn = 0;
     for(auto&& cid: mtao::iterator::range(ccm.cells().size())) {
-        auto F = ccm.triangulated_cell(true,true).transpose().eval();
-        if(igl::copyleft::cgal::piecewise_constant_winding_number(IV,F)) {
+        auto [V_,F] = ccm.triangulated_cell(true,true);
+        mtao::RowVecs3i FF = F.transpose();
+        double wn = 0;
+        if(V_.size() == 0) {
+            wn = igl::copyleft::cgal::piecewise_constant_winding_number(IV,FF);
+        } else {
+            mtao::RowVecs3d VV = V_.transpose();
+            wn = igl::copyleft::cgal::piecewise_constant_winding_number(VV,FF);
+        }
+
+        if(wn) {
             is_pcwn++;
         } else {
             mtao::logging::warn() << "Not pcwn cell: " << cid;

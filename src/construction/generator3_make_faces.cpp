@@ -394,6 +394,7 @@ mtao::map<int, CutFace<3>> CutCellGenerator<3>::compute_faces_axis(int idx, int 
             F.N = N;
             F.coord_mask<D>::operator=(face_mask(F.indices));
             faces[i] = std::move(F);
+            //std::cout << std::string(faces[i]) << std::endl;
         }
     }
 

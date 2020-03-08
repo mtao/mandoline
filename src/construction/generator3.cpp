@@ -109,16 +109,17 @@ CutCellMesh<3> CutCellGenerator<3>::generate() const {
                 inds.insert(fidx);
             }
         }
+        //std::cout << std::string(b) << std::endl;
         auto pos_cells = possible_cells_cell(inds, ccm.faces());
-        if (pos_cells.size() == 0) {
+        if(pos_cells.size() == 1) {
+        b.grid_cell = *pos_cells.begin();
+        } else if (pos_cells.size() == 0) {
             std::cout << "CELL: " << a.index << std::endl;
             std::cout << "No possible cells!?!?!" << std::endl;
             for (auto &&ind : inds) {
                 std::cout << "Face " << ind << ": ";
                 if (ccm.is_folded_face(ind)) {
-                    std::cout << "Folded" << std::endl;
-                } else {
-                    std::cout << std::endl;
+                    std::cout << "Folded: ";
                 }
                 auto &face = ccm.faces()[ind];
                 auto pc = possible_cells(face.indices);
@@ -128,7 +129,6 @@ CutCellMesh<3> CutCellGenerator<3>::generate() const {
                     std::cout << c[1] << ":";
                     std::cout << c[2] << " ";
                 }
-                std::cout << std::endl;
                 for (auto &&c : ccm.faces()[ind].indices) {
                     for (auto &&vi : c) {
                         std::cout << std::string(grid_vertex(vi)) << " ";
@@ -138,8 +138,9 @@ CutCellMesh<3> CutCellGenerator<3>::generate() const {
                 std::cout << std::endl;
             }
             std::cout << std::endl;
+        } else {
+            mtao::logging::warn()<< "Degenerate cell";
         }
-        b.grid_cell = *pos_cells.begin();
     }
     ccm.m_origV.resize(3, origV().size());
     for (int i = 0; i < origV().size(); ++i) {

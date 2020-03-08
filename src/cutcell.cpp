@@ -10,6 +10,16 @@ std::vector<Eigen::Triplet<double>> CutCell::boundary_triplets() const {
     }
     return trips;
 }
+
+CutCell::operator std::string() const {
+    std::stringstream ss;
+    ss << "CutCell[" << index << "(R" << region << ")";
+    for(auto&& [a,b]: *this) {
+        ss << a<<":" << b << " ";
+    }
+    ss << "]";
+    return ss.str();
+}
 /*
        auto CutCell::grid_cell(const std::vector<CutFace<3>>& F) const -> std::array<int,3> {
        if(F.empty()) { return {}; }
@@ -53,6 +63,9 @@ std::vector<Eigen::Triplet<double>> CutCell::boundary_triplets() const {
 void CutCell::serialize(protobuf::CutCell &cell) const {
     cell.set_id(index);
     cell.set_region(region);
+    std::cout << "cell grid cell: " ;
+    std::copy(grid_cell.begin(),grid_cell.end(),std::ostream_iterator<int>(std::cout,","));
+    std::cout << std::endl;
     protobuf::serialize(grid_cell, *cell.mutable_grid_cell());
     auto &&pmap = *cell.mutable_entries();
     for (auto &&[a, b] : *this) {

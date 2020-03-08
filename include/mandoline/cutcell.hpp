@@ -15,6 +15,7 @@ struct CutCell : public std::map<int, bool> {
     int region = -1;
     coord_type grid_cell;
 
+    operator std::string() const;
     void serialize(protobuf::CutCell &) const;
     static CutCell from_proto(const protobuf::CutCell &);
 

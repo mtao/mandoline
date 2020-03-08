@@ -462,6 +462,7 @@ auto TriangleIntersections<D>::vptr_faces() const -> std::set<std::vector<const 
                                */
     auto V = gvertices();
     populate_crossing_indices<D>(V);
+
     auto VM = crossing_indexer<D>(V);
 
     auto IVM = inverse_crossing_indexer<D>(V);
@@ -470,18 +471,29 @@ auto TriangleIntersections<D>::vptr_faces() const -> std::set<std::vector<const 
     for (auto &&c : V) {
         B.col(c.index) = mtao::eigen::stl2eigen(BC.at(c.vertex_ptr())).template topRows<2>();
     }
+    //for(auto&& v: V) { std::cout << std::string(v) << " ";}
+    //std::cout << std::endl;
+    //std::cout << B << std::endl;
     auto Es = this->nobdry_edges(VM);
+    //for(auto&& e: Es) {
+    //    std::cout << e[0] << ":" << e[1] << " ";
+    //}
+    //std::cout << std::endl;
     //std::set<Edge> Es(Evec.begin(),Evec.end());
     FaceCollapser fc(Es);
     Edge be = boundary_edge(VM);
+    std::cout << be[0] << ":" << be[1] << std::endl;
     fc.set_edge_for_removal(be);
 
     fc.bake(B);
 
+    //for(auto&& [e,fc]: fc.edge_to_face()) {
+    //    std::cout << e[0] << ":" << e[1] << " => " << ( std::get<1>(fc)?'-':'+')<< std::get<0>(fc)  << std::endl;
+    //}
 
     for (auto &&[cid, fs] : fc.faces_no_holes()) {
         std::vector<const VType *> v(fs.size());
-        std::transform(fs.begin(), fs.end(), v.begin(), [&](int idx) {
+        std::transform(fs.rbegin(), fs.rend(), v.begin(), [&](int idx) {
             return IVM.at(idx);
         });
         ret.emplace(std::move(v));

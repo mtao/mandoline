@@ -104,7 +104,9 @@ mtao::ColVecs2i input_mesh_regions(const mandoline::CutCellMesh<3>& ccm) {
 mtao::ColVecs2i regions(const mtao::ColVecs3d& V, const mtao::ColVecs3i& F) {
     Eigen::MatrixXi C;
     Eigen::MatrixXd VV = V.transpose();
+    Eigen::Matrix<CGAL::Lazy_exact_nt<CGAL::Gmpq>, Eigen::Dynamic, Eigen::Dynamic> VVV = VV.cast<CGAL::Lazy_exact_nt<CGAL::Gmpq>>();
     Eigen::MatrixXi FF = F.transpose();
-    igl::copyleft::cgal::extract_cells(VV.cast<CGAL::Lazy_exact_nt<CGAL::Gmpq>>().eval(),FF,C);
+    igl::copyleft::cgal::extract_cells(VVV,FF,C);
+    //igl::copyleft::cgal::extract_cells(VV.cast<CGAL::Lazy_exact_nt<CGAL::Gmpq>>().eval(),FF,C);
     return C.transpose();
 }

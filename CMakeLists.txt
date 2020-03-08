@@ -183,10 +183,12 @@ SET(MANDOLINE_CUTMESH_SRCS
 SET(TOOLS_SRCS
     src/tools/planar_slicer.cpp
     src/tools/exploded_mesh.cpp
+    src/tools/cutmesh_info.cpp
     )
 SET(TOOLS_HDRS
     include/mandoline/tools/planar_slicer.hpp
     include/mandoline/tools/exploded_mesh.hpp
+    include/mandoline/tools/cutmesh_info.hpp
     )
 
 
@@ -260,6 +262,7 @@ protobuf::libprotobuf
 ADD_LIBRARY(mandoline_cutmesh3
     $<TARGET_OBJECTS:cutmesh_proto>
     $<TARGET_OBJECTS:cutmesh3_obj>
+    $<TARGET_OBJECTS:tools_obj>
     )
 TARGET_LINK_LIBRARIES(mandoline_cutmesh3
     mtao::geometry OpenMP::OpenMP_CXX

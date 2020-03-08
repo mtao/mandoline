@@ -4,7 +4,7 @@ ADD_LIBRARY(cutmesh_maker
     make_cutmesh_generator_from_cmdline.hpp
     )
 
-TARGET_LINK_LIBRARIES(cutmesh_maker mandoline)
+TARGET_LINK_LIBRARIES(cutmesh_maker mandoline cxxopts)
 ADD_DEFINITIONS(-g)
 
 ADD_EXECUTABLE(cutmesh_to_obj cutmesh_to_obj.cpp)

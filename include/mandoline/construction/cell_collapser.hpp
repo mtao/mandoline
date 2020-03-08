@@ -23,6 +23,7 @@ struct CellCollapser {
     //CellCollapser(const mtao::map<int,std::set<std::vector<int>>>& faces);
     CellCollapser(const mtao::map<int, CutFace<3>> &faces);
     std::tuple<std::set<std::vector<int>>, std::set<Edge>> clean_unmanifold(const std::vector<int> &);
+    // for each edge, list off all of the ordered halffaces that use it 
     mtao::map<Edge, std::set<const HalfFace *>> collect_halffaces() const;
 
     int dual_cell(const HalfFace &hf) const;
@@ -61,11 +62,12 @@ void CellCollapser::bake(const Eigen::MatrixBase<Derived> &V) {
 template<typename Derived>
 void CellCollapser::merge(const Eigen::MatrixBase<Derived> &V) {
     auto t2 = mtao::logging::profiler("cell collapser merge", false, "profiler");
-    for (auto [e, hfs] : collect_halffaces()) {
+    for (auto [e, halffaces] : collect_halffaces()) {
         //auto t3 = mtao::logging::profiler("cell collapser edge fan processessing",false,"profiler");
-        if (hfs.empty()) {
+        if (halffaces.empty()) {
             continue;
         }
+        //std::cout << "Edge " << e[0] << ":" << e[1] << "has " << halffaces.size() << " half faces" << std::endl;
         auto [a, b] = e;
         if (a > b) {
             continue;
@@ -74,12 +76,11 @@ void CellCollapser::merge(const Eigen::MatrixBase<Derived> &V) {
         auto vb = V.col(b);
         auto vba = va - vb;
 
-#ifdef MANDOLINE_USE_FLOP_FREE_ANGLE_COMPUTATION
         int maxcoeff;
         if (vba.norm() < 1e-8) {
             mtao::Mat3d A = mtao::Mat3d::Zero();
 
-            for (auto &&hfp : hfs) {
+            for (auto &&hfp : halffaces) {
                 auto [fidx, e] = *hfp;
 
                 bool sign = std::get<1>(m_halfface_to_cell.at(*hfp));
@@ -100,32 +101,15 @@ void CellCollapser::merge(const Eigen::MatrixBase<Derived> &V) {
         }
         int ui = (maxcoeff + 1) % 3;
         int uj = (maxcoeff + 2) % 3;
-#else//MANDOLINE_USE_FLOP_FREE_ANGLE_COMPUTATION
-        mtao::Vec3d t = (vba).normalized();
-        mtao::Matrix<double, 3, 2> uv;
-        auto u = uv.col(0);
-        auto v = uv.col(1);
-        for (int i = 0; i < 3; ++i) {
-            if (t((i + 1) % 3) != 0) {
-                u = t.cross(mtao::Vec3d::Unit(i));
-                break;
-            }
-        }
-        v = u.cross(t);
-#endif//MANDOLINE_USE_FLOP_FREE_ANGLE_COMPUTATION
         mtao::map<double, HalfFace> index_map;
-        for (auto &&hfp : hfs) {
+        for (auto &&hfp : halffaces) {
             auto [fidx, e] = *hfp;
 
             auto &&F = m_faces.at(fidx);
             bool sign = std::get<1>(m_halfface_to_cell.at(*hfp));
             auto N = (sign ? 1 : -1) * F.N;
 
-#ifdef MANDOLINE_USE_FLOP_FREE_ANGLE_COMPUTATION
             mtao::Vec2d p(N(ui), N(uj));
-#else//MANDOLINE_USE_FLOP_FREE_ANGLE_COMPUTATION
-            mtao::Vec2d p = uv.transpose() * N;
-#endif//MANDOLINE_USE_FLOP_FREE_ANGLE_COMPUTATION
 
             double ang = mtao::geometry::trigonometry::angle(p)(0);
             index_map[ang] = *hfp;

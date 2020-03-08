@@ -23,42 +23,44 @@
 using namespace mtao::logging;
 #include "make_cutmesh_from_cmdline.hpp"
 #include "make_cutmesh_generator_from_cmdline.hpp"
+#include "mandoline/tools/cutmesh_info.hpp"
 
 
 using namespace mandoline;
 
 
 
-mtao::CommandLineParser make_cutmesh_clparser() {
-    mtao::CommandLineParser clp;
-    clp.add_option("adaptive",true);
-    clp.add_option("normalize");
-    clp.add_option("checks");
-    clp.add_option("prescaled");
-    clp.add_option("N",-1);
-    clp.add_option("NI",3);
-    clp.add_option("NJ",3);
-    clp.add_option("NK",3);
-    clp.add_option("adaptive-level",-1);
-    clp.add_option("remove-self-intersections",true);
-    return clp;
+cxxopts::Options make_cutmesh_clparser() {
+    cxxopts::Options options("make_cutmesh", "make a cutcell-mesh using mandoline");
+
+    options.add_options()
+        ("mesh_file", "mesh grid file",cxxopts::value<std::string>())
+        ("output", "output cutmesh file",cxxopts::value<std::string>())
+        ("N,shape", "output shape as a triplet of csv NI,NJ,NV" ,cxxopts::value<std::string>()->default_value("5,5,5"))
+        ("p,prescaled", "Whether the mesh was already scaled to grid index space",cxxopts::value<bool>()->default_value("false"))
+        ("r,rsi", "remove self intersections (may be slow)",cxxopts::value<bool>()->default_value("false"))
+        ("a,adaptivity_level", "Number of grid resolutions",cxxopts::value<int>()->default_value("0"))
+        ("c,checks", "Do some quality checks on the resulting ccm",cxxopts::value<bool>()->default_value("false"))
+        ("n,normalize", "Normalize data to a unit cube",cxxopts::value<bool>()->default_value("false"))
+        ("i,info", "show extra info after creating the ccm",cxxopts::value<bool>()->default_value("false"))
+        ("h,help", "Print usage");
+    options.parse_positional({"mesh_file","output"});
+    options.positional_help({"<mesh_file> <output_filename>"});
+    return options;
 }
 
 CutCellMesh<3> make_cutmesh(int argc, char * argv[]) {
     auto clp = make_cutmesh_clparser();
-    if(clp.parse(argc,argv)) {
-        return make_cutmesh(clp);
-    } else {
-        return {};
-    }
+    auto result = clp.parse(argc,argv);
+    return make_cutmesh(result);
 }
-std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> read_mesh_input(const mtao::CommandLineParser& clp) {
+std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> read_mesh_input(const cxxopts::ParseResult& result) {
 
-    std::string obj_filename = clp.arg(0);
-    if(clp.args().size() < 1) {
+    if(!bool(result.count("mesh_file"))) {
         fatal() << "No input mesh filename!";
         return {};
     }
+    std::string obj_filename = result["mesh_file"].as<std::string>();
     mtao::ColVecs3d V;
     mtao::ColVecs3i F;
     {
@@ -67,7 +69,7 @@ std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> read_mesh_input(const mtao::Command
         igl::read_triangle_mesh(obj_filename,VV,FF);
         V = VV.transpose();
         F = FF.transpose();
-        bool si = clp.optT<bool>("remove-self-intersections");
+        bool si = result["rsi"].as<bool>();
         if(si) {
             auto t = mtao::logging::profiler("remesh_time",false,"remesh_profiler");
             std::tie(V,F) = mtao::geometry::prune(V,F,0);
@@ -92,30 +94,50 @@ std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> read_mesh_input(const mtao::Command
     }
     return {V,F};
 }
-construction::CutCellGenerator<3> make_generator(const mtao::CommandLineParser& clp) {
-    auto [V,F] = read_mesh_input(clp);
-    return make_generator(V,F,clp);
+construction::CutCellGenerator<3> make_generator(const cxxopts::ParseResult& result) {
+    auto [V,F] = read_mesh_input(result);
+    return make_generator(V,F,result);
 
 }
-construction::CutCellGenerator<3> make_generator(const mtao::ColVecs3d& VV, const mtao::ColVecs3i& FF, const mtao::CommandLineParser& clp) {
+construction::CutCellGenerator<3> make_generator(const mtao::ColVecs3d& VV, const mtao::ColVecs3i& FF, const cxxopts::ParseResult& result) {
     auto&& log = make_logger("profiler",mtao::logging::Level::All);
-    std::string obj_filename = clp.arg(0);
-    int adaptive_level = clp.optT<int>("adaptive-level");
-    bool adaptive = clp.optT<bool>("adaptive") || adaptive_level >= 0;
 
-    int NI = clp.optT<int>("NI");
-    int NJ = clp.optT<int>("NJ");
-    int NK = clp.optT<int>("NK");
-    int N = clp.optT<int>("N");
-    bool do_checks = clp.optT<bool>("checks");
-    bool prescaled = clp.optT<bool>("prescaled");
-    bool normalize = clp.optT<bool>("normalize");
-    std::cout << "N: " << N << std::endl;
-    if(N > 0) {
-        NI = NJ = NK = N;
+    if(!bool(result.count("mesh_file"))) {
+        fatal() << "No input mesh filename!";
+        return {};
     }
+    std::string obj_filename = result["mesh_file"].as<std::string>();
+    int adaptive_level = result["adaptivity_level"].as<int>();
+    bool adaptive = adaptive_level >= 0;
 
-    assert(NI>0);
+    std::string Ns = result["shape"].as<std::string>();
+    std::array<int,3> N;
+    {
+        auto it = Ns.begin();
+        auto it2 = Ns.begin();
+        size_t pos = 0;
+        size_t comma_count = std::count_if(Ns.begin(),Ns.end(), [](std::string::value_type c) -> bool {
+                return c == ',';
+                });
+        if(comma_count != 2) {
+            fatal() << "Shape should have 2 commas";
+            return {};
+        }
+        auto step = [&]() {
+            it2 = std::find(it,Ns.end(),',');
+            std::string ret(it,it2);
+            it = it2+1;
+            return ret;
+
+        };
+        N[0] = std::stoi(step());
+        N[1] = std::stoi(step());
+        N[2] = std::stoi(step());
+    }
+    bool do_checks = result["checks"].as<bool>();
+    bool prescaled = result["prescaled"].as<bool>();
+    bool normalize = result["normalize"].as<bool>();
+
 
 
     mtao::ColVecs3d V = VV;
@@ -138,13 +160,13 @@ construction::CutCellGenerator<3> make_generator(const mtao::ColVecs3d& VV, cons
         v = V.col(i);
     }
 
-    std::array<int,3> NN{{NI,NJ,NK}};
-    mtao::Vec3d dx = 1.0 / (mtao::eigen::stl2eigen(NN).cast<double>().array()+1);
+    mtao::Vec3d dx = 1.0 / (mtao::eigen::stl2eigen(N).cast<double>().array()+1);
     mtao::Vec3d origin = mtao::Vec3d::Zero();
 
     construction::CutCellGenerator<3> ccg;
     if(prescaled) {
-        auto sg = CutCellMesh<3>::StaggeredGrid(NN,mtao::Vec3d::Ones());
+        auto vg = mtao::geometry::grid::Grid3d(N,mtao::Vec3d::Ones());
+        auto sg = CutCellMesh<3>::StaggeredGrid(vg);
         ccg = construction::CutCellGenerator<3>(stlp,sg, {});
         auto bbox = mtao::geometry::bounding_box(V);
     } else {
@@ -154,10 +176,11 @@ construction::CutCellGenerator<3> make_generator(const mtao::ColVecs3d& VV, cons
 
         mtao::Vec3d C = (bbox.min() + bbox.max()) / 2;
         mtao::Vec3d s = bbox.sizes() / 2;
-        bbox.min() = C - (1 + bbox_offset) * s;
-        bbox.max() = C + (1 + bbox_offset) * s;
+        bbox.min() -= bbox_offset * s;
+        bbox.max() += bbox_offset * s;
 
-        auto sg = CutCellMesh<3>::StaggeredGrid::from_bbox(bbox,NN,true);
+
+        auto sg = CutCellMesh<3>::StaggeredGrid::from_bbox(bbox,N,true);
         ccg = construction::CutCellGenerator<3>(stlp,sg, {});
     }
     if(adaptive) {
@@ -181,20 +204,25 @@ construction::CutCellGenerator<3> make_generator(const mtao::ColVecs3d& VV, cons
     }
     return ccg;
 }
-CutCellMesh<3> make_cutmesh(const construction::CutCellGenerator<3>& ccg, const mtao::CommandLineParser& clp) {
+CutCellMesh<3> make_cutmesh(const construction::CutCellGenerator<3>& ccg, const cxxopts::ParseResult& result) {
 
     CutCellMesh<3> ccm;
     {
         auto t = mtao::logging::profiler("ccm_generation",false,"profiler");
         ccm = ccg.generate();
     }
-    bool normalize = clp.optT<bool>("normalize");
+    bool normalize = result["normalize"].as<bool>();
+
+    bool info = result["info"].as<bool>();
+    if(info) {
+        tools::print_all_info(ccm);
+    }
     //ccm.normalize_output = normalize;
     return ccm;
 }
 
-CutCellMesh<3> make_cutmesh(const mtao::CommandLineParser& clp) {
+CutCellMesh<3> make_cutmesh(const cxxopts::ParseResult& result) {
 
     auto t = mtao::logging::timer("Total construction time");
-    return make_cutmesh(make_generator(clp),clp);
+    return make_cutmesh(make_generator(result),result);
 }

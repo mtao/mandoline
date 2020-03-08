@@ -67,6 +67,7 @@ struct FaceCollapser {
     // indicate that a single directed edges in on the outside
     void set_edge_for_removal(const Edge &e);
 
+    const std::map<Edge, std::tuple<int, bool>>& edge_to_face() const { return m_edge_to_face; }
   private:
     // a directed edge maps to a face identity and whether this is the same order as the input
     std::map<Edge, std::tuple<int, bool>> m_edge_to_face;

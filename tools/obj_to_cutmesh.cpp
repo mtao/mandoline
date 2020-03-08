@@ -6,17 +6,20 @@ int main(int argc, char * argv[]) {
 
     auto&& log = make_logger("profiler",mtao::logging::Level::All);
     auto clp = make_cutmesh_clparser();
-    if(clp.parse(argc, argv)) {
-
-        if(clp.args().size() < 2) {
-            mtao::logging::warn() << "No filename, not outputting!";
-        }
-        auto ccm = make_cutmesh(clp);
-        if(clp.args().size() >= 2) {
-            std::string output_prefix = clp.arg(1);
-            ccm.write(output_prefix);
-        }
+    auto res = clp.parse(argc, argv);
+    bool help_out = res.count("help");
+    if (help_out) {
+        std::cout << clp.help() << std::endl;
+        return 0;
     }
+    if(!bool(res.count("output"))) {
+        mtao::logging::fatal() << "No output filename!";
+        return {};
+    }
+
+    auto ccm = make_cutmesh(res);
+    std::string output_prefix = res["output"].as<std::string>();;
+    ccm.write(output_prefix);
 
     return 0;
 }
