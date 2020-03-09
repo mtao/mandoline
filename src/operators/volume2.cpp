@@ -64,6 +64,7 @@ mtao::VecXd edge_lengths(const CutCellMesh<2> &ccm) {
 mtao::VecXd dual_edge_lengths(const CutCellMesh<2> &ccm) {
 
     mtao::VecXd DL(ccm.cut_edges().size());
+    DL.setZero();
     if (ccm.cut_edges().size() > 0) {
         for (auto &&[i, edge] : mtao::iterator::enumerate(ccm.cut_edges())) {
             if (edge.is_axial_edge()) {

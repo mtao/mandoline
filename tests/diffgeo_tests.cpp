@@ -48,7 +48,7 @@ TEST_CASE("2D", "[boundary,exterior_grid]") {
         Eigen::VectorXd B = L * Eigen::VectorXd::Ones(L.cols());
 
         REQUIRE((LSL).norm() == Approx(0));
-        REQUIRE(B.norm() == Approx(0));
+        REQUIRE(B.norm() < 1e-5);
 
         std::mt19937 gen(0);
         std::uniform_real_distribution<> dis(-10., 10.);

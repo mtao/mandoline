@@ -4,7 +4,7 @@
 namespace mandoline::operators {
 
 // primal-1 form -h> dual-1 -d> dual-0
-Eigen::SparseMatrix<double> divergence(const CutCellMesh<2> &ccm);
+Eigen::SparseMatrix<double> divergence(const CutCellMesh<2> &ccm, bool include_domain_boundary = false);
 
 // primal-2 -d> primal-1 form -h> dual-1 -d> dual-0
 Eigen::SparseMatrix<double> laplacian(const CutCellMesh<2> &ccm);

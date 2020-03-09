@@ -5,8 +5,8 @@
 namespace mandoline::operators {
 
 // primal-1 form -h> dual-1 -d> dual-0
-Eigen::SparseMatrix<double> divergence(const CutCellMesh<2> &ccm) {
-    auto B = boundary(ccm, false);
+Eigen::SparseMatrix<double> divergence(const CutCellMesh<2> &ccm, bool include_domain_boundary) {
+    auto B = boundary(ccm, include_domain_boundary);
     auto h1 = dual_hodge1(ccm);
     return B.transpose() * h1.asDiagonal();
 }

@@ -19,6 +19,7 @@
 #include <Magnum/GL/Renderer.h>
 #include <mtao/geometry/mesh/stack_meshes.hpp>
 #include <mtao/solvers/linear/preconditioned_conjugate_gradient.hpp>
+#include "mandoline/operators/diffgeo2.hpp"
 
 #include <thread>
 #include "mandoline/mesh3.hpp"
@@ -49,10 +50,11 @@ class MeshViewer: public mtao::opengl::Window2 {
         mtao::ColVectors<double,4> colors;
         mtao::ColVectors<double,2> cachedV;
         mtao::ColVectors<int,2> cachedE;
+        mtao::Vec2f harmonic_dir = mtao::Vec2f::UnitX(); 
 
         int face_index = -1;
         enum ColorType: char {
-            Random, Regions, Harmonic
+            Random, Regions, Harmonic, Harmonic_RHS
         };
 
         ColorType color_type = ColorType::Random;
@@ -180,9 +182,20 @@ void MeshViewer::reset_curve() {
 }
 
 void MeshViewer::gui() {
+    {
+        const char* items[] = { "Random", "Regions", "Harmonic", "Harmonid_RHS" };
+        int current_item = int(color_type);
+        if(ImGui::Combo("Color Type", &current_item, items, 4)) {
+            color_type = static_cast<ColorType>(current_item);
+            update_faces();
+        }
+    }
+
+
     if(ImGui::InputInt2("N", N.data()))  {
         //update_bbox();
     }
+
     if(ImGui::InputInt("Face index", &face_index))  {
         if(ccm) {
             int nf = ccm->num_faces();
@@ -223,6 +236,9 @@ void MeshViewer::gui() {
         }
     }
 
+    if(ImGui::SliderFloat2("Harmonid cir", harmonic_dir.data(),-1,1))  {
+        update_faces();
+    }
     ImGui::Text("Cursor position (%f,%f)", cursor.x(),cursor.y());
 }
 
@@ -257,32 +273,7 @@ void MeshViewer::update_ccm() {
     ccg.bake();
 
     ccm = ccg.generate();
-    std::cout << "HEM data: " << std::endl;
-    std::cout << ccm->hem.edges() << std::endl;
-    std::cout <<std::endl;
 
-    for(auto&& [a,b]: ccm->exterior_grid.boundary_facet_pairs()) {
-        std::cout << a << ":" << b << " ";
-    }
-    std::cout << std::endl;
-    {
-        std::cout << "Cell index grid: " << std::endl;
-        auto g = ccm->exterior_grid.cell_indices();
-        auto s = g.shape();
-        for(int i = 0; i < s[0]; ++i) {
-            for(int j = 0; j < s[1]; ++j) {
-                std::cout << g(i,j) << " ";
-            }
-            std::cout << std::endl;
-        }
-        std::cout << std::endl;
-    }
-    std::cout << "Cell coordinates: " << ccm->exterior_grid.num_cells()  << std::endl;
-    std::cout << "Cell coordinates: " << ccm->exterior_grid.cell_coords().size()  << std::endl;
-    for(auto&& [a,b]: ccm->exterior_grid.cell_coords()) {
-        std::cout << a << ":" << b << " ";
-    }
-    std::cout << std::endl;
 
 
     //set_colors(ccm.active_grid_cell_mask);
@@ -306,6 +297,12 @@ void MeshViewer::update_ccm() {
         ccm->faces();
         grid_mesh.set(ccm->vertex_grid());
         grid_drawable->activate_edges();
+        auto r = ccm->regions();
+        std::set<int> regions;
+        for(int i = 0; i < r.size(); ++i) {
+            regions.insert(r(i));
+        }
+        std::cout << "Region count: " << regions.size() << std::endl;
     }
     update_faces();
 }
@@ -316,12 +313,6 @@ void MeshViewer::update_face(int idx) {
 
     if(idx < 0 || idx >= ccm->num_cells()) return;
     auto c = ccm->cell(idx);
-    for(auto&& c: c) {
-        std::copy
-            (c.begin(),c.end(),std::ostream_iterator<int>(std::cout,","));
-        std::cout << " ";
-    }
-    std::cout << std::endl;
     auto d = *c.begin();
     if(d.size() < 3) return;
     auto F = mtao::geometry::mesh::earclipping(ccm->vertices(),d);
@@ -332,9 +323,7 @@ void MeshViewer::update_face(int idx) {
 void MeshViewer::update_faces() {
     if(!ccm) return;
 
-    if(colors.cols() != ccm->num_cells()) {
-        update_colors();
-    }
+    update_colors();
     std::vector<std::tuple<mtao::ColVecs3i, mtao::Vec4d>> FCs;
     for(int i = 0; i < ccm->num_cells(); ++i) {
         FCs.reserve(ccm->num_cells());
@@ -351,62 +340,93 @@ void MeshViewer::update_faces() {
 
 }
 void MeshViewer::update_colors() {
+    if(!ccm) return;
     colors.resize(4,ccm->num_cells());
-    switch(color_type) {
-        case ColorType::Region:
-            mtao::VecXi R = ccm->regions();
-            int num_regions = R.maxCoeff()+1;
-            mtao::ColVecs4d C(4,num_regions);
-            C.setRandom();
-            C.row(3).setConstant(1);
+    auto region_colors = [&]() {
+        mtao::VecXi R = ccm->regions();
+        int num_regions = R.maxCoeff()+1;
+        mtao::ColVecs4d C(4,num_regions);
+        C.setRandom();
+        C.row(3).setConstant(1);
 
-            for(int i = 0; i < R.size(); ++i) {
-                colors.col(i) = C.col(R(i));
+        for(int i = 0; i < R.size(); ++i) {
+            colors.col(i) = C.col(R(i));
+        }
+    };
+    auto random_colors = [&]() {
+        colors.setRandom();
+    };
+
+    auto get_rhs = [&]() {
+
+        mtao::Vec2d dir = harmonic_dir.cast<double>();
+        mtao::VecXd u(ccm->num_edges());
+        u.setZero();
+        for (auto &&[eidx, edge] : mtao::iterator::enumerate(ccm->cut_edges())) {
+            if(edge.external_boundary) {
+                auto [oc,b] = *edge.external_boundary;
+                if(oc == -2) {
+                    u(eidx) = (b?-1:1) * dir(edge.unbound_axis());
+                } else {
+                    u(eidx) = 0;
+                }
+            } else {
+                if (edge.is_axial_edge()) {
+                    u(eidx) = 0;
+                } else {// boundary faces are not allowed to emit anything
+                    u(eidx) = 0;
+                }
             }
+        }
+        for (auto &&[idx, bfp] : mtao::iterator::enumerate(ccm->exterior_grid.boundary_facet_pairs())) {
+            if (ccm->exterior_grid.is_boundary_facet(idx)) {
+                int axis = ccm->exterior_grid.boundary_facet_axes()[idx];
+                u(idx + ccm->cut_edges().size()) = dir(axis);
+            } else {
+                u(idx + ccm->cut_edges().size()) = 0;// grid domain boundaries are not allowed to emit anything
+            }
+        }
+        Eigen::SparseMatrix<double> D = mandoline::operators::divergence(*ccm, true);
+        mtao::VecXd b = D * u;
+        return b;
+    };
+    auto harmonic_rhs_colors = [&]() {
+        Eigen::SparseMatrix<double> L = mandoline::operators::laplacian(*ccm);
+
+        mtao::VecXd x = get_rhs();
+        x /= x.cwiseAbs().maxCoeff();
+        colors.row(0) = x;
+        colors.row(2) = -x;
+        colors.row(1).array() = 0;
+    };
+    auto harmonic_colors = [&]() {
+            Eigen::SparseMatrix<double> L = mandoline::operators::laplacian(*ccm);
+            //std::cout << L << std::endl;
+
+            mtao::VecXd b = get_rhs();
+            mtao::VecXd x(b.rows());
+            x.setZero();
+            mtao::solvers::linear::CholeskyPCGSolve(L,b,x);
+            x /= x.cwiseAbs().maxCoeff();
+            colors.row(0) = x;
+            colors.row(2) = -x;
+            colors.row(1).array() = 0;
+    };
+    switch(color_type) {
+        case ColorType::Regions:
+            region_colors();
             break;
         case ColorType::Random:
-            colors.setRandom();
+            random_colors();
             break;
         case ColorType::Harmonic:
-
-
-            mtao::Vec2d dir = mtao::Vec2d::Random();
-            mtao::VecXd u(ccm->num_edges());
-            for (auto &&[eidx, edge] : mtao::iterator::enumerate(ccm->cut_edges())) {
-                if(edge.external_boundary) {
-                    auto [oc,b] = *edge->external_boundary;
-                    if(oc == -2) {
-                        u(eidx) = (b?-1:1) * dir(edge.unbound_axis());
-                    }
-                } else {
-                    if (edge.is_axial_edge()) {
-                        u(eidx) = 0;
-                    } else {// boundary faces are not allowed to emit anything
-                        u(eidx) = 0;
-                    }
-                }
-            }
-            for (auto &&[idx, bfp] : mtao::iterator::enumerate(ccm.exterior_grid.boundary_facet_pairs())) {
-                if (!ccm.exterior_grid.is_boundary_facet(idx)) {
-                    int axis = ccm.exterior_grid.boundary_facet_axes()(idx);
-                    u(idx + ccm.cut_edges().size()) = dir(axis);
-                } else {
-                    u(idx + ccm.cut_edges().size()) = 0;// grid domain boundaries are not allowed to emit anything
-                }
-            }
-            Eigen::SparseMatrix<double> D = mandoline::operators::divergence(ccm);
-            Eigen::SparseMatrix<double> L = mandoline::operators::laplacian(ccm);
-            mtao::VecXd b = D * u;
-
-            mtao::VecXd x(b.rows());
-            x = mtao::solvers::linear::PCGSolve(L,b,x);
-            x /= x.cwiseAbs().maxCoeff();
-            colors.row(2) = x;
-            colors.row(1) = -x;
-            colors.row(0) = 0;
+            harmonic_colors();
+            break;
+        case ColorType::Harmonic_RHS:
+            harmonic_rhs_colors();
             break;
     }
-    colors.noalias() = colors.cwiseAbs();
+    colors.noalias() = (colors.array() > 0).select(colors,0);
     colors.row(3).setConstant(1);
 }
 

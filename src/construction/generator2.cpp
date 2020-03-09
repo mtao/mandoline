@@ -166,9 +166,9 @@ CutCellMesh<2> CutCellEdgeGenerator<2>::generate_faces() const {
             mtao::logging::error() << "SET WASNT LEXICOGRAPHICAL ORDER SOMEHOW?";
         }
         if (pca[0][idx] < 0) {
-            return {{ -1, 1 }};
+            return {{ -2, 1 }};
         } else if (pca[1][idx] >= cell_shape()[idx]) {
-            return {{ -1, 0 }};
+            return {{ -2, 0 }};
         } else {
             int pi = cell_index(pca[0]);
             int ni = cell_index(pca[1]);

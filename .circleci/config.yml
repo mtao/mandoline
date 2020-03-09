@@ -36,4 +36,7 @@ jobs:
             - run:
                 name: Building Mandoline
                 command: 'cmake --build build -j 2'
+            - run:
+                name: Running tests 
+                command: 'cmake --build build --target test'
 

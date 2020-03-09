@@ -7,7 +7,7 @@ FUNCTION(ADD_CATCHTEST BINNAME)
     ADD_EXECUTABLE(${BINNAME}_test main.cpp ${ARGN})
     TARGET_LINK_LIBRARIES(${BINNAME}_test PRIVATE mandoline Catch2::Catch2)
     #ParseAndAddCatchTests(${BINNAME}_test)
-    MESSAGE(STATUS "MAKING ${BINNAME}_TEST")
+    add_test(NAME ${BINNAME} COMMAND ${BINNAME}_test)
 ENDFUNCTION()
 
 ADD_CATCHTEST(face_collapser
