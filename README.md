@@ -5,7 +5,32 @@ A robust cut-cell mesh generator for arbitrary triangle-mesh inputs
 # NOTE:
 I've currently messed up the 3d code while updating some stuff and due to sloppy practices i don't have a great version to roll back to. 2D works nicely / exposes some functionality nicely (check out the curve_drawing_2d example).
 
-## Dependencies
+## Serialization
+By default Mandoline uses [protobuf](https://developers.google.com/protocol-buffers/) for serialization, following the format of defined at [proto/cutmesh.proto](https://github.com/mtao/mandoline/blob/master/proto/cutmesh.proto). This is language agnostic and so in theory, so long as your language has protobuf support/bindings you can read the output of Mandoline. In fact a lot of initial validity testing on Mandoline were done in python.
+
+## Examples/Tools
+There are a few examples / tools that are provided.
+They can be built by 
+```bash
+make example_name
+```
+
+### curve_drawing_2d
+in ```examples/curve_drawing_2d``` there is an example of how to run the 2D version of Mandoline on a drawn curve.
+
+After drawing a curve press `Make CCM` to build the cutmesh. By default it should show Random colors for each cut-cell, but that visualization mode can be changed by the Combo box at the top of the gui widget (regions = 1 color per region; Harmonic = the solution to a Poisson equation based off the boundary; Harmonic_RHS shows the right hands used in the Poisson equations).
+
+
+### make_cutmesh_gui
+We provide a visual interface for creating cutmeshes from OBJ files whose code is found at  ```tools/make_cutmesh_gui.cpp```, which provides a gui widget for changing the grid resolution, grid bounding box, etc before making a cutmesh and saving it to disk. The obj file is a commandoline argument.
+```bash
+make_cutmesh_gui obj_filename.obj
+```
+### cutmesh_info
+We provide a simple tool for inspecting high level details about a cutmesh file, whose code is found in ```tools/cutmesh_info.cpp```. The meat of it is found at ```src/tools/cutmesh_info.cpp``` for those curious.
+```bash
+cutmesh_info cutmesh_file.cutmesh
+```
 
 
 ### Compilation
@@ -25,9 +50,7 @@ mkdir build
 cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release
 make -j5
-make make_cutmesh_gui -j5
 ```
-where ```make_cutmesh_gui``` is a little UI for making cutmesehs from triangle meshes.
 
 ### Built-in Libraries
 Mandoline depends on a few libraries that it will fetch on its own:
