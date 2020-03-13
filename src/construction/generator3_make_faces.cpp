@@ -65,6 +65,14 @@ void CutCellGenerator<3>::bake_faces() {
     int face_size = m_cut_faces.size();
 
 
+    {
+        auto s = StaggeredGrid::cell_shape();
+        spdlog::warn("cell shape: {},{},{}", s[0],s[1],s[2]);
+    }
+    {
+        auto s = active_grid_cell_mask().shape();
+        spdlog::warn("Interior cell mask shape: {},{},{}", s[0],s[1],s[2]);
+    }
     using Grid2 = mtao::geometry::grid::StaggeredGrid<double, 2>;
     auto subgrid = [this](auto &&g, int d) {
         int n0 = (d + 1) % 3;
@@ -277,6 +285,7 @@ void CutCellGenerator<3>::compute_faces() {
                 } else if (pca[1][idx] >= cell_shape()[idx]) {
                     f.external_boundary = { -1, 0 };
                 } else if (I.size() == 1 && I.begin()->size() == 4) {//should always be a grid cell!
+                    =jkkjk
                     int pi = cell_index(pca[0]);
                     int ni = cell_index(pca[1]);
                     bool pa = m_active_grid_cell_mask.get(pi);

@@ -29,6 +29,10 @@ ADD_CATCHTEST(interp
     interp_tests.cpp
     )
 
+ADD_CATCHTEST(3D
+    single_cube_test.cpp
+    )
+
 # not real tests, just binaries for testing functionality
 
 

@@ -60,13 +60,6 @@ class CutCellEdgeGenerator : public mtao::geometry::grid::StaggeredGrid<double, 
     using CoordMaskedEdgeType = CoordMaskedEdge<D>;
     using GridDatab = mtao::geometry::grid::GridDataD<bool, D>;
 
-    struct GridVertex : public CoordType {
-        GridVertex(const StaggeredGrid &sg, const CoordType &c) : CoordType(c), index(sg.vertex_index(c)) {}
-        GridVertex(const StaggeredGrid &sg, int index) : CoordType(sg.template form_unindex<0>(index)), index(index) {}
-        int index = -1;
-    };
-
-    bool performance = false;
 
 
     //returns a new mesh and a set of boundary vertices
@@ -111,10 +104,6 @@ class CutCellEdgeGenerator : public mtao::geometry::grid::StaggeredGrid<double, 
     Vec get_world_vertex(const VType &p) const {
         auto &&g = vertex_grid();
         return g.origin() + (p.p().cwiseProduct(g.dx()));
-    }
-    Vec get_world_vertex(const GridVertex &p) const {
-        auto &&g = vertex_grid();
-        return g.origin() + (mtao::eigen::stl2eigen(p).cwiseProduct(g.dx()));
     }
 
     size_t grid_vertex_size() const { return StaggeredGrid::vertex_size(); }
@@ -266,7 +255,6 @@ class CutCellEdgeGenerator : public mtao::geometry::grid::StaggeredGrid<double, 
   protected:
     // helper for assigning boundary information to
 
-  private:
     using crossing_store_type = mtao::map<CoordType, std::set<EdgeCrossing<D>>>;
     std::array<crossing_store_type, D> get_per_axis_crossing_indices() const;
     std::array<crossing_store_type, D> get_per_axis_crossing_indices(const mtao::vector<Crossing<D>> &isects) const;

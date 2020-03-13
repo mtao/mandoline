@@ -1,5 +1,44 @@
 #include "mandoline/construction/generator2.hpp"
+#include <spdlog/spdlog.h>
 
+template <typename GridB>
+void print_gridb(const GridB& g) {
+
+    if constexpr(GridB::D == 3) 
+    {
+        for(int i = 0; i < g.shape(0); ++i) {
+            for(int j = 0; j < g.shape(1); ++j) {
+                for(int k = 0; k < g.shape(2); ++k) {
+                    if(g(i,j,k)) {
+                        std::cout << "o";
+                    } else {
+                        std::cout << ".";
+                    }
+                }
+                std::cout << std::endl;
+            }
+            std::cout << std::endl;
+        }
+    }
+
+}
+template <typename GridB>
+void print_grid(const GridB& g) {
+
+    if constexpr(GridB::D == 3) 
+    {
+        for(int i = 0; i < g.shape(0); ++i) {
+            for(int j = 0; j < g.shape(1); ++j) {
+                for(int k = 0; k < g.shape(2); ++k) {
+                    std::cout << g(i,j,k) << " ";
+                }
+                std::cout << std::endl;
+            }
+            std::cout << std::endl;
+        }
+    }
+
+}
 namespace mandoline::construction {
 
 std::array<int, 2> smallest_ordered_edge(const std::vector<int> &v) {
@@ -23,6 +62,12 @@ auto CutCellEdgeGenerator<2>::compute_planar_hem(const std::vector<VType> &GV, c
 }
 template<>
 auto CutCellEdgeGenerator<2>::compute_planar_hem(const std::vector<VType> &GV, const ColVecs &V, const Edges &E, const GridDatab &interior_cell_mask) const -> std::tuple<mtao::geometry::mesh::HalfEdgeMesh, std::set<Edge>> {
+    spdlog::warn("Doing planar hem GV,V,E,icm");
+    {
+        auto s = interior_cell_mask.shape();
+        spdlog::warn("Interior cell mask shape: {},{}", s[0],s[1]);
+    }
+    print_gridb(interior_cell_mask);
     bool adaptive = interior_cell_mask.empty();
     auto ret = compute_planar_hem(V, E, interior_cell_mask);
     //the cells that vertices belong to
@@ -114,6 +159,8 @@ auto CutCellEdgeGenerator<2>::compute_planar_hem(const std::vector<VType> &GV, c
 template<>
 auto CutCellEdgeGenerator<2>::compute_planar_hem(const ColVecs &V, const Edges &E, const GridDatab &interior_cell_mask) const -> std::tuple<mtao::geometry::mesh::HalfEdgeMesh, std::set<Edge>> {
 
+    spdlog::warn("Doing planar hem V,E,icm");
+    print_gridb(interior_cell_mask);
     auto t = mtao::logging::profiler("computing planar hem", false, "profiler");
     using namespace mtao::geometry::mesh;
 

@@ -125,7 +125,31 @@ void CutCellEdgeGenerator<D>::bake() {
         //auto t = mtao::logging::timer("generator bake vertices");
         auto t = mtao::logging::profiler("grid bake vertices", false, "profiler");
         bake_vertices();
-        mtao::logging::debug() << "Number of vertices: " << m_crossings.size();
+        mtao::logging::trace() << "Number of crossings: " << m_crossings.size();
+#if !defined(NDEBUG)
+        int vc = 0;
+        int ec = 0;
+        int fc = 0;
+        for(auto&& c: m_crossings) {
+            using VType = Vertex<D>;
+            using EdgeIsect = EdgeIntersection<D>;
+            using TriIsect = TriangleIntersection<D>;
+            std::visit(
+                    [&](auto &&v) {
+                    using T = typename std::decay_t<decltype(v)>;
+                    if constexpr (std::is_same_v<T, VType const *>) {
+                    vc++;
+                    } else if constexpr (std::is_same_v<T, EdgeIsect const *>) {
+                    ec++;
+                    } else if constexpr (std::is_same_v<T, TriIsect const *>) {
+                    fc++;
+                    }
+                    },
+                    c.vv);
+        }
+        //mtao::logging::trace() << "Number of crossings: " << m_crossings.size();
+        spdlog::warn("Number of crossings {}: (vc:{},ec:{},fc:{})", m_crossings.size(), vc,ec,fc);
+#endif
     }
     {
         //auto t = mtao::logging::timer("generator bake edges");
@@ -659,7 +683,7 @@ template<int D>
 void CutCellEdgeGenerator<D>::bake_active_grid_cell_mask() {
 
     auto s = StaggeredGrid::cell_shape();
-    m_active_grid_cell_mask = GridDatab::Constant(true, StaggeredGrid::cell_shape());
+    m_active_grid_cell_mask = GridDatab::Constant(true, s);
 
 
     mtao::map<std::array<int, 2>, int> cutedge_to_edge_map;

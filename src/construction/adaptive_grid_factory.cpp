@@ -1,4 +1,5 @@
 #include "mandoline/construction/adaptive_grid_factory.hpp"
+#include <spdlog/spdlog.h>
 
 
 namespace mandoline::construction {
@@ -311,6 +312,8 @@ AdaptiveGridFactory::AdaptiveGridFactory(const GridData3 &mask) : original(!mask
     int level_count = int(std::ceil(std::log2(size)));
     size = 1 << level_count;
     level_count /= logwidth;
+    level_count = std::max(1,level_count);
+    spdlog::warn("Adaptive grid factory level count: {} with size: {}", level_count, size);
     levels.resize(level_count);
     levels_mask.resize(level_count);
     levels[0] = GridData3b::Constant(0, size / width, size / width, size / width);
