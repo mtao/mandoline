@@ -52,7 +52,7 @@ class CutCellEdgeGenerator : public mtao::geometry::grid::StaggeredGrid<double, 
     using StaggeredGrid::vertex_index;
     using StaggeredGrid::cell_index;
     using StaggeredGrid::vertex;
-    using CoordType = std::array<int, D>;
+    using coord_type = std::array<int, D>;
     //vertex that lives in the grid as a grid cell + local offset
     using VType = Vertex<D>;
     using EdgeIntersectionType = EdgeIntersection<D>;
@@ -118,11 +118,11 @@ class CutCellEdgeGenerator : public mtao::geometry::grid::StaggeredGrid<double, 
     void add_boundary_elements(const BoundaryElements &E);
     void set_boundary_elements(const BoundaryElements &E);
     void add_edges(const Edges &E);
-    static std::set<EdgeIntersectionType> cell_edge_intersections(const std::set<CoordType> &cells);
+    static std::set<EdgeIntersectionType> cell_edge_intersections(const std::set<coord_type> &cells);
     template<typename Func>
-    static void per_cell_vertex_looper(Func &&f, const CoordType &c) {
+    static void per_cell_vertex_looper(Func &&f, const coord_type &c) {
         for (int i = 0; i < (2 << D); ++i) {
-            CoordType cc = c;
+            coord_type cc = c;
             std::bitset<D> bs(i);
             for (int j = 0; j < D; ++j) {
                 cc[j] += bs[j] ? 1 : 0;
@@ -131,9 +131,9 @@ class CutCellEdgeGenerator : public mtao::geometry::grid::StaggeredGrid<double, 
         }
     }
     template<typename Func>
-    static void per_dual_cell_vertex_looper(Func &&f, const CoordType &c) {
+    static void per_dual_cell_vertex_looper(Func &&f, const coord_type &c) {
         for (int i = 0; i < (2 << D); ++i) {
-            CoordType cc = c;
+            coord_type cc = c;
             std::bitset<D> bs(i);
             for (int j = 0; j < D; ++j) {
                 cc[j] -= bs[j] ? 1 : 0;
@@ -142,13 +142,13 @@ class CutCellEdgeGenerator : public mtao::geometry::grid::StaggeredGrid<double, 
         }
     }
     template<typename Func>
-    static void per_boundary_cell_vertex_looper(int N, Func &&f, const CoordType &c) {
+    static void per_boundary_cell_vertex_looper(int N, Func &&f, const coord_type &c) {
         for (int i = 0; i < (2 << (D - 1)); ++i) {
             std::bitset<D> bs(i);
             if (bs[N]) {//if bit is 1 we move on
                 continue;
             }
-            CoordType cc = c;
+            coord_type cc = c;
             Vec v = Vec::Zero();
             for (int j = 0; j < D; ++j) {
                 cc[j] += bs[j];
@@ -175,8 +175,8 @@ class CutCellEdgeGenerator : public mtao::geometry::grid::StaggeredGrid<double, 
 
     size_t new_vertex_offset() const { return grid_vertex_size() + origV().size(); }
 
-    std::set<CoordType> active_cells() const;
-    std::array<mtao::map<CoordType, std::set<int>>, D> crossing_indices() const;
+    std::set<coord_type> active_cells() const;
+    std::array<mtao::map<coord_type, std::set<int>>, D> crossing_indices() const;
 
     auto &&origE() const { return data().E(); }
     auto origE(int idx) const { return data().E(idx); }
@@ -188,11 +188,11 @@ class CutCellEdgeGenerator : public mtao::geometry::grid::StaggeredGrid<double, 
     const auto &newV() const { return m_newV; }
     const Vec &newV(int i) const { return m_newV[i]; }
 
-    std::tuple<CoordType, std::array<double, D>> grid_coord(const Vec &v) const;
+    std::tuple<coord_type, std::array<double, D>> grid_coord(const Vec &v) const;
     ColVecs compact_vertices() const;
-    ColVecs V() const;
-    ColVecs all_V() const;
-    ColVecs all_GV() const;
+    ColVecs V() const; // the non-grid velocities (from crossings)
+    ColVecs all_V() const; // all of the vertices grid 
+    ColVecs all_GV() const; // all vertices in index/grid space
     VecVector stl_V() const;
 
 
@@ -224,11 +224,14 @@ class CutCellEdgeGenerator : public mtao::geometry::grid::StaggeredGrid<double, 
         }
     }
 
+    bool is_valid_cell_coord(const coord_type& c) const {
+        return StaggeredGrid::cell_grid().valid_index(c);
+    }
     bool is_valid_grid_index(int idx) const {
         return idx >= 0 && idx < StaggeredGrid::cell_size();
     }
     template<typename Derived>
-    CoordType get_grid_cell(const Eigen::MatrixBase<Derived> &p) const {
+    coord_type get_grid_cell(const Eigen::MatrixBase<Derived> &p) const {
         return std::get<0>(StaggeredGrid::coord(p));
     }
     void update_vertices_from_intersections();
@@ -242,9 +245,9 @@ class CutCellEdgeGenerator : public mtao::geometry::grid::StaggeredGrid<double, 
     std::set<Edge> edge_slice(int dim, int slice) const;
     std::array<mtao::map<int, std::set<Edge>>, D> axial_edges() const;
 
-    std::set<CoordType> possible_cells(const std::vector<int> &face) const;
-    std::set<CoordType> possible_cells(const std::set<std::vector<int>> &face) const;
-    std::set<CoordType> possible_cells_cell(const std::set<int> &faces, const std::vector<CutFace<D>> &) const;
+    std::set<coord_type> possible_cells(const std::vector<int> &face) const;
+    std::set<coord_type> possible_cells(const std::set<std::vector<int>> &face) const;
+    std::set<coord_type> possible_cells_cell(const std::set<int> &faces, const std::vector<CutFace<D>> &) const;
     coord_mask<D> face_mask(const std::vector<int> &face) const;
     coord_mask<D> face_mask(const std::set<std::vector<int>> &face) const;
     bool is_in_cell(const std::vector<int> &face) const;
@@ -255,7 +258,7 @@ class CutCellEdgeGenerator : public mtao::geometry::grid::StaggeredGrid<double, 
   protected:
     // helper for assigning boundary information to
 
-    using crossing_store_type = mtao::map<CoordType, std::set<EdgeCrossing<D>>>;
+    using crossing_store_type = mtao::map<coord_type, std::set<EdgeCrossing<D>>>;
     std::array<crossing_store_type, D> get_per_axis_crossing_indices() const;
     std::array<crossing_store_type, D> get_per_axis_crossing_indices(const mtao::vector<Crossing<D>> &isects) const;
 
@@ -265,11 +268,12 @@ class CutCellEdgeGenerator : public mtao::geometry::grid::StaggeredGrid<double, 
 
 
     //Note that grid-edge and grid-vertex values belong to multiple cells
-    mtao::map<CoordType, std::set<int>> vertex_ownership() const;
+    mtao::map<coord_type, std::set<int>> vertex_ownership() const;
 
     const GridDatab &active_grid_cell_mask() const {
         return m_active_grid_cell_mask;
     }
+    bool is_active_cell(const coord_type& c) const;
 
   protected:
     CutData<D> m_data;

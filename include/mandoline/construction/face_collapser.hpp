@@ -18,7 +18,7 @@ namespace mandoline::construction {
 struct FaceCollapser {
   public:
     using Edge = std::array<int, 2>;
-    using CoordType = std::array<int, 3>;
+    using coord_type = std::array<int, 3>;
     //FaceCollapser(const std::map<int,std::set<std::vector<int>>>& faces);
     FaceCollapser(const std::set<Edge> &edges);
 

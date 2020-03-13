@@ -71,22 +71,22 @@ auto CutCellEdgeGenerator<2>::compute_planar_hem(const std::vector<VType> &GV, c
     bool adaptive = interior_cell_mask.empty();
     auto ret = compute_planar_hem(V, E, interior_cell_mask);
     //the cells that vertices belong to
-    std::vector<std::set<CoordType>> vertex_cells(GV.size());
+    std::vector<std::set<coord_type>> vertex_cells(GV.size());
     for (auto &&[v, cs] : mtao::iterator::zip(GV, vertex_cells)) {
-        CoordType c = v.coord;
+        coord_type c = v.coord;
         cs.insert(c);
         if (v.clamped(0)) {
-            CoordType cc = v.coord;
+            coord_type cc = v.coord;
             cc[0]--;
             cs.insert(cc);
         }
         if (v.clamped(1)) {
-            CoordType cc = v.coord;
+            coord_type cc = v.coord;
             cc[1]--;
             cs.insert(cc);
         }
         if (v.is_grid_vertex()) {
-            CoordType cc = v.coord;
+            coord_type cc = v.coord;
             cc[0]--;
             cc[1]--;
             cs.insert(cc);
@@ -112,7 +112,7 @@ auto CutCellEdgeGenerator<2>::compute_planar_hem(const std::vector<VType> &GV, c
 
 
     //the cells that each single=-curve face belongs to
-    mtao::map<int, std::set<CoordType>> cell_coords;
+    mtao::map<int, std::set<coord_type>> cell_coords;
 
     auto ci = hem.cell_indices();
     auto vi = hem.vertex_indices();
@@ -125,7 +125,7 @@ auto CutCellEdgeGenerator<2>::compute_planar_hem(const std::vector<VType> &GV, c
 
             auto &coords = it->second;
             auto &&vc = vertex_cells[vi(i)];
-            std::set<CoordType> gs;
+            std::set<coord_type> gs;
             std::set_intersection(coords.begin(), coords.end(), vc.begin(), vc.end(), std::inserter(gs, gs.end()));
             coords = gs;
         }
@@ -133,7 +133,7 @@ auto CutCellEdgeGenerator<2>::compute_planar_hem(const std::vector<VType> &GV, c
 
     auto cells_map = hem.cells_map();
     auto cells_halfedge_map = hem.cell_halfedges_map();
-    mtao::map<CoordType, std::set<int>> coord_cells;
+    mtao::map<coord_type, std::set<int>> coord_cells;
     for (auto &&[cc, cs] : cell_coords) {
         for (auto &&c : cs) {
             coord_cells[c].insert(cc);
@@ -203,11 +203,11 @@ auto CutCellEdgeGenerator<2>::compute_planar_hem(const ColVecs &V, const Edges &
 
         if (!adaptive) {
             //auto t = mtao::logging::timer("actual looping in mask");
-            CoordType shape = interior_cell_mask.shape();
+            coord_type shape = interior_cell_mask.shape();
             for (auto &&s : shape) {
                 s++;
             }
-            mtao::geometry::grid::utils::multi_loop(shape, [&](const CoordType &c) {
+            mtao::geometry::grid::utils::multi_loop(shape, [&](const coord_type &c) {
                 for (int i = 0; i < 2; ++i) {
                     auto cc = c;
                     cc[i]--;

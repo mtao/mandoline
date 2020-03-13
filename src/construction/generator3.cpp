@@ -114,30 +114,30 @@ CutCellMesh<3> CutCellGenerator<3>::generate() const {
         if(pos_cells.size() == 1) {
         b.grid_cell = *pos_cells.begin();
         } else if (pos_cells.size() == 0) {
-            std::cout << "CELL: " << a.index << std::endl;
-            std::cout << "No possible cells!?!?!" << std::endl;
-            for (auto &&ind : inds) {
-                std::cout << "Face " << ind << ": ";
-                if (ccm.is_folded_face(ind)) {
-                    std::cout << "Folded: ";
-                }
-                auto &face = ccm.faces()[ind];
-                auto pc = possible_cells(face.indices);
-                std::cout << std::string(ccm.faces()[ind]) << ":::";
-                for (auto &&c : possible_cells(ccm.faces()[ind].indices)) {
-                    std::cout << c[0] << ":";
-                    std::cout << c[1] << ":";
-                    std::cout << c[2] << " ";
-                }
-                for (auto &&c : ccm.faces()[ind].indices) {
-                    for (auto &&vi : c) {
-                        std::cout << std::string(grid_vertex(vi)) << " ";
-                    }
-                }
+            //std::cout << "CELL: " << a.index << std::endl;
+            //std::cout << "No possible cells!?!?!" << std::endl;
+            //for (auto &&ind : inds) {
+            //    std::cout << "Face " << ind << ": ";
+            //    if (ccm.is_folded_face(ind)) {
+            //        std::cout << "Folded: ";
+            //    }
+            //    auto &face = ccm.faces()[ind];
+            //    auto pc = possible_cells(face.indices);
+            //    std::cout << std::string(ccm.faces()[ind]) << ":::";
+            //    for (auto &&c : possible_cells(ccm.faces()[ind].indices)) {
+            //        std::cout << c[0] << ":";
+            //        std::cout << c[1] << ":";
+            //        std::cout << c[2] << " ";
+            //    }
+            //    for (auto &&c : ccm.faces()[ind].indices) {
+            //        for (auto &&vi : c) {
+            //            std::cout << std::string(grid_vertex(vi)) << " ";
+            //        }
+            //    }
 
-                std::cout << std::endl;
-            }
-            std::cout << std::endl;
+            //    std::cout << std::endl;
+            //}
+            //std::cout << std::endl;
         } else {
             mtao::logging::warn()<< "Degenerate cell";
         }
@@ -205,7 +205,7 @@ void CutCellGenerator<3>::update_active_grid_cell_mask() {
                 warn() << "Axial faces should have two possible cells!: face " << fidx;
             }
             if (face.external_boundary) {
-                std::array<CoordType, 2> pca;
+                std::array<coord_type, 2> pca;
                 std::copy(pc.begin(), pc.end(), pca.begin());
                 int idx;
                 for (idx = 0; idx < 3; ++idx) {
@@ -246,16 +246,22 @@ void CutCellGenerator<3>::bake_cells() {
         CellCollapser cc(m_faces);
         auto V = all_GV();
 
-        if (adaptive) {
-            auto t = mtao::logging::profiler("Adaptive grid", false, "profiler");
-            assert(m_active_grid_cell_mask.shape() == cell_shape());
-            auto adaptive_grid_factory = AdaptiveGridFactory(m_active_grid_cell_mask);
-            adaptive_grid_factory.make_cells(adaptive_level);
-            adaptive_grid = adaptive_grid_factory.create();
-        }
         //auto [a,b] = adaptive_grid->compute_edges(adaptive_level);
+        //for(auto&& [hf,bd]: cc.m_halfface_to_cell) {
+        //    auto&& [face_index, edge] = hf;
+        //    auto&& [a,b] = edge;
+        //    auto&& [bs,sgn] = bd;
+        //    spdlog::warn("{}: ({},{}) => {}({})", face_index,a,b,bs,sgn);
+        //}
 
         cc.bake(V);
+        //spdlog::error("Baked!");
+        //for(auto&& [hf,bd]: cc.m_halfface_to_cell) {
+        //    auto&& [face_index, edge] = hf;
+        //    auto&& [a,b] = edge;
+        //    auto&& [bs,sgn] = bd;
+        //    spdlog::warn("{}: ({},{}) => {}({})", face_index,a,b,bs,sgn);
+        //}
         folded_faces = cc.folded_faces();
         //m_normal_faces = cc.m_faces;
         boundary_vertices.clear();
@@ -283,6 +289,13 @@ void CutCellGenerator<3>::bake_cells() {
         for (auto &&[a, b] : mtao::iterator::zip(cell_boundaries, cb)) {
             a.insert(b.begin(), b.end());
         }
+    }
+    if (adaptive) {
+        auto t = mtao::logging::profiler("Adaptive grid", false, "profiler");
+        assert(m_active_grid_cell_mask.shape() == cell_shape());
+        auto adaptive_grid_factory = AdaptiveGridFactory(m_active_grid_cell_mask);
+        adaptive_grid_factory.make_cells(adaptive_level);
+        adaptive_grid = adaptive_grid_factory.create();
     }
 
     {

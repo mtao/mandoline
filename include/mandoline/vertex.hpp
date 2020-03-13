@@ -22,23 +22,23 @@ struct Vertex {
 
     //Definitions
     using Vec = mtao::Vector<double, D>;
-    using CoordType = std::array<int, D>;
+    using coord_type = std::array<int, D>;
     using MaskType = coord_mask<D>;
     using OptInd = std::array<std::optional<int>, D>;
 
     //Members
-    CoordType coord = {};
+    coord_type coord = {};
     Vec quot = Vec::Zero();
     std::bitset<D> clamped_indices = {};
 
 
     //Constructors
     Vertex() = default;
-    Vertex(const CoordType &);
+    Vertex(const coord_type &);
     template<typename Derived>
-    Vertex(const CoordType &c, const Eigen::MatrixBase<Derived> &q);
+    Vertex(const coord_type &c, const Eigen::MatrixBase<Derived> &q);
     template<typename Derived>
-    Vertex(const CoordType &c, const Eigen::MatrixBase<Derived> &q, const std::bitset<D> &bs);
+    Vertex(const coord_type &c, const Eigen::MatrixBase<Derived> &q, const std::bitset<D> &bs);
     Vertex(const Vertex &) = default;
     Vertex(Vertex &&) = default;
     Vertex &operator=(const Vertex &) = default;
@@ -66,9 +66,9 @@ struct Vertex {
     bool clamped(int index) const;
     size_t clamped_count() const;
     bool is_grid_vertex() const;
-    bool is_in_cell(const CoordType &c) const;//closed cell concept
-    std::set<CoordType> possible_cells() const;
-    //std::set<CoordType> possible_faces() const;
+    bool is_in_cell(const coord_type &c) const;//closed cell concept
+    std::set<coord_type> possible_cells() const;
+    //std::set<coord_type> possible_faces() const;
 
     //Thresholding
     void repair();

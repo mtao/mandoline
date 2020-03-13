@@ -28,7 +28,7 @@ struct EdgeIntersection : public Vertex<D> {
     //Definitions
     using VType = Vertex<D>;
     using Vec = typename VType::Vec;
-    using CoordType = typename VType::CoordType;
+    using coord_type = typename VType::coord_type;
     using VType::p;
     using VType::quot;
     using VType::coord;
@@ -58,7 +58,7 @@ struct TriangleIntersection : public Vertex<D> {
     //Definitions
     using VType = Vertex<D>;
     using Vec = typename VType::Vec;
-    using CoordType = typename VType::CoordType;
+    using coord_type = typename VType::coord_type;
     using VType::p;
     using VType::quot;
     using VType::coord;
@@ -80,7 +80,7 @@ struct Crossing {
     //Definitions
     using VType = Vertex<D>;
     using Vec = typename VType::Vec;
-    using CoordType = typename VType::CoordType;
+    using coord_type = typename VType::coord_type;
     using EdgeIsect = EdgeIntersection<D>;
     using TriangleIsect = TriangleIntersection<D>;
     using VPtr = VType const *;
@@ -128,7 +128,7 @@ struct EdgeCrossing {
     //Definitions
     using VType = Vertex<D>;
     using Vec = typename VType::Vec;
-    using CoordType = typename VType::CoordType;
+    using coord_type = typename VType::coord_type;
 
     //Members
     const VType *val = nullptr;

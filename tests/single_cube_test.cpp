@@ -74,24 +74,26 @@ TEST_CASE("3D Cube", "[ccm3]") {
 
     V.array() += .5;
     //V.colwise() += mtao::Vec3d(.5,.4,.6);
-    auto ccg = CutCellGenerator<3>(V,std::array<int,3>{{3,3,3}});
+    mtao::geometry::grid::Grid3d vertex_grid(std::array<int,3>{{3,3,3}},mtao::Vec3d::Ones());
+    auto ccg = CutCellGenerator<3>(V,vertex_grid);
     ccg.set_boundary_elements(F);
 
     ccg.bake();
 
+    std::cout << ccg.all_V() << std::endl;
 
     for(auto&& eisects: ccg.data().edge_intersections()) {
-        std::cout << eisects.edge_index  << ")";
-        for(auto&& e: eisects.vptr_edge) {
-            std::cout << std::string(*e) << " ";
-        }
-        std::cout << " ===> ";
+        //std::cout << eisects.edge_index  << ")";
+        //for(auto&& e: eisects.vptr_edge) {
+        //    std::cout << std::string(*e) << " ";
+        //}
+        //std::cout << " ===> ";
         REQUIRE(eisects.intersections.size() == 1);
         REQUIRE(eisects.intersections.front().edge_coord == Approx(.5));
-        for(auto&& p: eisects.intersections) {
-            std::cout << std::string(p) << " ";
-        }
-        std::cout << std::endl;
+        //for(auto&& p: eisects.intersections) {
+        //    std::cout << std::string(p) << " ";
+        //}
+        //std::cout << std::endl;
     }
 
     for(auto&& fisects: ccg.data().triangle_intersections()) {
@@ -102,7 +104,7 @@ TEST_CASE("3D Cube", "[ccm3]") {
                 tri_size++;
                 std::array<int,4> counts{{0,0,0,0}};
                 for(auto&& p: f) {
-                    std::cout << std::string(*p) << std::endl;
+                    //std::cout << std::string(*p) << std::endl;
                     counts[p->mask().count()]++;
                 }
                 REQUIRE(counts[0]==1);
@@ -158,6 +160,7 @@ TEST_CASE("3D Cube", "[ccm3]") {
 
     auto ccm = ccg.generate();
     
+    /*
     std::cout  << ccg.V() << std::endl;
     std::cout  << ccg.origV().size() << std::endl;
     for(auto&& p: ccg.origV()) {
@@ -188,6 +191,7 @@ TEST_CASE("3D Cube", "[ccm3]") {
         }
         std::cout << std::endl;
     }
+    */
 
 }
 

@@ -159,7 +159,7 @@ void CutCellGenerator<3>::bake_faces() {
                 auto &E = ae[cidx];
                 //auto&& [cidx,E] = *it;
                 //for(auto&& [cidx,E]: ae) {
-                CoordType coord;
+                coord_type coord;
                 coord[dim] = cidx;
                 auto &ahd = ahdata[cidx];
                 std::transform(E.begin(), E.end(), std::inserter(ahd.edges, ahd.edges.end()), [](auto s) {
@@ -185,7 +185,7 @@ void CutCellGenerator<3>::bake_faces() {
                 });
             }
             for (auto &&[cidx, E] : ae) {
-                CoordType coord;
+                coord_type coord;
                 auto &ahd = ahdata[cidx];
                 auto fa = ahd.hem.cell_indices().array();
                 fa = (fa >= 0).select(fa + face_size, -1);
@@ -268,7 +268,7 @@ void CutCellGenerator<3>::compute_faces() {
                 if (pc.size() != 2) {
                     continue;
                 }
-                std::array<CoordType, 2> pca;
+                std::array<coord_type, 2> pca;
                 std::copy(pc.begin(), pc.end(), pca.begin());
                 //find the boundary cells axis
                 int idx;
@@ -285,17 +285,24 @@ void CutCellGenerator<3>::compute_faces() {
                 } else if (pca[1][idx] >= cell_shape()[idx]) {
                     f.external_boundary = { -1, 0 };
                 } else if (I.size() == 1 && I.begin()->size() == 4) {//should always be a grid cell!
-                    =jkkjk
-                    int pi = cell_index(pca[0]);
-                    int ni = cell_index(pca[1]);
-                    bool pa = m_active_grid_cell_mask.get(pi);
-                    bool na = m_active_grid_cell_mask.get(ni);
+                    bool pa = is_active_cell(pca[0]);
+                    bool na = is_active_cell(pca[1]);
                     bool sign = (idx%2==1);
                     if (na ^ pa) {//active inactive boundary
                         if (pa) {
-                            f.external_boundary = { pi, sign };
+                            if(is_valid_cell_coord(pca[0])) {
+                                int pi = cell_index(pca[0]);
+                                f.external_boundary = { pi, sign };
+                            } else {
+                                f.external_boundary = { -2, sign };
+                            }
                         } else {
-                            f.external_boundary = { ni, !sign };
+                            if(is_valid_cell_coord(pca[1])) {
+                                int ni = cell_index(pca[1]);
+                                f.external_boundary = { ni, !sign };
+                            } else {
+                                f.external_boundary = { -2, sign };
+                            }
                         }
                     }
                 }
@@ -376,7 +383,7 @@ mtao::map<int, CutFace<3>> CutCellGenerator<3>::compute_faces_axis(int idx, int 
                 if (pc.empty()) {
                     continue;
                 }
-                std::array<CoordType, 2> pca;
+                std::array<coord_type, 2> pca;
                 std::copy(pc.begin(), pc.end(), pca.begin());
                 if (pca[0][idx] + 1 != pca[1][idx]) {
                     std::cout << "SET WASNT LEXICOGRAPHICAL ORDER SOMEHOW?" << std::endl;

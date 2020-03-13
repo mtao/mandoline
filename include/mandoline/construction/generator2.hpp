@@ -8,7 +8,7 @@ class CutCellGenerator<2> : public CutCellEdgeGenerator<2> {
     using CCEG = CutCellEdgeGenerator<2>;
     using BoundaryElements = typename CCEG::BoundaryElements;
     using CCEG::CCEG;
-    using CoordType = typename CCEG::CoordType;
+    using coord_type = typename CCEG::coord_type;
     CutCellGenerator() = default;
     CutCellGenerator(CutCellGenerator &&) = default;
     CutCellGenerator &operator=(CutCellGenerator &&) = default;

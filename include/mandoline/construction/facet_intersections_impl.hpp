@@ -482,7 +482,6 @@ auto TriangleIntersections<D>::vptr_faces() const -> std::set<std::vector<const 
     //std::set<Edge> Es(Evec.begin(),Evec.end());
     FaceCollapser fc(Es);
     Edge be = boundary_edge(VM);
-    std::cout << be[0] << ":" << be[1] << std::endl;
     fc.set_edge_for_removal(be);
 
     fc.bake(B);

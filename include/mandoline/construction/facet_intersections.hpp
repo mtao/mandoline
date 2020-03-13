@@ -77,7 +77,7 @@ struct EdgeIntersections : public IntersectionsBase<D, EdgeIntersections<D>> {
     using VType = Vertex<D>;
     using VPtrEdge = std::array<const VType *, 2>;
     using Vec = typename VType::Vec;
-    using CoordType = typename VType::CoordType;
+    using coord_type = typename VType::coord_type;
     using SGType = mtao::geometry::grid::StaggeredGrid<double, D>;
     using Base = IntersectionsBase<D, EdgeIntersections<D>>;
     using Base::mask;
@@ -180,7 +180,7 @@ struct TriangleIntersections : public IntersectionsBase<D, TriangleIntersections
     using Edge = std::array<int, 2>;
     using Face = std::array<int, 3>;
     using Vec = typename VType::Vec;
-    using CoordType = typename VType::CoordType;
+    using coord_type = typename VType::coord_type;
     using Base = IntersectionsBase<D, TriangleIntersections<D>>;
     using Base::mask;
     std::map<VPtrEdge, EdgeIntersections<D>> edge_intersections;

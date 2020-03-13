@@ -7,16 +7,16 @@
 #include <type_traits>
 namespace mandoline {
 template<int D>
-Vertex<D>::Vertex(const CoordType &c) : coord(c), clamped_indices((1 << D) - 1) {}
+Vertex<D>::Vertex(const coord_type &c) : coord(c), clamped_indices((1 << D) - 1) {}
 
 template<int D>
 template<typename Derived>
-Vertex<D>::Vertex(const CoordType &c, const Eigen::MatrixBase<Derived> &q) : coord(c), quot(q), clamped_indices(bs_from_quot(q)) {}
+Vertex<D>::Vertex(const coord_type &c, const Eigen::MatrixBase<Derived> &q) : coord(c), quot(q), clamped_indices(bs_from_quot(q)) {}
 
 
 template<int D>
 template<typename Derived>
-Vertex<D>::Vertex(const CoordType &c, const Eigen::MatrixBase<Derived> &q, const std::bitset<D> &clamped_indices) : coord(c), quot(q), clamped_indices(clamped_indices) {}
+Vertex<D>::Vertex(const coord_type &c, const Eigen::MatrixBase<Derived> &q, const std::bitset<D> &clamped_indices) : coord(c), quot(q), clamped_indices(clamped_indices) {}
 
 template<int D>
 template<typename Derived>
@@ -162,15 +162,15 @@ bool Vertex<D>::is_grid_vertex() const {
 }
 
 template<int D>
-auto Vertex<D>::possible_cells() const -> std::set<CoordType> {
+auto Vertex<D>::possible_cells() const -> std::set<coord_type> {
     return mask().possible_cells(coord);
     /*
-            std::set<CoordType> ret;
+            std::set<coord_type> ret;
             for(int i = 0; i < (2 << D); ++i) {
                 std::bitset<D> bs(i);
                 if((bs&clamped_indices) == bs) {
 
-                    CoordType cc = coord;
+                    coord_type cc = coord;
                     for(int j = 0; j < D; ++j) {
                         cc[j] -= bs[j]?1:0;
                     }

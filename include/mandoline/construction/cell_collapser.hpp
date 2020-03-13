@@ -19,7 +19,7 @@ struct CellCollapser {
   public:
     using Edge = std::array<int, 2>;
     using HalfFace = std::tuple<int, Edge>;
-    using CoordType = std::array<int, 3>;
+    using coord_type = std::array<int, 3>;
     //CellCollapser(const mtao::map<int,std::set<std::vector<int>>>& faces);
     CellCollapser(const mtao::map<int, CutFace<3>> &faces);
     std::tuple<std::set<std::vector<int>>, std::set<Edge>> clean_unmanifold(const std::vector<int> &);
@@ -49,7 +49,7 @@ struct CellCollapser {
     mtao::map<HalfFace, std::tuple<int, bool>> m_halfface_to_cell;
     mtao::map<int, CutFace<3>> m_faces;
     std::map<int, std::set<Edge>> flap_edges;
-    mtao::map<int, std::set<CoordType>> face_cell_possibilities;
+    mtao::map<int, std::set<coord_type>> face_cell_possibilities;
     std::vector<mtao::map<int, bool>> m_cell_boundaries;
     std::set<Edge> invalid_edges;
     mtao::data_structures::DisjointSet<int> cell_ds;
@@ -67,16 +67,17 @@ void CellCollapser::merge(const Eigen::MatrixBase<Derived> &V) {
         if (halffaces.empty()) {
             continue;
         }
-        //std::cout << "Edge " << e[0] << ":" << e[1] << "has " << halffaces.size() << " half faces" << std::endl;
         auto [a, b] = e;
         if (a > b) {
             continue;
         }
+        mtao::logging::warn() << "Edge " << e[0] << ":" << e[1] << "has " << halffaces.size() << " half faces";
         auto va = V.col(a);
         auto vb = V.col(b);
         auto vba = va - vb;
 
         int maxcoeff;
+        // if the edge is really small then we use eigen analysis of the face to compute a normal
         if (vba.norm() < 1e-8) {
             mtao::Mat3d A = mtao::Mat3d::Zero();
 
@@ -108,10 +109,12 @@ void CellCollapser::merge(const Eigen::MatrixBase<Derived> &V) {
             auto &&F = m_faces.at(fidx);
             bool sign = std::get<1>(m_halfface_to_cell.at(*hfp));
             auto N = (sign ? 1 : -1) * F.N;
+            std::cout << std::string(F) << " ===> " << N.transpose() << std::endl;
 
             mtao::Vec2d p(N(ui), N(uj));
 
             double ang = mtao::geometry::trigonometry::angle(p)(0);
+            std::cout << "p: " << p.transpose() << "::: " << ang << std::endl;
             index_map[ang] = *hfp;
         }
         auto it = index_map.begin();
@@ -126,6 +129,7 @@ void CellCollapser::merge(const Eigen::MatrixBase<Derived> &V) {
             int idx = std::get<0>(m_halfface_to_cell[hf]);
             int idx1 = std::get<0>(m_halfface_to_cell[hf1]);
             if (idx >= 0 && idx1 >= 0) {
+                std::cout << idx << " == " << idx1 << std::endl;
                 cell_ds.join(cell(hf), dual_cell(hf1));
             }
         }
@@ -148,7 +152,7 @@ void CellCollapser::merge(const Eigen::MatrixBase<Derived> &V) {
 
     if (!face_cell_possibilities.empty()) {
         /*
-                   mtao::map<CoordType,std::tuple<int,bool>> map;
+                   mtao::map<coord_type,std::tuple<int,bool>> map;
                    for(auto&& [c,fs]: cell_boundaries) {
                    for(auto&& [f,b]: fs) {
 

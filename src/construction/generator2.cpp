@@ -153,7 +153,7 @@ CutCellMesh<2> CutCellEdgeGenerator<2>::generate_faces() const {
         if (pc.size() != 2) {
             return {};
         }
-        std::array<CoordType, 2> pca{ { { {} }, { {} } } };
+        std::array<coord_type, 2> pca{ { { {} }, { {} } } };
         std::copy(pc.begin(), pc.end(), pca.begin());
         //find the boundary cells axis
         int idx;

@@ -31,6 +31,7 @@ ADD_CATCHTEST(interp
 
 ADD_CATCHTEST(3D
     single_cube_test.cpp
+    cell_collapser_test.cpp
     )
 
 # not real tests, just binaries for testing functionality

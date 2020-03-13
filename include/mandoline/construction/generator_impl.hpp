@@ -264,11 +264,11 @@ void CutCellEdgeGenerator<D>::update_vertices_from_intersections() {
     }
 }
 template<int D>
-auto CutCellEdgeGenerator<D>::cell_edge_intersections(const std::set<CoordType> &cells) -> std::set<EdgeIntersectionType> {
+auto CutCellEdgeGenerator<D>::cell_edge_intersections(const std::set<coord_type> &cells) -> std::set<EdgeIntersectionType> {
 
     std::set<EdgeIntersectionType> isects;
     for (auto &&c : cells) {
-        per_cell_vertex_looper([&](const CoordType &vc, const std::bitset<D> &bs) {
+        per_cell_vertex_looper([&](const coord_type &vc, const std::bitset<D> &bs) {
             isects.emplace(EdgeIntersectionType{ vc, Vec::Zero(), -1, 0 });
         },
                                c);
@@ -277,20 +277,20 @@ auto CutCellEdgeGenerator<D>::cell_edge_intersections(const std::set<CoordType> 
 }
 
 template<int D>
-auto CutCellEdgeGenerator<D>::grid_coord(const Vec &v) const -> std::tuple<CoordType, std::array<double, D>> {
+auto CutCellEdgeGenerator<D>::grid_coord(const Vec &v) const -> std::tuple<coord_type, std::array<double, D>> {
 
     auto CQ = StaggeredGrid::coord(v);
     return CQ;
 }
 
 template<int D>
-auto CutCellEdgeGenerator<D>::active_cells() const -> std::set<CoordType> {
-    std::set<CoordType> cells;
-    auto add_cells = [&](const CoordType &c, const Vec &quot) {
-        std::set<CoordType> mycells;
+auto CutCellEdgeGenerator<D>::active_cells() const -> std::set<coord_type> {
+    std::set<coord_type> cells;
+    auto add_cells = [&](const coord_type &c, const Vec &quot) {
+        std::set<coord_type> mycells;
         mycells.insert(c);
 
-        CoordType myc = c;
+        coord_type myc = c;
         std::function<void(bool, int)> mac;
         mac = [&](bool sign, int dim) {
             myc[dim] = c[dim] - sign;
@@ -310,8 +310,8 @@ auto CutCellEdgeGenerator<D>::active_cells() const -> std::set<CoordType> {
         /*
                        for(int i = 0; i < D; ++i) {
                        if(quot(i) == 0) {
-                       std::set<CoordType> newcoords;
-                       std::transform(mycells.begin(),mycells.end(),std::inserter(newcoords,newcoords.end()),[&](CoordType c) {
+                       std::set<coord_type> newcoords;
+                       std::transform(mycells.begin(),mycells.end(),std::inserter(newcoords,newcoords.end()),[&](coord_type c) {
                        c[i]--;
                        return c;
                        });
@@ -340,8 +340,8 @@ auto CutCellEdgeGenerator<D>::active_cells() const -> std::set<CoordType> {
     return cells;
 }
 template<int D>
-auto CutCellEdgeGenerator<D>::crossing_indices() const -> std::array<mtao::map<CoordType, std::set<int>>, D> {
-    std::array<mtao::map<CoordType, std::set<int>>, D> crossings;
+auto CutCellEdgeGenerator<D>::crossing_indices() const -> std::array<mtao::map<coord_type, std::set<int>>, D> {
+    std::array<mtao::map<coord_type, std::set<int>>, D> crossings;
 
     for (auto &&[idx, isect] : mtao::iterator::enumerate(m_crossings)) {
         for (int d = 0; d < D; ++d) {
@@ -356,9 +356,9 @@ auto CutCellEdgeGenerator<D>::crossing_indices() const -> std::array<mtao::map<C
 
 /*
            template <int D, typename Func>
-           static void CutCellEdgeGenerator<D>::per_cell_vertex_looper(Func&& f, const CoordType& c) {
+           static void CutCellEdgeGenerator<D>::per_cell_vertex_looper(Func&& f, const coord_type& c) {
            for(int i = 0; i < (2 << D); ++i) {
-           CoordType cc = c;
+           coord_type cc = c;
            std::bitset<D> bs(i);
            for(int j = 0; j < D; ++j) {
            cc[j] += bs[j]?1:0;
@@ -378,7 +378,7 @@ mtao::map<int, int> CutCellEdgeGenerator<D>::vertex_reindexer() const {
     for (int i = 0; i < grid_size; ++i) {
         vert_reindex[i] = i;
     }
-    auto reindexvertex = [&](CoordType c, Vec q, int oldidx) {
+    auto reindexvertex = [&](coord_type c, Vec q, int oldidx) {
         //for(int i = 0; i < D; ++i) {
         //    if(q(i) > .5) {
         //        c[i]+=1;
@@ -543,7 +543,6 @@ auto CutCellEdgeGenerator<D>::all_GV() const -> ColVecs {
     }
     return R;
 
-    return mtao::eigen::hstack(StaggeredGrid::vertices(), V());
 }
 
 template<int D>
@@ -694,7 +693,7 @@ void CutCellEdgeGenerator<D>::bake_active_grid_cell_mask() {
     {
 
         auto t = mtao::logging::timer("Adding grid vertices");
-        auto add_grid = [&](int dim, const CoordType &c) {
+        auto add_grid = [&](int dim, const coord_type &c) {
             m_per_axis_crossings[dim][c];
             /*
                            per_boundary_cell_vertex_looper(dim,[&](auto&& c, auto&& bs) {
@@ -713,7 +712,7 @@ void CutCellEdgeGenerator<D>::bake_active_grid_cell_mask() {
                     m_active_grid_cell_mask(c) = false;
 
                     per_boundary_cell_vertex_looper(
-                      i, [&](const CoordType &a, const std::bitset<D> &bs) {
+                      i, [&](const coord_type &a, const std::bitset<D> &bs) {
                           add_grid(i, a);
                       },
                       c);
@@ -730,7 +729,7 @@ void CutCellEdgeGenerator<D>::bake_edges() {
     }
 
 
-    auto get_grid_edge = [&](CoordType c, int type) -> Edge {
+    auto get_grid_edge = [&](coord_type c, int type) -> Edge {
         int fidx = StaggeredGrid::vertex_index(c);
         c[type]++;
         int nidx = StaggeredGrid::vertex_index(c);
@@ -740,7 +739,7 @@ void CutCellEdgeGenerator<D>::bake_edges() {
     {
         std::mutex edges_mutex;
         //Create every new edge possible where at least one side is on the interior of the mask
-        auto add_edges = [&](auto &&s, const CoordType &grid_edge, int dim) {
+        auto add_edges = [&](auto &&s, const coord_type &grid_edge, int dim) {
             std::vector<int> vec;
             mtao::map<double, int> edge_ordered_elements;
             auto e = get_grid_edge(grid_edge, dim);
@@ -899,13 +898,13 @@ auto CutCellEdgeGenerator<D>::axial_edges() const -> std::array<mtao::map<int, s
     return ret;
 }
 template<int D>
-auto CutCellEdgeGenerator<D>::vertex_ownership() const -> mtao::map<CoordType, std::set<int>> {
-    mtao::map<CoordType, std::set<int>> crossings;
+auto CutCellEdgeGenerator<D>::vertex_ownership() const -> mtao::map<coord_type, std::set<int>> {
+    mtao::map<coord_type, std::set<int>> crossings;
 
     for (auto &&[idx, isect] : mtao::iterator::enumerate(m_crossings)) {
         auto bs = isect.vertex().clamped_indices.as_bitset1();
-        CoordType c = isect.coord;
-        per_dual_cell_vertex_looper([&, idx = idx](const CoordType &c, std::bitset<D> &b) {
+        coord_type c = isect.coord;
+        per_dual_cell_vertex_looper([&, idx = idx](const coord_type &c, std::bitset<D> &b) {
             if ((b & bs) == b) {
                 crossings[c].insert(idx);
             }
@@ -915,14 +914,14 @@ auto CutCellEdgeGenerator<D>::vertex_ownership() const -> mtao::map<CoordType, s
     return crossings;
 }
 template<int D>
-auto CutCellEdgeGenerator<D>::possible_cells(const std::vector<int> &face) const -> std::set<CoordType> {
+auto CutCellEdgeGenerator<D>::possible_cells(const std::vector<int> &face) const -> std::set<coord_type> {
 
     if (face.empty()) { return {}; }
-    std::set<CoordType> possibles = GV(face[0]).possible_cells();
+    std::set<coord_type> possibles = GV(face[0]).possible_cells();
 
     for (auto &&f : face) {
         auto s = GV(f).possible_cells();
-        std::set<CoordType> i;
+        std::set<coord_type> i;
         std::set_intersection(possibles.begin(), possibles.end(), s.begin(), s.end(), std::inserter(i, i.end()));
         possibles = std::move(i);
         if (possibles.empty()) {
@@ -933,15 +932,15 @@ auto CutCellEdgeGenerator<D>::possible_cells(const std::vector<int> &face) const
     return possibles;
 }
 template<int D>
-auto CutCellEdgeGenerator<D>::possible_cells(const std::set<std::vector<int>> &faces) const -> std::set<CoordType> {
+auto CutCellEdgeGenerator<D>::possible_cells(const std::set<std::vector<int>> &faces) const -> std::set<coord_type> {
 
     if (faces.empty()) { return {}; }
-    std::set<CoordType> possibles = GV((*faces.begin())[0]).possible_cells();
+    std::set<coord_type> possibles = GV((*faces.begin())[0]).possible_cells();
 
     for (auto &&face : faces) {
         for (auto &&f : face) {
             auto s = GV(f).possible_cells();
-            std::set<CoordType> i;
+            std::set<coord_type> i;
             std::set_intersection(possibles.begin(), possibles.end(), s.begin(), s.end(), std::inserter(i, i.end()));
             possibles = std::move(i);
             if (possibles.empty()) {
@@ -953,14 +952,14 @@ auto CutCellEdgeGenerator<D>::possible_cells(const std::set<std::vector<int>> &f
     return possibles;
 }
 template<int D>
-auto CutCellEdgeGenerator<D>::possible_cells_cell(const std::set<int> &faces, const std::vector<CutFace<D>> &CFs) const -> std::set<CoordType> {
+auto CutCellEdgeGenerator<D>::possible_cells_cell(const std::set<int> &faces, const std::vector<CutFace<D>> &CFs) const -> std::set<coord_type> {
 
     if (faces.empty()) { return {}; }
-    std::set<CoordType> possibles = possible_cells(CFs[*faces.begin()].indices);
+    std::set<coord_type> possibles = possible_cells(CFs[*faces.begin()].indices);
 
     for (auto &&face : faces) {
         auto s = possible_cells(CFs[face].indices);
-        std::set<CoordType> i;
+        std::set<coord_type> i;
         std::set_intersection(possibles.begin(), possibles.end(), s.begin(), s.end(), std::inserter(i, i.end()));
         possibles = std::move(i);
         if (possibles.empty()) {
@@ -999,15 +998,15 @@ auto CutCellEdgeGenerator<D>::face_mask(const std::vector<int> &faces) const -> 
 }
 /*
                    template <int D>
-                   auto CutCellEdgeGenerator<D>::possible_faces(const std::set<std::vector<int>>& faces) const -> std::set<CoordType> {
+                   auto CutCellEdgeGenerator<D>::possible_faces(const std::set<std::vector<int>>& faces) const -> std::set<coord_type> {
 
                    if(faces.empty()) { return {}; }
-                   std::set<CoordType> possibles = GV((*faces.begin())[0]).possible_faces();
+                   std::set<coord_type> possibles = GV((*faces.begin())[0]).possible_faces();
 
                    for(auto&& face: faces) {
                    for(auto&& f: face) {
                    auto s = GV(f).possible_faces();
-                   std::set<CoordType> i;
+                   std::set<coord_type> i;
                    std::set_intersection(possibles.begin(),possibles.end(),s.begin(),s.end(),std::inserter(i,i.end()));
                    possibles = std::move(i);
                    if(possibles.empty()) {
@@ -1019,14 +1018,14 @@ auto CutCellEdgeGenerator<D>::face_mask(const std::vector<int> &faces) const -> 
                    return possibles;
                    }
                    template <int D>
-                   auto CutCellEdgeGenerator<D>::possible_faces(const std::vector<int>& face) const -> std::set<CoordType> {
+                   auto CutCellEdgeGenerator<D>::possible_faces(const std::vector<int>& face) const -> std::set<coord_type> {
 
                    if(face.empty()) { return {}; }
-                   std::set<CoordType> possibles = GV(face[0]).possible_faces();
+                   std::set<coord_type> possibles = GV(face[0]).possible_faces();
 
                    for(auto&& f: face) {
                    auto s = GV(f).possible_faces();
-                   std::set<CoordType> i;
+                   std::set<coord_type> i;
                    std::set_intersection(possibles.begin(),possibles.end(),s.begin(),s.end(),std::inserter(i,i.end()));
                    possibles = std::move(i);
                    if(possibles.empty()) {
@@ -1046,6 +1045,10 @@ bool CutCellEdgeGenerator<D>::is_in_cell(const std::vector<int> &face) const {
     return !possible_cells(face).empty();
 }
 
+template<int D>
+bool CutCellEdgeGenerator<D>::is_active_cell(const coord_type& coord) const {
+    return m_active_grid_cell_mask.valid_index(coord) && m_active_grid_cell_mask(coord);
+}
 /*
 // helper for assigning boundary information to
 template<int D, typename IndexContainerType>
@@ -1055,7 +1058,7 @@ std::optional<std::tuple<int, bool>>
     if (pc.size() != 2) {
         return {};
     }
-    std::array<CoordType, 2> pca;
+    std::array<coord_type, 2> pca;
     std::copy(pc.begin(), pc.end(), pca.begin());
     //find the boundary cells axis
     int idx;
