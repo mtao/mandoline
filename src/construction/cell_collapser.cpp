@@ -1,6 +1,7 @@
 #include "mandoline/construction/cell_collapser.hpp"
 #include <algorithm>
 #include <iterator>
+#include <spdlog/spdlog.h>
 
 #include <mtao/iterator/enumerate.hpp>
 namespace mandoline::construction {
@@ -29,20 +30,28 @@ CellCollapser::CellCollapser(const mtao::map<int, CutFace<3>> &faces) {
         }
         if (!CS.indices.empty()) {
             auto &&CSS = m_faces[fid] = std::move(CS);
-            cell_ds.add_node(2 * cid);
-            cell_ds.add_node(2 * cid + 1);
 
             auto add_halfface = [&](Edge e, bool flap = false) {
                 int base = flap ? (-2) : (2 * cid);//flap -> (-2 so the neg can have -1). wel'l just ignore negative entries
                 base = 2 * cid;
+                base = 0;
                 {
+
+                    int id = 100 * fid + base;
+                    cell_ds.add_node(id);
                     HalfFace hf{ fid, e };
-                    m_halfface_to_cell[hf] = std::make_tuple(base, true);
+                    auto&& [face_index, edge] = hf;
+                    auto&& [a,b] = edge;
+                    m_halfface_to_cell[hf] = std::make_tuple(id, true);
                 }
                 std::swap(e[0], e[1]);
                 {
+                    int id = 100 * fid + base + 1;
+                    cell_ds.add_node(id);
                     HalfFace hf{ fid, e };
-                    m_halfface_to_cell[hf] = std::make_tuple(base + 1, false);
+                    auto&& [face_index, edge] = hf;
+                    auto&& [a,b] = edge;
+                    m_halfface_to_cell[hf] = std::make_tuple(id, false);
                 }
             };
             for (auto &&C : CSS.indices) {
@@ -61,8 +70,7 @@ CellCollapser::CellCollapser(const mtao::map<int, CutFace<3>> &faces) {
 }
 
 auto CellCollapser::clean_unmanifold(const std::vector<int> &C) -> std::tuple<std::set<std::vector<int>>, std::set<Edge>> {
-    //auto t = mtao::logging::profiler("clean unmanifold",false,"profiler");
-    //M is true if we want to keep a vertex
+    //auto t = mtao::logging::profiler("clean unmanifold",false,"profiler"); //M is true if we want to keep a vertex
     //std::vector<bool> M(C.size(),true);
     std::set<Edge> E;
     for (int i = 0; i < C.size(); ++i) {
@@ -262,6 +270,49 @@ void CellCollapser::remove_boundary_cells_by_volume(const std::map<int, double> 
                                 return vol < 0;
                             }),
                             m_cell_boundaries.end());
+}
+
+void CellCollapser::fill_cell_boundaries() {
+    cell_ds.reduce_all();
+    mtao::map<int, int> reindexer;
+    for (auto &&i : cell_ds.root_indices()) {
+        reindexer[cell_ds.node(i).data] = reindexer.size();
+    }
+    m_cell_boundaries.resize(reindexer.size());
+    for (auto &&[hf, cb] : m_halfface_to_cell) {
+        auto &[c, b] = cb;
+        if (c >= 0) {
+            int root = cell_ds.get_root(c).data;
+            int cell = reindexer[root];
+            c = cell;
+            m_cell_boundaries[cell][std::get<0>(hf)] = b;
+        }
+        //{
+        //    auto&& [face_index, edge] = hf;
+        //    auto&& [a,b] = edge;
+        //    auto&& [bs,sgn] = cb;
+        //    spdlog::info("{}: ({},{}) => {}({})", face_index,a,b,bs,sgn);
+        //}
+    }
+
+    if (!face_cell_possibilities.empty()) {
+        /*
+           mtao::map<coord_type,std::tuple<int,bool>> map;
+           for(auto&& [c,fs]: cell_boundaries) {
+           for(auto&& [f,b]: fs) {
+
+           }
+           }
+           */
+    }
+
+
+    /*
+    m_cell_boundaries.erase(std::remove_if(m_cell_boundaries.begin(), m_cell_boundaries.end(), [](auto &&m) {
+                return m.size() < 4;
+                }),
+            m_cell_boundaries.end());
+            */
 }
 
 }// namespace mandoline::construction

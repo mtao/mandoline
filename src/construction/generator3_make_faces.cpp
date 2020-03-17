@@ -65,14 +65,14 @@ void CutCellGenerator<3>::bake_faces() {
     int face_size = m_cut_faces.size();
 
 
-    {
-        auto s = StaggeredGrid::cell_shape();
-        spdlog::warn("cell shape: {},{},{}", s[0],s[1],s[2]);
-    }
-    {
-        auto s = active_grid_cell_mask().shape();
-        spdlog::warn("Interior cell mask shape: {},{},{}", s[0],s[1],s[2]);
-    }
+    //{
+    //    auto s = StaggeredGrid::cell_shape();
+    //    spdlog::warn("cell shape: {},{},{}", s[0],s[1],s[2]);
+    //}
+    //{
+    //    auto s = active_grid_cell_mask().shape();
+    //    spdlog::warn("Interior cell mask shape: {},{},{}", s[0],s[1],s[2]);
+    //}
     using Grid2 = mtao::geometry::grid::StaggeredGrid<double, 2>;
     auto subgrid = [this](auto &&g, int d) {
         int n0 = (d + 1) % 3;
@@ -85,12 +85,12 @@ void CutCellGenerator<3>::bake_faces() {
     };
     std::array<CutCellEdgeGenerator<2>, D> grids{ { subgrid(*this, 0), subgrid(*this, 1), subgrid(*this, 2) } };
 
-    auto AC = active_cells();
-    auto AE = axial_edges();
+    auto activeCells = active_cells();
+    auto axialEdges = axial_edges();
     //#pragma omp parallel for
 
     auto t = mtao::logging::profiler("Flagging active cells");
-    for (auto &&c : AC) {
+    for (auto &&c : activeCells) {
         for (int i = 0; i < D; ++i) {
             int p1 = (i + 1) % 3;
             int p2 = (i + 2) % 3;
@@ -131,9 +131,9 @@ void CutCellGenerator<3>::bake_faces() {
     for (int i = 0; i < 3; ++i) {
         int dim = i;
         auto &&ahdata = axis_hem_data[i];
-        auto &&ae = AE[i];
+        auto &&axialEdges_dim = axialEdges[i];
         auto &&g = grids[i];
-        //for(auto&& [dim,ahdata,ae,g_]: mtao::iterator::enumerate(axis_hem_data, AE,grids)) {
+        //for(auto&& [dim,ahdata,axialEdges_dim,g_]: mtao::iterator::enumerate(axis_hem_data, axialEdges,grids)) {
         //auto& g = g_;
         SubGridTransformer subtran(g, *this, dim, 0);
         //subV.row(0) = V.row((i+1)%3);
@@ -147,18 +147,18 @@ void CutCellGenerator<3>::bake_faces() {
             auto t = mtao::logging::timer(timer_str);
             timer_str[timer_str.size() - 1] += 1;
 
-            std::vector<int> aiinds(ae.size());
-            std::transform(ae.begin(), ae.end(), aiinds.begin(), [](auto &&pr) {
+            std::vector<int> axial_edge_indices(axialEdges_dim.size());
+            std::transform(axialEdges_dim.begin(), axialEdges_dim.end(), axial_edge_indices.begin(), [](auto &&pr) {
                 return pr.first;
             });
-            auto it = aiinds.begin();
+            auto it = axial_edge_indices.begin();
 
-#pragma omp parallel for
-            for (it = aiinds.begin(); it < aiinds.end(); it++) {
+//#pragma omp parallel for
+            for (it = axial_edge_indices.begin(); it < axial_edge_indices.end(); it++) {
                 int cidx = *it;
-                auto &E = ae[cidx];
+                auto &E = axialEdges_dim[cidx];
                 //auto&& [cidx,E] = *it;
-                //for(auto&& [cidx,E]: ae) {
+                //for(auto&& [cidx,E]: axialEdges_dim) {
                 coord_type coord;
                 coord[dim] = cidx;
                 auto &ahd = ahdata[cidx];
@@ -166,13 +166,28 @@ void CutCellGenerator<3>::bake_faces() {
                     if (s[0] > s[1]) {
                         std::swap(s[0], s[1]);
                     }
+                    std::cout << s[0] << ":" << s[1] << " ";
                     return s;
                 });
+                std::cout << std::endl;
                 //ahd.edges.insert(E.begin(),E.end());
-                std::cout << "AHD size: " << ahd.edges.size() << std::endl;
+                //spdlog::info("AHD size {}", ahd.edges.size());
+                //std::cout << "AHD size: " << ahd.edges.size() << std::endl;
 
                 std::set<Edge> bedges;
+                if(dim == 2 && cidx == 1) {
+                    std::cout << "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv" << std::endl;
+                    std::cout << "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv" << std::endl;
+                    std::cout << "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv" << std::endl;
+                    std::cout << "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv" << std::endl;
+                }
                 std::tie(ahd.hem, bedges) = g.compute_planar_hem(subVV, mtao::eigen::stl2eigen(ahd.edges), ahd.active_grid_cell_mask);
+                if(dim == 2 && cidx == 1) {
+                    std::cout << "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" << std::endl;
+                    std::cout << "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" << std::endl;
+                    std::cout << "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" << std::endl;
+                    std::cout << "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" << std::endl;
+                }
                 std::transform(bedges.begin(), bedges.end(), std::inserter(ahd.boundary_edges, ahd.boundary_edges.end()), [&, dim = dim](Edge e) -> Edge {
                     for (auto &&idx : e) {
 
@@ -184,7 +199,7 @@ void CutCellGenerator<3>::bake_faces() {
                     return e;
                 });
             }
-            for (auto &&[cidx, E] : ae) {
+            for (auto &&[cidx, E] : axialEdges_dim) {
                 coord_type coord;
                 auto &ahd = ahdata[cidx];
                 auto fa = ahd.hem.cell_indices().array();
@@ -281,9 +296,9 @@ void CutCellGenerator<3>::compute_faces() {
                     std::cout << "SET WASNT LEXICOGRAPHICAL ORDER SOMEHOW?" << std::endl;
                 }
                 if (pca[0][idx] < 0) {
-                    f.external_boundary = { -1, 1 };
+                    f.external_boundary = { -2, 1 };
                 } else if (pca[1][idx] >= cell_shape()[idx]) {
-                    f.external_boundary = { -1, 0 };
+                    f.external_boundary = { -2, 0 };
                 } else if (I.size() == 1 && I.begin()->size() == 4) {//should always be a grid cell!
                     bool pa = is_active_cell(pca[0]);
                     bool na = is_active_cell(pca[1]);
@@ -328,29 +343,33 @@ void CutCellGenerator<3>::compute_faces_axis(int idx) {
     //axial half edge mesh data
     auto &ahdata = axis_hem_data[idx];
 
-    //active axial indices
-    std::vector<int> aiinds(ahdata.size());
-    std::transform(ahdata.begin(), ahdata.end(), aiinds.begin(), [](auto &&pr) {
+    //pull the keys out so we can parallel for loop over them
+    std::vector<int> axial_edge_indices(ahdata.size());
+    std::transform(ahdata.begin(), ahdata.end(), axial_edge_indices.begin(), [](auto &&pr) {
         return pr.first;
     });
-    auto it = aiinds.begin();
+    auto it = axial_edge_indices.begin();
     std::vector<mtao::map<int, CutFace<D>>> faces_vec(ahdata.size());
 
-#pragma omp parallel for
-    for (it = aiinds.begin(); it < aiinds.end(); it++) {
+//#pragma omp parallel for
+    for (it = axial_edge_indices.begin(); it < axial_edge_indices.end(); it++) {
         int cidx = *it;
         auto &ahd = ahdata.at(cidx);
-        faces_vec[std::distance(aiinds.begin(), it)] = compute_faces_axis(idx, cidx);
+        auto r = compute_faces_axis(idx, cidx);
+        //spdlog::info("compute faces axis {} level {} got size {}",idx,cidx,r.size());
+        faces_vec[std::distance(axial_edge_indices.begin(), it)] = std::move(r);
     }
 
     for (auto &&fcs : faces_vec) {
         for (auto &&[id, fs] : fcs) {
             axis_face_indices[idx].insert(id);
+            std::cout << std::string(fs) << std::endl;
         }
         m_faces.insert(fcs.begin(), fcs.end());
     }
 }
 mtao::map<int, CutFace<3>> CutCellGenerator<3>::compute_faces_axis(int idx, int cidx) const {
+    //spdlog::error("Compute_face_axis({},{})",idx,cidx);
 
     mtao::map<int, CutFace<D>> faces;
     auto &ahdata = axis_hem_data[idx];
@@ -365,19 +384,40 @@ mtao::map<int, CutFace<3>> CutCellGenerator<3>::compute_faces_axis(int idx, int 
     mtao::Vec3d N = mtao::Vec3d::Unit((idx + 1) % 3).cross(mtao::Vec3d::Unit((idx + 2) % 3));
 
     auto mesh_faces = ahd.hem.cells_multi_component_map();
+    //spdlog::info("AHD {},{} got {} faces", idx,cidx,mesh_faces.size());
+    if(idx == 2 && cidx == 1) {
+        std::cout << "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv" << std::endl;
+        std::cout << "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv" << std::endl;
+        std::cout << "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv" << std::endl;
+        std::cout << "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv" << std::endl;
+    }
 
     auto vols = ahd.hem.signed_areas(VV);
     for (auto &&[i, v] : mesh_faces) {
+        std::cout << "Face: \n";
+        for(auto&& c: v) {
+        std::copy(c.begin(),c.end(),std::ostream_iterator<int>(std::cout,",")); std::cout << std::endl;
+        }
         CutFace<D> F;
         F.id = Edge{ { idx, cidx } };
         auto add_loop = [&](const std::vector<int> &v) {
+            if(idx == 2 && cidx == 1 ) {
+            std::cout << "Adding loop: ";
+            std::copy(v.begin(),v.end(),std::ostream_iterator<int>(std::cout,",")); std::cout << std::endl;
+            }
+
             if (v.size() > 2) {
                 if (axial_primal_faces[idx].find(smallest_ordered_edge(v)) == axial_primal_faces[idx].end()) {
-                    F.indices.emplace(v);
+                    std::vector<int> vv(v.size());
+
+                    std::copy(v.rbegin(),v.rend(),vv.begin());
+
+                    F.indices.emplace(std::move(vv));
                 }
             }
         };
         for (auto &v : v) {// for every boundary cell figure out if this is a boundary stencil
+            //spdlog::info("Is boundary face?: {}", ahd.is_boundary_cell(v));
             if (ahd.is_boundary_cell(v)) {
                 auto pc = possible_cells(v);
                 if (pc.empty()) {
@@ -412,6 +452,12 @@ mtao::map<int, CutFace<3>> CutCellGenerator<3>::compute_faces_axis(int idx, int 
             faces[i] = std::move(F);
             //std::cout << std::string(faces[i]) << std::endl;
         }
+    }
+    if(idx == 2 && cidx == 1) {
+        std::cout << "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" << std::endl;
+        std::cout << "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" << std::endl;
+        std::cout << "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" << std::endl;
+        std::cout << "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" << std::endl;
     }
 
     /*

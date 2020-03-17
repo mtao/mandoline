@@ -15,6 +15,7 @@
 #include <igl/read_triangle_mesh.h>
 #include <mtao/geometry/mesh/boundary_facets.h>
 #include <mtao/geometry/prune_vertices.hpp>
+#include "debug_cutface.hpp"
 
 #include <mtao/geometry/mesh/shapes/cube.hpp>
 
@@ -72,7 +73,7 @@ TEST_CASE("3D Cube", "[ccm3]") {
 
     auto [V,F] = mtao::geometry::mesh::shapes::cube<double>();
 
-    V.array() += .5;
+    V.array() += .3;
     //V.colwise() += mtao::Vec3d(.5,.4,.6);
     mtao::geometry::grid::Grid3d vertex_grid(std::array<int,3>{{3,3,3}},mtao::Vec3d::Ones());
     auto ccg = CutCellGenerator<3>(V,vertex_grid);
@@ -159,39 +160,61 @@ TEST_CASE("3D Cube", "[ccm3]") {
 
 
     auto ccm = ccg.generate();
-    
-    /*
-    std::cout  << ccg.V() << std::endl;
-    std::cout  << ccg.origV().size() << std::endl;
-    for(auto&& p: ccg.origV()) {
-        std::cout << ">" << p.transpose() << std::endl;
-    }
 
-    std::cout << "CCG active cells: " << std::endl;
-    for(auto&& c: ccg.active_cells()) {
-        std::cout << c[0] << "," << c[1] << "," << c[2] << " ";
-    }
-    std::cout << std::endl;
-
-    print_gridb(ccm.active_cell_mask());
-    for(auto&& c: ccm.active_cells()) {
-        std::cout << c[0] << "," << c[1] << "," << c[2] << " ";
-    }
-    std::cout << std::endl;
-    std::cout << "Num faces: " << ccm.face_size() << std::endl;
-    for(auto&& f: ccm.faces()) {
-        std::cout << std::string(f) << std::endl;
-    }
-
-    std::cout << "Num cells: " << ccm.cell_size() << std::endl;
-    for(auto&& c: ccm.cells()) {
-        for(auto&& [f,s]: c) {
-            std::cout << "[" << f <<":" << s << "]";
-
+    std::cout << "Num cut-edges: " << ccm.cut_edge_size() << std::endl;
+    {
+        for(auto&& [idx,e]: mtao::iterator::enumerate(ccm.cut_edges())) {
+            std::cout << idx << ": " << std::string(e.mask()) << " " << std::string(e) << std::endl;
         }
-        std::cout << std::endl;
     }
-    */
+    
+    //std::cout << "Num faces: " << ccm.face_size() << std::endl;
+    //{
+    //    auto V = ccm.vertices();
+    //    //for(auto&& f: ccm.faces()) {
+    //    //    std::cout << std::string(f) << std::endl;
+    //    //}
+    //    for(auto&& [idx,f]: mtao::iterator::enumerate(ccm.faces())) {
+    //        std::cout << idx << ": " << std::string(f.mask()) << " " << std::string(f) << std::endl;
+
+    //        auto ff = f;
+    //        ff.N = -f.N;
+    //        CHECK(check_convex_face_normal(V,ff));
+    //    }
+    //    std::cout << std::endl;
+    //}
+    //std::cout << "Vertices: \n";
+    //for(int i = 0; i < ccm.vertices().cols(); ++i) {
+    //    std::cout << i << ")) " << ccm.vertices().col(i).transpose() << std::endl;
+    //}
+    ////std::cout  << ccg.V() << std::endl;
+    //std::cout  << ccg.origV().size() << std::endl;
+    //for(auto&& p: ccg.origV()) {
+    //    std::cout << ">" << p.transpose() << std::endl;
+    //}
+
+    ///*
+    //std::cout << "CCG active cells: " << std::endl;
+    //for(auto&& c: ccg.active_cells()) {
+    //    std::cout << c[0] << "," << c[1] << "," << c[2] << " ";
+    //}
+    //std::cout << std::endl;
+
+    //print_gridb(ccm.active_cell_mask());
+    //for(auto&& c: ccm.active_cells()) {
+    //    std::cout << c[0] << "," << c[1] << "," << c[2] << " ";
+    //}
+    //std::cout << std::endl;
+    //*/
+
+    //std::cout << "Num cells: " << ccm.cell_size() << std::endl;
+    //for(auto&& c: ccm.cells()) {
+    //    for(auto&& [f,s]: c) {
+    //        std::cout << "[" << f <<":" << s << "]";
+
+    //    }
+    //    std::cout << std::endl;
+    //}
 
 }
 

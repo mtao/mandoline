@@ -831,8 +831,36 @@ CutCellMesh<D> CutCellEdgeGenerator<D>::generate_edges() const {
         std::copy(m_grid_edges.begin(), m_grid_edges.end(), std::back_inserter(ret.m_cut_edges));
 
     } else {
-        std::copy(m_cut_edges.begin(), m_cut_edges.end(), std::back_inserter(ret.m_cut_edges));
+        std::transform(m_cut_edges.begin(), m_cut_edges.end(), std::back_inserter(ret.m_cut_edges), [](const CutMeshEdge<D>& E) -> CutEdge<D> {
+                if (E.parent_eid == -1) {
+                auto m = E.mask();
+                for(int j = 0; j < D; ++j) {
+                if(m[j]) {
+                return CutEdge<D>(m,E.indices,std::array<int,2>{{j,*m[j]}});
+                }
+                }
+                } else {
+                return E;
+                }
+                assert(false);
+                return {};
+
+        });
         std::copy(m_grid_edges.begin(), m_grid_edges.end(), std::back_inserter(ret.m_cut_edges));
+        spdlog::error("Generator mesh edges: ");
+        for(auto&& [idx,e]: mtao::iterator::enumerate(m_cut_edges)) {
+            std::cout << idx << ": " << std::string(e.mask()) << " ";
+            std::cout << e.indices[0] << ":" << e.indices[1] << std::endl;
+        }
+        spdlog::error("Generator grid edges: ");
+        for(auto&& [idx,e]: mtao::iterator::enumerate(m_grid_edges)) {
+            std::cout << idx << ": " << std::string(e.mask()) << " ";
+            std::cout << e.indices[0] << ":" << e.indices[1] << std::endl;
+        }
+        spdlog::error("Generator cut edges: ");
+        for(auto&& [idx,e]: mtao::iterator::enumerate(ret.m_cut_edges)) {
+            std::cout << idx << ": " << std::string(e.mask()) << " " << std::string(e) << std::endl;
+        }
     }
 
     for(auto&& [eidx, ce]: mtao::iterator::enumerate(m_cut_edges)) {

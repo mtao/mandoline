@@ -42,11 +42,9 @@ CutEdgeBase<D>::operator std::string() const {
         }
     },
                id);
-    for (auto &&f : indices) {
-        ss << "[";
-        std::copy(f.begin(), f.end(), std::ostream_iterator<int>(ss, ","));
-        ss << "],";
-    }
+    ss << "[";
+    std::copy(indices.begin(), indices.end(), std::ostream_iterator<int>(ss, ","));
+    ss << "],";
 
     /*
     if (external_boundary) {

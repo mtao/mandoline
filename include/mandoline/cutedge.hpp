@@ -44,6 +44,7 @@ struct CutEdgeBase : public CoordMaskedEdge<D> {
     CutEdgeBase(const coord_mask<D> &m, const std::array<int, 2> &indices, const std::array<int, 2> &id) : Base(m, indices), id(id) {}
 
     CutEdgeBase(const CutMeshEdge<D> &E) : CutEdgeBase(E.mask(), E.indices, E.parent_eid) {}
+    CutEdgeBase(const Base &E) : Base(E) {}
     CutEdgeBase() = default;
     CutEdgeBase(const CutEdgeBase &) = default;
     CutEdgeBase(CutEdgeBase &&) = default;
