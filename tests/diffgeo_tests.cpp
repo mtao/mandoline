@@ -45,9 +45,11 @@ TEST_CASE("2D", "[boundary,exterior_grid]") {
 
         Eigen::MatrixXd LL = L;
         Eigen::MatrixXd LSL = LL - LL.transpose();
+        std::cout << L << std::endl;
         Eigen::VectorXd B = L * Eigen::VectorXd::Ones(L.cols());
 
         REQUIRE((LSL).norm() == Approx(0));
+        std::cout << B.transpose() << std::endl;
         REQUIRE(B.norm() < 1e-5);
 
         std::mt19937 gen(0);
@@ -97,6 +99,29 @@ TEST_CASE("2D", "[boundary,exterior_grid]") {
             //    REQUIRE(err == Approx(0.).margin(1e-6));
             //}
         }
+    }
+    {
+        auto B = mandoline::operators::surface_boundary(ccm);
+        auto D = mandoline::operators::surface_divergence(ccm);
+        auto L = mandoline::operators::surface_laplacian(ccm);
+        //std::cout << "Boundary\n";
+        //std::cout << B << std::endl;
+        //std::cout << "Divergence\n";
+        //std::cout << D << std::endl;
+        std::cout << "Cut edges: " << ccm.cut_edge_size() << std::endl;
+        std::cout << "Laplacian " << L.rows() << "," << L.cols() << "\n";
+        std::cout << L << std::endl;
+        //{
+        //    mtao::VecXd b = D * u;
+        //    Eigen::ConjugateGradient<Eigen::SparseMatrix<double>, Eigen::Lower> cg;
+        //    cg.compute(L);
+        //    mtao::VecXd x = cg.solve(b);
+        //    REQUIRE(cg.info() == Eigen::Success);
+
+        //    mtao::VecXd pg = ccm.boundary(false) * x;
+        //    double err = (D * (u - pg)).norm();
+        //    REQUIRE(err == Approx(0.).margin(1e-6));
+        //}
     }
 }
 //switch (cg.info()) {

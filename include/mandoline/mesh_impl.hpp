@@ -21,8 +21,12 @@ int CutCellMeshBase<D, Derived>::cut_vertex_size() const {
     return m_cut_vertices.size();
 }
 template<int D, typename Derived>
-int CutCellMeshBase<D, Derived>::vertex_size() const {
+int CutCellMeshBase<D, Derived>::num_vertices() const {
     return StaggeredGrid::vertex_size() + cut_vertex_size();
+}
+template<int D, typename Derived>
+int CutCellMeshBase<D, Derived>::vertex_size() const {
+    return num_vertices(); 
 }
 template<int D, typename Derived>
 auto CutCellMeshBase<D, Derived>::vertex(int idx) const -> Vec {

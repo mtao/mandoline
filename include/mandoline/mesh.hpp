@@ -80,6 +80,7 @@ struct CutCellMeshBase : public mtao::geometry::grid::StaggeredGrid<double, D> {
     }
     //Vec dual_vertex(int vertex) const;
     int vertex_size() const;
+    int num_vertices() const;
     int cut_vertex_size() const;
 
 

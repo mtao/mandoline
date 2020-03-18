@@ -106,7 +106,7 @@ mtao::VecXd ExteriorGrid<D>::boundary_facet_volumes(bool make_boundary) const {
     auto &A = boundary_facet_axes();
     mtao::VecXd ret(A.size());
     ret.setZero();
-    auto vols = Base::template form_volumes<D - 0>();
+    auto vols = Base::template form_volumes<D - 1>();
 
     for (auto &&[row, axis] : mtao::iterator::enumerate(boundary_facet_axes())) {
         if (make_boundary || !is_boundary_facet(row)) {

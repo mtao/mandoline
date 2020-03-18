@@ -1,6 +1,7 @@
 #include "mandoline/operators/diffgeo2.hpp"
 #include "mandoline/operators/boundary2.hpp"
 #include "mandoline/operators/volume2.hpp"
+#include <spdlog/spdlog.h>
 
 namespace mandoline::operators {
 
@@ -23,21 +24,95 @@ std::map<int, std::array<int, 2>> surface_adjacency(const CutCellMesh<2> &ccm) {
     for (auto &&[eidx, edge] : mtao::iterator::enumerate(ccm.cut_edges())) {
         if (edge.is_mesh_edge()) {
             if (auto it = adj.find(edge.indices[0]); it == adj.end()) {
-                it->second = std::array<int, 2>{ { -1, eidx } };
+                adj[edge.indices[0]]= std::array<int, 2>{ { eidx, -1 } };
             } else {
-                it->second[1] = eidx;
+                //it->second[1] = eidx;
+                adj[edge.indices[0]][1] = eidx;
             }
             if (auto it = adj.find(edge.indices[1]); it == adj.end()) {
-                it->second = std::array<int, 2>{ { eidx, -1 } };
+                adj[edge.indices[1]] = std::array<int, 2>{ { eidx, -1 } };
             } else {
-                it->second[0] = eidx;
+                //it->second[0] = eidx;
+                adj[edge.indices[1]][1] = eidx;
             }
         }
+    }
+
+    // create an orientation by running around open edges and then random edges
+    std::set<int> unseen_edges;
+    std::set<int> open_edges;
+    for(auto&& [k,v]: adj) {
+        unseen_edges.emplace(k);
+        if(v[0] < 0 || v[1] < 0) {
+            open_edges.emplace(k);
+        }
+    }
+    auto remove = [&](int idx) {
+
+        if(auto it = open_edges.find(idx); it != open_edges.end()) {
+            open_edges.erase(it);
+        }
+        if(auto it = unseen_edges.find(idx); it != unseen_edges.end()) {
+            unseen_edges.erase(it);
+        }
+    };
+    auto run = [&](const int start_vertex, const int start_edge) {
+
+        int vertex = start_vertex;
+        int edge = start_edge;
+        do {
+            auto&& e = ccm.cut_edge(start_edge).indices;
+            // step vertex
+            if(e[0] == vertex) {
+                vertex = e[1];
+            } else {
+                vertex = e[0];
+            }
+            remove(vertex);
+
+            // step edge and swap it into the right order
+            auto& de = adj[vertex];
+            if(de[0] != edge) {
+                std::swap(de[0],de[1]);
+            }
+            edge = de[1];
+            if(edge < 0) {
+                break;
+            }
+
+
+        } while(vertex != start_vertex);
+
+    };
+    while(!open_edges.empty()) {
+
+        int start_idx = *open_edges.begin();
+        remove(start_idx);
+        int start_edge;
+        auto&& e = adj[start_idx];
+        if(e[0] == -1) {
+            start_edge = e[1];
+        } else {
+            start_edge = e[0];
+        }
+        run(start_idx,start_edge);
+    }
+    while(!unseen_edges.empty()) {
+        int start_idx = *unseen_edges.begin();
+        remove(start_idx);
+        auto&& e = adj[start_idx];
+        int start_edge = e[0];
+
+        run(start_idx,start_edge);
+
     }
     return adj;
 }
 mtao::VecXd surface_dual_lengths(const CutCellMesh<2> &ccm) {
     return surface_dual_lengths(ccm, surface_adjacency(ccm));
+}
+Eigen::SparseMatrix<double> surface_boundary(const CutCellMesh<2> &ccm) {
+    return surface_boundary(ccm, surface_adjacency(ccm));
 }
 Eigen::SparseMatrix<double> surface_divergence(const CutCellMesh<2> &ccm) {
     return surface_divergence(ccm, surface_adjacency(ccm));
@@ -49,7 +124,8 @@ Eigen::SparseMatrix<double> surface_laplacian(const CutCellMesh<2> &ccm) {
 mtao::VecXd surface_dual_lengths(const CutCellMesh<2> &ccm, const std::map<int, std::array<int, 2>> &adj_struct) {
 
     auto vols = edge_lengths(ccm);
-    mtao::VecXd el(ccm.cut_edges().size());
+    //mtao::VecXd el(ccm.cut_edges().size());
+    mtao::VecXd el(ccm.num_vertices());
     el.setZero();
     for (auto &&[dual_edge_index, pr] : adj_struct) {
         for (auto &&idx : pr) {
@@ -70,7 +146,7 @@ Eigen::SparseMatrix<double> surface_boundary(const CutCellMesh<2> &ccm, const st
             triplets.emplace_back(n, dual_edge_index, -1);
         }
         if (p >= 0) {
-            triplets.emplace_back(p, dual_edge_index, -1);
+            triplets.emplace_back(p, dual_edge_index, 1);
         }
     }
     Eigen::SparseMatrix<double> R(ccm.cut_edges().size(), ccm.vertex_size());
