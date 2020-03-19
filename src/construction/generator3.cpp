@@ -504,6 +504,7 @@ bool CutCellGenerator<3>::check_face_utilization() const {
         }
     }
     for (auto &&f : faces) {
+        spdlog::error("Unused face");
         std::cout << "Unused face: " << f << std::endl;
         auto face = m_faces.at(f);
         std::cout << std::string(face) << std::endl;

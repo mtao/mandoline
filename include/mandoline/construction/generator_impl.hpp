@@ -102,17 +102,6 @@ CutCellEdgeGenerator<D>::CutCellEdgeGenerator(const StaggeredGrid &g) : CutCellE
            return get_crossings(get_orig_line(eidx),edge_index);
            }
            */
-template<int D>
-void CutCellEdgeGenerator<D>::clear() {
-    m_data.clear();
-    m_origEMap.clear();
-    m_per_axis_crossings = {};
-    m_newV.clear();
-    m_crossings.clear();
-    cut_edges = {};
-    m_cut_edges.clear();
-    m_cut_faces.clear();
-}
 
 template<int D>
 void CutCellEdgeGenerator<D>::bake() {
@@ -629,14 +618,36 @@ mtao::ColVectors<double, D> paci_verts(const PACI &paci, const GridType &g) {
     }
     return V;
 }
+template<int D>
+void CutCellEdgeGenerator<D>::clear() {
+    m_data.clear();
+    m_origEMap.clear();
+    m_per_axis_crossings = {};
+    m_newV.clear();
+    for(auto&& a: m_per_axis_crossings) {
+        a.clear();
+    }
+    m_crossings.clear();
+    cut_edges = {};
+    m_grid_edges.clear();
+    m_cut_edges.clear();
+    m_cut_faces.clear();
+}
 
 template<int D>
 void CutCellEdgeGenerator<D>::reset(const mtao::vector<VType> &gvs) {
     m_data = CutData<D>(gvs);
     m_origV.clear();
     m_origEMap.clear();
+    for(auto&& a: m_per_axis_crossings) {
+        a.clear();
+    }
+    cut_edges = {};
     m_newV.clear();
     m_crossings.clear();
+    m_grid_edges.clear();
+    m_cut_edges.clear();
+    m_cut_faces.clear();
     std::transform(gvs.begin(), gvs.end(), std::back_inserter(m_origV), [&](const VType &gv) {
         return get_world_vertex(gv);
     });
@@ -847,34 +858,36 @@ CutCellMesh<D> CutCellEdgeGenerator<D>::generate_edges() const {
 
         });
         std::copy(m_grid_edges.begin(), m_grid_edges.end(), std::back_inserter(ret.m_cut_edges));
-        spdlog::error("Generator mesh edges: ");
-        for(auto&& [idx,e]: mtao::iterator::enumerate(m_cut_edges)) {
-            std::cout << idx << ": " << std::string(e.mask()) << " ";
-            std::cout << e.indices[0] << ":" << e.indices[1] << std::endl;
-        }
-        spdlog::error("Generator grid edges: ");
-        for(auto&& [idx,e]: mtao::iterator::enumerate(m_grid_edges)) {
-            std::cout << idx << ": " << std::string(e.mask()) << " ";
-            std::cout << e.indices[0] << ":" << e.indices[1] << std::endl;
-        }
-        spdlog::error("Generator cut edges: ");
-        for(auto&& [idx,e]: mtao::iterator::enumerate(ret.m_cut_edges)) {
-            std::cout << idx << ": " << std::string(e.mask()) << " " << std::string(e) << std::endl;
-        }
+        //spdlog::error("Generator mesh edges: ");
+        //for(auto&& [idx,e]: mtao::iterator::enumerate(m_cut_edges)) {
+        //    std::cout << idx << ": " << std::string(e.mask()) << " ";
+        //    std::cout << e.indices[0] << ":" << e.indices[1] << std::endl;
+        //}
+        //spdlog::error("Generator grid edges: ");
+        //for(auto&& [idx,e]: mtao::iterator::enumerate(m_grid_edges)) {
+        //    std::cout << idx << ": " << std::string(e.mask()) << " ";
+        //    std::cout << e.indices[0] << ":" << e.indices[1] << std::endl;
+        //}
+        //spdlog::error("Generator cut edges: ");
+        //for(auto&& [idx,e]: mtao::iterator::enumerate(ret.m_cut_edges)) {
+        //    std::cout << idx << ": " << std::string(e.mask()) << " " << std::string(e) << std::endl;
+        //}
     }
 
     for(auto&& [eidx, ce]: mtao::iterator::enumerate(m_cut_edges)) {
+        if(ce.parent_eid>= 0) {
 
-        mtao::Vec2d ts;
-        for(auto&& [i,vi,t]: mtao::iterator::enumerate(ce.indices,mtao::iterator::shell(ts.data(),ts.data()+ts.size()))) {
+            mtao::Vec2d ts;
+            for(auto&& [i,vi,t]: mtao::iterator::enumerate(ce.indices,mtao::iterator::shell(ts.data(),ts.data()+ts.size()))) {
 
-            if(vi < grid_vertex_size()) {
-                t = data().get_edge_coord(ce.parent_eid,grid_vertex(vi));
-            } else {
-                t = data().get_edge_coord(ce.parent_eid,crossing(vi));
+                if(vi < grid_vertex_size()) {
+                    t = data().get_edge_coord(ce.parent_eid,grid_vertex(vi));
+                } else {
+                    t = data().get_edge_coord(ce.parent_eid,crossing(vi));
+                }
             }
+            ret.m_mesh_edges[eidx] = InterpolatedEdge{ ts, ce.parent_eid };
         }
-        ret.m_mesh_edges[eidx] = InterpolatedEdge{ ts, ce.parent_eid };
     }
     return ret;
 }

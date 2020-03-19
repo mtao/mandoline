@@ -161,7 +161,7 @@ auto CutCellEdgeGenerator<2>::compute_planar_hem(const ColVecs &V, const Edges &
     bool adaptive = interior_cell_mask.empty();
     EmbeddedHalfEdgeMesh<double, 2> ehem;
     {
-        std::cout << E << std::endl;
+        //std::cout << E << std::endl;
         //auto t = mtao::logging::timer("Making halfedge mesh");
         auto VV = V;
         VV.row(0) = V.row(1);
@@ -182,19 +182,10 @@ auto CutCellEdgeGenerator<2>::compute_planar_hem(const ColVecs &V, const Edges &
     {
         //auto t = mtao::logging::timer("Generating topology");
         ehem.make_topology();
-        std::cout << ehem.edges() << std::endl;
     }
 
     std::set<Edge> boundary_edges;
 
-
-    auto print_coord = [&](auto &&c) {
-        std::cout << "(";
-        for (auto &&v : c) {
-            std::cout << v << ",";
-        }
-        std::cout << ")";
-    };
     { // create the boundary edge data
 
         if (!adaptive) {

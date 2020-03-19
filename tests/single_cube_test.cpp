@@ -73,7 +73,7 @@ TEST_CASE("3D Cube", "[ccm3]") {
 
     auto [V,F] = mtao::geometry::mesh::shapes::cube<double>();
 
-    V.array() += .3;
+    V.array() += .5;
     //V.colwise() += mtao::Vec3d(.5,.4,.6);
     mtao::geometry::grid::Grid3d vertex_grid(std::array<int,3>{{3,3,3}},mtao::Vec3d::Ones());
     auto ccg = CutCellGenerator<3>(V,vertex_grid);

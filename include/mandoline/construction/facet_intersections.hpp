@@ -40,7 +40,7 @@ struct IntersectionsBase : public coord_mask<D> {
         auto vedges = vptr_edges();
         std::set<Edge> ret;
         for (auto &&[a, b] : vedges) {
-            std::cout << std::string(*a) << ":" << std::string(*b) << std::endl;
+            //std::cout << std::string(*a) << ":" << std::string(*b) << std::endl;
             Edge e{ { indexer.at(a), indexer.at(b) } };
             if (e[0] == e[1]) continue;
             std::sort(e.begin(), e.end());

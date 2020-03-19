@@ -153,7 +153,7 @@ void CutCellGenerator<3>::bake_faces() {
             });
             auto it = axial_edge_indices.begin();
 
-//#pragma omp parallel for
+#pragma omp parallel for
             for (it = axial_edge_indices.begin(); it < axial_edge_indices.end(); it++) {
                 int cidx = *it;
                 auto &E = axialEdges_dim[cidx];
@@ -166,28 +166,28 @@ void CutCellGenerator<3>::bake_faces() {
                     if (s[0] > s[1]) {
                         std::swap(s[0], s[1]);
                     }
-                    std::cout << s[0] << ":" << s[1] << " ";
+                    //std::cout << s[0] << ":" << s[1] << " ";
                     return s;
                 });
-                std::cout << std::endl;
+                //std::cout << std::endl;
                 //ahd.edges.insert(E.begin(),E.end());
                 //spdlog::info("AHD size {}", ahd.edges.size());
                 //std::cout << "AHD size: " << ahd.edges.size() << std::endl;
 
                 std::set<Edge> bedges;
-                if(dim == 2 && cidx == 1) {
-                    std::cout << "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv" << std::endl;
-                    std::cout << "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv" << std::endl;
-                    std::cout << "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv" << std::endl;
-                    std::cout << "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv" << std::endl;
-                }
+                //if(dim == 2 && cidx == 1) {
+                //    std::cout << "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv" << std::endl;
+                //    std::cout << "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv" << std::endl;
+                //    std::cout << "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv" << std::endl;
+                //    std::cout << "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv" << std::endl;
+                //}
                 std::tie(ahd.hem, bedges) = g.compute_planar_hem(subVV, mtao::eigen::stl2eigen(ahd.edges), ahd.active_grid_cell_mask);
-                if(dim == 2 && cidx == 1) {
-                    std::cout << "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" << std::endl;
-                    std::cout << "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" << std::endl;
-                    std::cout << "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" << std::endl;
-                    std::cout << "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" << std::endl;
-                }
+                //if(dim == 2 && cidx == 1) {
+                //    std::cout << "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" << std::endl;
+                //    std::cout << "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" << std::endl;
+                //    std::cout << "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" << std::endl;
+                //    std::cout << "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" << std::endl;
+                //}
                 std::transform(bedges.begin(), bedges.end(), std::inserter(ahd.boundary_edges, ahd.boundary_edges.end()), [&, dim = dim](Edge e) -> Edge {
                     for (auto &&idx : e) {
 
@@ -351,7 +351,7 @@ void CutCellGenerator<3>::compute_faces_axis(int idx) {
     auto it = axial_edge_indices.begin();
     std::vector<mtao::map<int, CutFace<D>>> faces_vec(ahdata.size());
 
-//#pragma omp parallel for
+#pragma omp parallel for
     for (it = axial_edge_indices.begin(); it < axial_edge_indices.end(); it++) {
         int cidx = *it;
         auto &ahd = ahdata.at(cidx);
@@ -363,7 +363,7 @@ void CutCellGenerator<3>::compute_faces_axis(int idx) {
     for (auto &&fcs : faces_vec) {
         for (auto &&[id, fs] : fcs) {
             axis_face_indices[idx].insert(id);
-            std::cout << std::string(fs) << std::endl;
+            //std::cout << std::string(fs) << std::endl;
         }
         m_faces.insert(fcs.begin(), fcs.end());
     }
@@ -385,26 +385,12 @@ mtao::map<int, CutFace<3>> CutCellGenerator<3>::compute_faces_axis(int idx, int 
 
     auto mesh_faces = ahd.hem.cells_multi_component_map();
     //spdlog::info("AHD {},{} got {} faces", idx,cidx,mesh_faces.size());
-    if(idx == 2 && cidx == 1) {
-        std::cout << "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv" << std::endl;
-        std::cout << "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv" << std::endl;
-        std::cout << "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv" << std::endl;
-        std::cout << "vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv" << std::endl;
-    }
 
     auto vols = ahd.hem.signed_areas(VV);
     for (auto &&[i, v] : mesh_faces) {
-        std::cout << "Face: \n";
-        for(auto&& c: v) {
-        std::copy(c.begin(),c.end(),std::ostream_iterator<int>(std::cout,",")); std::cout << std::endl;
-        }
         CutFace<D> F;
         F.id = Edge{ { idx, cidx } };
         auto add_loop = [&](const std::vector<int> &v) {
-            if(idx == 2 && cidx == 1 ) {
-            std::cout << "Adding loop: ";
-            std::copy(v.begin(),v.end(),std::ostream_iterator<int>(std::cout,",")); std::cout << std::endl;
-            }
 
             if (v.size() > 2) {
                 if (axial_primal_faces[idx].find(smallest_ordered_edge(v)) == axial_primal_faces[idx].end()) {
@@ -452,12 +438,6 @@ mtao::map<int, CutFace<3>> CutCellGenerator<3>::compute_faces_axis(int idx, int 
             faces[i] = std::move(F);
             //std::cout << std::string(faces[i]) << std::endl;
         }
-    }
-    if(idx == 2 && cidx == 1) {
-        std::cout << "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" << std::endl;
-        std::cout << "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" << std::endl;
-        std::cout << "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" << std::endl;
-        std::cout << "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^" << std::endl;
     }
 
     /*

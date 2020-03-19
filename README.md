@@ -2,8 +2,6 @@
 [![CircleCI](https://circleci.com/gh/mtao/mandoline/tree/master.svg?style=svg)](https://circleci.com/gh/mtao/mandoline/tree/master)
 A robust cut-cell mesh generator for arbitrary triangle-mesh inputs
 
-# NOTE:
-I've currently messed up the 3d code while updating some stuff and due to sloppy practices i don't have a great version to roll back to. 2D works nicely / exposes some functionality nicely (check out the curve_drawing_2d example).
 
 ## Serialization
 By default Mandoline uses [protobuf](https://developers.google.com/protocol-buffers/) for serialization, following the format of defined at [proto/cutmesh.proto](https://github.com/mtao/mandoline/blob/master/proto/cutmesh.proto). This is language agnostic and so in theory, so long as your language has protobuf support/bindings you can read the output of Mandoline. In fact a lot of initial validity testing on Mandoline were done in python.

@@ -126,6 +126,13 @@ void CutData<D, Indexer>::bake(const std::optional<SGType> &grid, bool fuse) {
             m_cut_edges.emplace_back(m, E, eidx);
         };
         auto add_from_eis = [&](const EdgeIntersections<D>& EI) {
+        };
+
+        // loop over every edge and find potential edges
+        int i = 0;
+#pragma omp parallel for
+        for (i = 0; i < m_edge_intersections.size(); i++) {
+            auto &&EI = m_edge_intersections[i];
             coord_mask<D> ei_mask = EI.mask();
 
             // if the edge has no intersections AND no edge has
@@ -136,18 +143,11 @@ void CutData<D, Indexer>::bake(const std::optional<SGType> &grid, bool fuse) {
 
                 // generate the edge, reindexed by m_crossings
                 std::array<int, 2> e;
-                if(EI.edge_index >= 0) {
                     auto ei = E(EI.edge_index);
                     for (auto &&[i, v] : mtao::iterator::enumerate(e)) {
                         v = m_crossings[ei(i)].index;
                     }
 
-                }  else {
-                    std::transform(EI.vptr_edge.begin(), EI.vptr_edge.end(), e.begin(), [&](auto &&c) {
-                            std::cout << std::string(*c) << std::endl;
-                            return m_vertex_indexer.at(c);
-                            });
-                }
                 add_edge(ei_mask, e, EI.edge_index);
 
             } else {// can't just put subsequent logic in here because edge can set trivial
@@ -158,20 +158,54 @@ void CutData<D, Indexer>::bake(const std::optional<SGType> &grid, bool fuse) {
                     add_edge(ei_mask, E, EI.edge_index);
                 }
             }
-        };
-
-        // loop over every edge and find potential edges
-        int i = 0;
-#pragma omp parallel for
-        for (i = 0; i < m_edge_intersections.size(); i++) {
-            auto &&EI = m_edge_intersections[i];
-            add_from_eis(EI);
         }
         if constexpr(D == 3) {
             for (i = 0; i < m_triangle_intersections.size(); i++) {
                 auto &&FI = m_triangle_intersections[i];
-                for(auto&& [eptrs,eis]: FI.edge_intersections) {
-                    add_from_eis(eis);
+
+                const auto& ei_fi_map = FI.edge_to_triangle_map;
+                for(auto&& [eptrs,EI]: FI.edge_intersections) {
+                    coord_mask<D> ei_mask = EI.mask();
+                    if (EI.intersections.empty()) {
+
+                        // generate the edge, reindexed by m_crossings
+                        std::array<int, 2> e;
+                        if(EI.edge_index >= 0) {
+                            auto ei = E(EI.edge_index);
+                            for (auto &&[i, v] : mtao::iterator::enumerate(e)) {
+                                v = m_crossings[ei(i)].index;
+                            }
+                        } else {
+                            e[0] = m_vertex_indexer.at(EI.vptr_edge[0]);
+                            e[1] = m_vertex_indexer.at(EI.vptr_edge[1]);
+                        }
+
+                        add_edge(ei_mask, e, EI.edge_index);
+
+                    } else {// can't just put subsequent logic in here because edge can set trivial
+                        //
+                        auto GV = EI.gvertices();
+                        for(auto&& c: GV) {
+                            std::visit(
+                                    [&](auto &&v) {
+                                    using T = typename std::decay_t<decltype(v)>;
+                                    if constexpr (std::is_same_v<T, EdgeIsect const *>) {
+                                    if(auto it = ei_fi_map.find(v); it != ei_fi_map.end()) {
+                                    c = Crossing<D>(it->second);
+                                    }
+                                    }
+                                    },
+                                    c.vv);
+                        }
+
+                        auto ival = mtao::iterator::interval<2>(GV);
+                        for (auto &&[a, b] : ival) {
+                                int aa = m_vertex_indexer.at(a.vertex_ptr());
+                                int bb = m_vertex_indexer.at(b.vertex_ptr());
+                                add_edge(EI.mask(),{{aa,bb}},EI.edge_index);
+                        }
+                    }
+
                 }
             }
         }
@@ -357,6 +391,7 @@ void CutData<D, Indexer>::clear() {
     m_crossings.clear();
     m_vertex_indexer.clear();
     m_cut_faces.clear();
+    m_cut_edges.clear();
     clean_edges();
     clean_triangles();
 }
