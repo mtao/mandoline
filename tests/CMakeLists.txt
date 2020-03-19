@@ -1,5 +1,4 @@
 # i should only be here if build testing is on 
-include(CTest)
 #include(ParseAndAddCatchTests)
 
 
