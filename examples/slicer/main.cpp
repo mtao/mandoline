@@ -40,6 +40,7 @@ class MeshViewer: public mtao::opengl::Window3 {
         mtao::ColVecs3d V;
         mtao::ColVecs4d C;
         mtao::ColVecs3i F;
+        Eigen::AlignedBox<float,3> bbox;
         mandoline::tools::SliceGenerator sg;
 
 
@@ -83,6 +84,7 @@ class MeshViewer: public mtao::opengl::Window3 {
             mtao::Vec3d mean = (bb.min() + bb.max())/2;
             V.colwise() -= mean;
             input_mesh.setTriangleBuffer(V.cast<float>(),F.cast<unsigned int>());
+            bbox = mtao::geometry::bounding_box(V).cast<float>();
             sg = mandoline::tools::SliceGenerator(V,F);
             auto E = mtao::geometry::mesh::boundary_facets(F);
 
@@ -97,7 +99,7 @@ class MeshViewer: public mtao::opengl::Window3 {
             
 
 
-            //input_phong = new mtao::opengl::Drawable<Magnum::Shaders::Phong>{input_mesh,phong_shader, drawables()};
+            input_phong = new mtao::opengl::Drawable<Magnum::Shaders::Phong>{input_mesh,phong_shader, drawables()};
             input_mesh.setParent(&root());
 
 
@@ -121,11 +123,12 @@ class MeshViewer: public mtao::opengl::Window3 {
 
 
             {
-                bool dirty = ImGui::SliderFloat3("origin", origin.data(),-1,1)
-                    ||
+                if(
+                        ImGui::SliderFloat("origin x", origin.data(),bbox.min()(0),bbox.max()(0)) ||
+                        ImGui::SliderFloat("origin y", origin.data()+1,bbox.min()(1),bbox.max()(1)) ||
+                        ImGui::SliderFloat("origin z", origin.data()+2,bbox.min()(2),bbox.max()(2)) ||
                     ImGui::SliderFloat3("direction", direction.data(),-1,1)
-                    ;
-                if(dirty) {
+                  ) {
                     update_slice();
                 }
             }

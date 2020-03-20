@@ -5,6 +5,7 @@
 #include <mtao/geometry/bounding_box.hpp>
 #include <mtao/eigen/stack.h>
 #include <mtao/geometry/mesh/compactify.hpp>
+#include <spdlog/spdlog.h>
 
 using namespace mandoline::construction;
 using namespace mandoline;
@@ -42,7 +43,7 @@ void SliceGenerator::update_embedding(const mtao::ColVecs3d &V) {
     mtao::Vec3d shape = bbox.sizes();
     shape = (shape.array() > 1e-10).select(shape, 1);
 
-    Base::operator=(mtao::geometry::grid::StaggeredGrid<double, 3>::from_bbox(bbox, std::array<int, 3>{ { 1, 1, 2 } }));
+    Base::operator=(mtao::geometry::grid::StaggeredGrid<double, 3>::from_bbox(bbox, std::array<int, 3>{ { 2, 2, 3 } }));
 
     data.Indexer::operator=(vertex_grid());
 
@@ -158,6 +159,7 @@ std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> SliceGenerator::slice(const Eigen::
         }
     }
     if (FF.size() == 0) {
+        spdlog::warn("Slicer returned no faces");
         return {};
     }
 
