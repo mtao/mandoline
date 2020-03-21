@@ -18,8 +18,8 @@ ADD_EXECUTABLE(cutmesh_info cutmesh_info.cpp)
 TARGET_LINK_LIBRARIES(cutmesh_info mandoline_cutmesh3)
 
 IF(Corrade_FOUND)
-ADD_EXECUTABLE(cfg_to_cutmesh cfg_to_cutmesh.cpp)
-TARGET_LINK_LIBRARIES(cfg_to_cutmesh cutmesh_maker mandoline OpenMP::OpenMP_CXX mtao::common  Corrade::Utility)
+    ADD_EXECUTABLE(cfg_to_cutmesh cfg_to_cutmesh.cpp)
+    TARGET_LINK_LIBRARIES(cfg_to_cutmesh cutmesh_maker mandoline OpenMP::OpenMP_CXX mtao::common  Corrade::Utility)
 ENDIF(Corrade_FOUND)
 
 
@@ -34,21 +34,29 @@ IF(HANDLE_SELF_INTERSECTIONS)
         PUBLIC -DMANDOLINE_HANDLE_SELF_INTERSECTIONS)
 
 
+    ADD_LIBRARY(cutmesh_validation
+        validation/cutmesh_validation.cpp 
+        validation/faces_fully_utilized.cpp validation/paired_boundary.cpp validation/pcwn_count.cpp validation/possible_cells.cpp
+        validation/grid_cells.cpp
+        validation/region_volumes.cpp
+        )
+    TARGET_LINK_LIBRARIES(cutmesh_validation gmp CGAL mpfr 
+        mandoline)
 
-ADD_EXECUTABLE(cutmesh_validation
-    validate_cutmesh.cpp
-    validation/cutmesh_validation.cpp 
-    validation/faces_fully_utilized.cpp validation/paired_boundary.cpp validation/pcwn_count.cpp validation/possible_cells.cpp
-    validation/grid_cells.cpp
-    validation/region_volumes.cpp
-    )
+    ADD_EXECUTABLE(validate_cutmesh
+        validate_cutmesh.cpp
+        )
 
-TARGET_LINK_LIBRARIES(cutmesh_validation gmp CGAL mpfr 
-    mandoline
-    )
-    ENDIF(HANDLE_SELF_INTERSECTIONS)
+    TARGET_LINK_LIBRARIES(validate_cutmesh mandoline cutmesh_validation)
+ENDIF(HANDLE_SELF_INTERSECTIONS)
 IF(${USE_OPENGL})
-ADD_EXECUTABLE(make_cutmesh_gui make_cutmesh_gui.cpp)
-TARGET_LINK_LIBRARIES(make_cutmesh_gui mandoline OpenMP::OpenMP_CXX mtao::common mtao::visualization)
+    ADD_EXECUTABLE(make_cutmesh_gui make_cutmesh_gui.cpp)
+    TARGET_LINK_LIBRARIES(make_cutmesh_gui mandoline OpenMP::OpenMP_CXX mtao::common mtao::visualization)
+    if(HANDLE_SELF_INTERSECTIONS) 
+        TARGET_COMPILE_DEFINITIONS(remove_self_intersections
+            PUBLIC -DMANDOLINE_HANDLE_SELF_INTERSECTIONS)
+    TARGET_LINK_LIBRARIES(make_cutmesh_gui cutmesh_validation)
+    endif()
+
 
 ENDIF(${USE_OPENGL})
