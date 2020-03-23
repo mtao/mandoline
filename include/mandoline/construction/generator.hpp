@@ -28,6 +28,7 @@ namespace mandoline::construction {
 //std::optional<std::tuple<int, bool>> make_boundary_pair(const std::vector<Vertex<D>> &V, const CoordMaskedGeometry<D, IndexContainerType> &boundary_facet);
 
 std::array<int, 2> smallest_ordered_edge(const std::vector<int> &v);
+std::array<int, 2> smallest_ordered_edge_reverse(const std::vector<int> &v);
 //ASSUMES SIMPLICIAL INPUTS
 template<int D>
 class CutCellEdgeGenerator : public mtao::geometry::grid::StaggeredGrid<double, D> {

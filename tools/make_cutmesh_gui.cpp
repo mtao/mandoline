@@ -7,6 +7,7 @@
 #include "mtao/geometry/mesh/boundary_facets.h"
 #include "mtao/geometry/mesh/read_obj.hpp"
 #include "mtao/geometry/bounding_box.hpp"
+#include "mtao/geometry/mesh/write_obj.hpp"
 #include "mtao/opengl/drawables.h"
 #include <mtao/types.h>
 #include <Corrade/Containers/Array.h>
@@ -22,6 +23,7 @@
 #include <mtao/geometry/prune_vertices.hpp>
 #include <mandoline/construction/construct_imgui.hpp>
 #include <mandoline/construction/remesh_self_intersections.hpp>
+#include <mandoline/construction/preprocess_mesh.hpp>
 #include <mandoline/mesh3.hpp>
 #include <mandoline/tools/cutmesh_info.hpp>
 #include "validation/cutmesh_validation.hpp"
@@ -83,9 +85,7 @@ class MeshViewer : public mtao::opengl::Window3 {
         Magnum::Math::Vector3<float> trans(trans_e.x(), trans_e.y(), trans_e.z());
 
         std::tie(V, F) = mtao::geometry::prune(V, F, 0);
-#if defined(MANDOLINE_HANDLE_SELF_INTERSECTIONS)
-        std::tie(V, F) = mandoline::construction::remesh_self_intersections(V, F);
-#endif
+        std::tie(V, F) = mandoline::construction::preprocess_mesh(V, F);
 
         constructor = mandoline::construction::CutmeshGenerator_Imgui::create(V, F);
 
@@ -174,11 +174,28 @@ class MeshViewer : public mtao::opengl::Window3 {
         if (ccm) {
             spdlog::info("Made CCM!!");
             mandoline::tools::print_region_info(*ccm);
+
 #if defined(MANDOLINE_HANDLE_SELF_INTERSECTIONS)
             auto regions_vec = input_mesh_regions(*ccm);
             std::set<int> regions;
             std::copy(regions_vec.data(), regions_vec.data() + regions_vec.size(), std::inserter(regions, regions.end()));
+            std::vector<std::set<std::array<int,3>>> Fs(regions.size());
+            for(int i = 0; i < regions_vec.cols(); ++i) {
+                auto R = regions_vec.col(i);
+                auto f = ccm->origF().col(i);
+                for(int j = 0; j < regions_vec.rows(); ++j) {
+                    Fs[R(j)].emplace(std::array<int,3>{{f(0),f(1),f(2)}});
+                }
+            }
+
             spdlog::info("Input mesh had {} regions", regions.size());
+            std::copy(regions.begin(),regions.end(),std::ostream_iterator<int>(std::cout,","));
+            std::cout << std::endl;
+            for(auto&& [idx,fs]: mtao::iterator::enumerate(Fs)) {
+                std::stringstream name;
+                name << "objfile" << idx << ".obj";
+                mtao::geometry::mesh::write_objD(ccm->origV(),mtao::eigen::stl2eigen(fs), name.str());
+            }
 #endif
         }
         {

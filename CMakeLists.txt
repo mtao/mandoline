@@ -130,6 +130,7 @@ SET(CONSTRUCTION_SRCS
     src/construction/generator3.cpp
     src/construction/cell_collapser.cpp
     src/construction/remesh_self_intersections.cpp
+    src/construction/preprocess_mesh.cpp
     src/construction/generator2.cpp
     src/construction/subgrid_transformer.cpp
     src/construction/face_collapser.cpp

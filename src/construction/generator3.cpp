@@ -336,6 +336,7 @@ void CutCellGenerator<3>::bake_cells() {
                     auto &&[a, b] = f.dual_edge;
                     if (a >= 0 && b >= 0) {
                         cell_ds.join(a, b);
+                        //spdlog::info("ad{} <=> ad{}", a,b);
                     }
                 }
                 for (auto &&[id, f] : faces()) {
@@ -343,6 +344,7 @@ void CutCellGenerator<3>::bake_cells() {
                         auto &[cid, s] = *f.external_boundary;
                         if (cid >= 0) {
                             cell_ds.join(max_cell_id + id, grid.get(cid));
+                            //spdlog::info("c{} <=> ad{}", cid,grid.get(cid));
                         }
                     }
                 }
@@ -354,6 +356,7 @@ void CutCellGenerator<3>::bake_cells() {
                         auto &&f = m_faces[fid];
                         if (!f.is_mesh_face()) {
                             cell_ds.join(cid, fid + max_cell_id);
+                            //spdlog::info("c{} <=> f{}", cid,fid);
                         }
                     }
                 }

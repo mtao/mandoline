@@ -490,9 +490,11 @@ auto TriangleIntersections<D>::vptr_faces() const -> std::set<std::vector<const 
     //    std::cout << e[0] << ":" << e[1] << " => " << ( std::get<1>(fc)?'-':'+')<< std::get<0>(fc)  << std::endl;
     //}
 
+    // for each face (in this case we dont have holes) 
     for (auto &&[cid, fs] : fc.faces_no_holes()) {
         std::vector<const VType *> v(fs.size());
-        std::transform(fs.rbegin(), fs.rend(), v.begin(), [&](int idx) {
+        // facecollapser does things backwards, so we gotta rbegin
+        std::transform(fs.rbegin(), fs.rend(), v.rbegin(), [&](int idx) {
             return IVM.at(idx);
         });
         ret.emplace(std::move(v));

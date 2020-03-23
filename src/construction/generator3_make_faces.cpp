@@ -52,10 +52,13 @@ void CutCellGenerator<3>::bake_faces() {
                     if (c) {
                         double Ni = origN.col(f.parent_fid)(i);
                         if (Ni > 0) {
-                            axial_primal_faces[i].insert(smallest_ordered_edge(f.indices));
+                            auto e = smallest_ordered_edge(f.indices);
+                            //std::swap(e[0],e[1]);
+                            axial_primal_faces[i].insert(e);
                         } else {
-                            std::vector<int> IR(f.indices.rbegin(), f.indices.rend());
-                            axial_primal_faces[i].insert(smallest_ordered_edge(IR));
+                            auto e = smallest_ordered_edge_reverse(f.indices);
+                            //std::swap(e[0],e[1]);
+                            axial_primal_faces[i].insert(e);
                         }
                     }
                 }
@@ -253,30 +256,9 @@ void CutCellGenerator<3>::compute_faces() {
     }
     for (auto &&[fidx, f] : m_faces) {
         auto &&I = f.indices;
-        //if(f.is_mesh_face())
-        //{
-        //std::cout << "Mesh Face: " << fidx << std::endl;
-        //} else {
-        //std::cout << "Grid Face: " << fidx << std::endl;
-        //}
-        //for(auto&& l: I)
-        //{
-        //    for(auto&& v: l)
-        //    {
-        //        std::cout << v << ":";
-        //    }
-        //    std::cout << std::endl;
-        //    if(l.size() > 4)
-        //    {
-        //        for(auto&& v: l)
-        //        {
-        //            std::cout << grid_info(v) << std::endl;
-        //        }
-        //    }
-        //}
-        //std::cout << std::endl;
         if (f.mask().count() == 1) {
             //auto&& loop = *I.begin();
+            // external boundary check: if this face is on a boundary
             auto pc = possible_cells(I);
             {
                 //                    if(loop.size() == 4) {
@@ -384,24 +366,40 @@ mtao::map<int, CutFace<3>> CutCellGenerator<3>::compute_faces_axis(int idx, int 
     mtao::Vec3d N = mtao::Vec3d::Unit((idx + 1) % 3).cross(mtao::Vec3d::Unit((idx + 2) % 3));
 
     auto mesh_faces = ahd.hem.cells_multi_component_map();
-    //spdlog::info("AHD {},{} got {} faces", idx,cidx,mesh_faces.size());
+    spdlog::info("AHD {},{} got {} faces", idx,cidx,mesh_faces.size());
 
     auto vols = ahd.hem.signed_areas(VV);
+    //std::cout << "Forbidden edges: ";
+    //for(auto&& [a,b]: axial_primal_faces[idx]) {
+    //    std::cout << a << ":" << b << " ";
+    //}
+    //std::cout << std::endl;
     for (auto &&[i, v] : mesh_faces) {
         CutFace<D> F;
         F.id = Edge{ { idx, cidx } };
         auto add_loop = [&](const std::vector<int> &v) {
 
             if (v.size() > 2) {
-                if (axial_primal_faces[idx].find(smallest_ordered_edge(v)) == axial_primal_faces[idx].end()) {
-                    std::vector<int> vv(v.size());
+                //std::copy(v.begin(),v.end(),std::ostream_iterator<int>(std::cout,","));
+                //std::cout << ": ";
+                auto e = smallest_ordered_edge(v);
+                //auto er = smallest_ordered_edge_reverse(v);
+                //std::cout << "Trying edge " << e[0] << ":" << e[1] << " rev: " << er[0] << ":" << er[1] << std::endl;
+                if (axial_primal_faces[idx].find(e) == axial_primal_faces[idx].end()) {
+                    //std::vector<int> vv(v.size());
 
-                    std::copy(v.rbegin(),v.rend(),vv.begin());
+                    //std::copy(v.rbegin(),v.rend(),vv.begin());
 
-                    F.indices.emplace(std::move(vv));
+                    F.indices.emplace(std::move(v));
                 }
             }
         };
+        //std::cout << i << ") " << vols.at(i) << ": ";
+        //for (auto &v : v) {
+        //    std::copy(v.begin(),v.end(),std::ostream_iterator<int>(std::cout,","));
+        //    std::cout << " ";
+        //}
+        //std::cout << std::endl;
         for (auto &v : v) {// for every boundary cell figure out if this is a boundary stencil
             //spdlog::info("Is boundary face?: {}", ahd.is_boundary_cell(v));
             if (ahd.is_boundary_cell(v)) {
@@ -412,13 +410,13 @@ mtao::map<int, CutFace<3>> CutCellGenerator<3>::compute_faces_axis(int idx, int 
                 std::array<coord_type, 2> pca;
                 std::copy(pc.begin(), pc.end(), pca.begin());
                 if (pca[0][idx] + 1 != pca[1][idx]) {
-                    std::cout << "SET WASNT LEXICOGRAPHICAL ORDER SOMEHOW?" << std::endl;
+                    spdlog::error("SET WASNT LEXICOGRAPHICAL ORDER SOMEHOW?");
                 }
                 std::array<int, 2> ind;
                 ind[0] = pca[0][(idx + 1) % 3];
                 ind[1] = pca[0][(idx + 2) % 3];
                 if (!ahd.active_grid_cell_mask.valid_index(ind)) {
-                    std::cout << "Invalid index???? " << std::endl;
+                    spdlog::error("Invalid index");
                 }
                 if (!ahd.active_grid_cell_mask(ind)) {
                     if (vols.at(i) >= 0) {

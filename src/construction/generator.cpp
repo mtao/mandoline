@@ -51,6 +51,17 @@ std::array<int, 2> smallest_ordered_edge(const std::vector<int> &v) {
     }
     return min;
 }
+std::array<int, 2> smallest_ordered_edge_reverse(const std::vector<int> &v) {
+    assert(v.size() >= 2);
+    std::array<int, 2> min{ { v[1], v[0] } };
+    for (int i = 0; i < v.size(); ++i) {
+        int j = (i + 1) % v.size();
+        std::array<int, 2> e{ { v[j], v[i] } };
+        min = std::min(e, min);
+    }
+    std::swap(min[0],min[1]);
+    return min;
+}
 template<>
 auto CutCellEdgeGenerator<2>::compute_planar_hem(const std::vector<VType> &GV, const Edges &E, const GridDatab &interior_cell_mask) const -> std::tuple<mtao::geometry::mesh::HalfEdgeMesh, std::set<Edge>> {
     ColVecs V(2, GV.size());

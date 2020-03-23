@@ -352,12 +352,15 @@ std::vector<int> CutCellMesh<3>::regions(bool boundary_sign_regions) const {
 
 std::vector<std::array<std::set<int>, 2>> CutCellMesh<3>::face_regions() const {
     auto R = regions();
-    std::vector<std::array<std::set<int>, 2>> ret(R.size());
-    for (auto &&c : cells()) {
+    std::copy(R.begin(),R.end(),std::ostream_iterator<int>(std::cout,","));
+    std::vector<std::array<std::set<int>, 2>> ret(*std::max_element(R.begin(),R.end())+1);
+    for (auto &&[cidx,c] : mtao::iterator::enumerate(cells())) {
         for (auto &&[fidx, s] : c) {
             auto &f = faces()[fidx];
+            int region = R[cidx];
+            auto& rset = ret[region];
             if (f.is_mesh_face()) {
-                ret[R[c.index]][s ? 0 : 1].insert(fidx);
+                rset[s ? 0 : 1].insert(fidx);
             }
         }
     }
