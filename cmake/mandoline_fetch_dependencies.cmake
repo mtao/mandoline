@@ -33,7 +33,7 @@ if(MTAO_PATH)
 else()
 
     fetch_dep(mtao https://github.com/mtao/core.git 
-        b95bb003c3dbecae8ebf4f1d488c1dd24c6351d0
+        5562c0309ebbd3548f1665255f11b24a37bfd33d
         ON)
     set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${mtao_SOURCE_DIR}/cmake")
 endif()

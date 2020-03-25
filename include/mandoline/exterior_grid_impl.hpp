@@ -130,5 +130,9 @@ int ExteriorGrid<D>::cell_index(const Eigen::MatrixBase<Derived>&p) const {
     return cell_index(c);
 
 }
+template <int D>
+int ExteriorGrid<D>::get_face_axis(int face_index) const {
+    return m_boundary_facet_axes.at(face_index);
 
+}
 }// namespace mandoline

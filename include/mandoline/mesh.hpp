@@ -16,7 +16,6 @@
 #include <mtao/eigen/stack.h>
 #include "mandoline/vertex.hpp"
 #include "mandoline/cutedge.hpp"
-#include "mandoline/cutface.hpp"
 #include "mandoline/interpolated_edge.hpp"
 
 namespace mandoline {

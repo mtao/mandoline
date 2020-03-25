@@ -1,5 +1,6 @@
 #pragma once
 #include "mandoline/mesh.hpp"
+#include "mandoline/cutface.hpp"
 #include "mandoline/exterior_grid.hpp"
 namespace mandoline {
 template<>

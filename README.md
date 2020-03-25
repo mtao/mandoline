@@ -14,9 +14,12 @@ make example_name
 ```
 
 ### curve_drawing_2d
-in ```examples/curve_drawing_2d``` there is an example of how to run the 2D version of Mandoline on a drawn curve.
+In ```examples/curve_drawing_2d``` there is an example of how to run the 2D version of Mandoline on a drawn curve.
 
 After drawing a curve press `Make CCM` to build the cutmesh. By default it should show Random colors for each cut-cell, but that visualization mode can be changed by the Combo box at the top of the gui widget (regions = 1 color per region; Harmonic = the solution to a Poisson equation based off the boundary; Harmonic_RHS shows the right hands used in the Poisson equations).
+
+### Boundary curve input/output
+in `boundary_curve_to_cutmesh2` one can pass in a cutmesh file of the format defined in [2D Format](https://github.com/mtao/mandoline/wiki/2D-Format).
 
 
 ### make_cutmesh_gui

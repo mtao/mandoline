@@ -17,6 +17,9 @@ TARGET_LINK_LIBRARIES(obj_to_cutmesh cutmesh_maker mandoline OpenMP::OpenMP_CXX 
 ADD_EXECUTABLE(cutmesh_info cutmesh_info.cpp)
 TARGET_LINK_LIBRARIES(cutmesh_info mandoline_cutmesh3)
 
+ADD_EXECUTABLE(boundary_curves_to_cutmesh2 boundary_curves_to_cutmesh2.cpp)
+TARGET_LINK_LIBRARIES(boundary_curves_to_cutmesh2 mandoline OpenMP::OpenMP_CXX mtao::common cxxopts)
+
 IF(Corrade_FOUND)
     ADD_EXECUTABLE(cfg_to_cutmesh cfg_to_cutmesh.cpp)
     TARGET_LINK_LIBRARIES(cfg_to_cutmesh cutmesh_maker mandoline OpenMP::OpenMP_CXX mtao::common  Corrade::Utility)

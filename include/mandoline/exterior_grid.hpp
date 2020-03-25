@@ -57,6 +57,7 @@ class ExteriorGrid : public mtao::geometry::grid::StaggeredGrid<double, D>
     std::vector<Eigen::Triplet<double>> boundary_facet_to_staggered_grid(int offset = 0) const;
     mtao::VecXd boundary_facet_volumes(bool make_boundary = true) const;
     const std::vector<int>& regions() const { return m_regions; }
+    int region(size_t idx) const { return m_regions.at(idx); }
 
   private:
     GridDatai m_cell_indices;// acts as a hash map for cell indexing based off a grid

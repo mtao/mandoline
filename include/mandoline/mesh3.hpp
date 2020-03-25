@@ -1,5 +1,6 @@
 #pragma once
 #include "mandoline/cutcell.hpp"
+#include "mandoline/cutface.hpp"
 #include "mandoline/barycentric_triangle_face.hpp"
 #include "mesh.hpp"
 namespace mandoline {
