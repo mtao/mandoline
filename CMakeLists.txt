@@ -48,9 +48,12 @@ ENDIF(HANDLE_SELF_INTERSECTIONS)
 add_library(mandoline_headers INTERFACE)
 target_include_directories(mandoline_headers INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>
+  $<INSTALL_INTERFACE:include> ${CMAKE_CURRENT_BINARY_DIR}
 )
-TARGET_LINK_LIBRARIES(mandoline_headers PUBLIC INTERFACE Eigen3::Eigen)
+TARGET_LINK_LIBRARIES(mandoline_headers PUBLIC INTERFACE Eigen3::Eigen
+    mtao::headers mtao::geometry igl::core protobuf::libprotobuf
+    )
+
 
 
 SET(COMMON_SRCS
@@ -195,23 +198,28 @@ SET(TOOLS_HDRS
     include/mandoline/tools/cutmesh_info.hpp
     )
 
+SET(TOOLS2_SRCS
+    src/tools/plcurve_io.cpp
+    )
+SET(TOOLS2_HDRS
+    include/mandoline/tools/plcurve_io.hpp
+    )
 
 ADD_LIBRARY(cutmesh2_obj OBJECT ${CUTMESH2_SRCS} ${CUTMESH2_HDRS})
 ADD_LIBRARY(cutmesh3_obj OBJECT ${CUTMESH3_SRCS} ${CUTMESH3_HDRS})
 ADD_LIBRARY(construction_obj OBJECT ${CONSTRUCTION_SRCS} ${CONSTRUCTION_HDRS})
 ADD_LIBRARY(tools_obj OBJECT ${TOOLS_SRCS} ${TOOLS_HDRS})
+ADD_LIBRARY(tools2_obj OBJECT ${TOOLS2_SRCS} ${TOOLS2_HDRS})
 
 
-TARGET_INCLUDE_DIRECTORIES(cutmesh2_obj PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
-TARGET_INCLUDE_DIRECTORIES(cutmesh3_obj PUBLIC  ${CMAKE_CURRENT_BINARY_DIR})
-TARGET_INCLUDE_DIRECTORIES(construction_obj PUBLIC  ${CMAKE_CURRENT_BINARY_DIR})
-TARGET_INCLUDE_DIRECTORIES(tools_obj PUBLIC  ${CMAKE_CURRENT_BINARY_DIR})
 
+# TODO: figure out why transitivity doesnt work
 TARGET_LINK_LIBRARIES(cutmesh2_obj PUBLIC mtao::headers mtao::geometry igl::core mandoline_headers protobuf::libprotobuf)
 TARGET_LINK_LIBRARIES(cutmesh3_obj PUBLIC mtao::headers mtao::geometry igl::core mandoline_headers protobuf::libprotobuf)
 TARGET_LINK_LIBRARIES(construction_obj PUBLIC mtao::headers mtao::geometry igl::core mandoline_headers protobuf::libprotobuf)
 
 TARGET_LINK_LIBRARIES(tools_obj PUBLIC mtao::headers mtao::geometry igl::core mandoline_headers protobuf::libprotobuf)
+TARGET_LINK_LIBRARIES(tools2_obj PUBLIC mandoline_headers mtao::headers mtao::geometry igl::core mandoline_headers protobuf::libprotobuf)
 
 ADD_DEFINITIONS(-g)
 IF(OpenMP_Found)
@@ -226,6 +234,7 @@ ADD_LIBRARY(mandoline
     $<TARGET_OBJECTS:cutmesh3_obj>
     $<TARGET_OBJECTS:construction_obj>
     $<TARGET_OBJECTS:tools_obj>
+    $<TARGET_OBJECTS:tools2_obj>
     )
 TARGET_LINK_LIBRARIES(mandoline
     mtao::geometry OpenMP::OpenMP_CXX
@@ -239,6 +248,7 @@ ADD_LIBRARY(mandoline2 EXCLUDE_FROM_ALL
     $<TARGET_OBJECTS:cutmesh_proto>
     $<TARGET_OBJECTS:cutmesh2_obj>
     $<TARGET_OBJECTS:construction_obj>
+    $<TARGET_OBJECTS:tools2_obj>
     )
 TARGET_LINK_LIBRARIES(mandoline2
     mtao::geometry OpenMP::OpenMP_CXX
