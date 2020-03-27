@@ -19,6 +19,25 @@ FaceCollapser::FaceCollapser(const std::set<Edge> &edges) {
         }
     }
 }
+FaceCollapser::FaceCollapser(const mtao::ColVecs2i &E) {
+    for (int cid = 0; cid < E.cols(); ++cid) {
+
+        Edge e;
+        mtao::eigen::stl2eigen(e) = E.col(cid);
+
+
+        face_ds.add_node(2 * cid);
+        face_ds.add_node(2 * cid + 1);
+        {
+            m_edge_to_face[e] = std::make_tuple(2 * cid, true);
+        }
+        Edge e2 = e;
+        std::swap(e2[0], e2[1]);
+        {
+            m_edge_to_face[e2] = std::make_tuple(2 * cid + 1, false);
+        }
+    }
+}
 
 
 auto FaceCollapser::collect_edges() const -> std::map<int, std::set<int>> {
@@ -74,7 +93,7 @@ std::map<int, std::map<int, int>> FaceCollapser::face_adjacency_map() const {
 std::map<int, std::vector<int>> FaceCollapser::faces_no_holes() const {
     std::map<int, std::vector<int>> ret;
 
-    auto& deg = dual_edge_graph;
+    auto &deg = dual_edge_graph;
     auto inc = [&](auto &&it) {
         return deg.find(it->second);
     };
@@ -91,7 +110,7 @@ std::map<int, std::vector<int>> FaceCollapser::faces_no_holes() const {
             continue;
         }
         int myface = face(it->first);
-        if (myface < 0) { // if 
+        if (myface < 0) {// if
             available_edges.erase(it->first);
             continue;
         }
@@ -124,18 +143,29 @@ std::map<int, std::vector<int>> FaceCollapser::faces_no_holes() const {
     return ret;
 }
 
+auto FaceCollapser::face_edges() const -> std::map<int, std::set<Edge>> {
+    std::map<int, std::set<Edge>> ret;
+    for (auto [edge, face_w_sign] : edge_to_face()) {
+        std::array<int, 2> e = edge;
+        std::sort(e.begin(), e.end());
+        ret[std::get<0>(face_w_sign)].insert(e);
+    }
+    return ret;
+}
+
+
 std::map<int, std::set<std::vector<int>>> FaceCollapser::faces() const {
     std::map<int, std::set<std::vector<int>>> ret;
 
-    auto& deg = dual_edge_graph;
+    auto &deg = dual_edge_graph;
     auto inc = [&](auto &&it) {
         return deg.find(it->second);
     };
     std::set<Edge> available_edges;
     for (auto &&[fe, se] : dual_edge_graph) {
-        auto [a,b] = fe;
-        auto [c,d] = se;
-        auto [face,sgn] = m_edge_to_face.at(fe);
+        auto [a, b] = fe;
+        auto [c, d] = se;
+        auto [face, sgn] = m_edge_to_face.at(fe);
         available_edges.insert(fe);
     }
 

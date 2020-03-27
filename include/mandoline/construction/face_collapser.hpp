@@ -21,6 +21,7 @@ struct FaceCollapser {
     using coord_type = std::array<int, 3>;
     //FaceCollapser(const std::map<int,std::set<std::vector<int>>>& faces);
     FaceCollapser(const std::set<Edge> &edges);
+    FaceCollapser(const mtao::ColVecs2i& edges);
 
 
     // reinterpret undirected edge graph as a sparse adjacency map
@@ -57,6 +58,9 @@ struct FaceCollapser {
     // when there are holes, this code will generate every boundary loop in the domain, some of which may have positive or negative volume.
     std::map<int, std::vector<int>> faces_no_holes() const;
     std::map<int, std::set<std::vector<int>>> faces() const;
+
+    // returns a soup of edges (vertex pairs) for each face
+    std::map<int, std::set<Edge>> face_edges() const;
     //template<typename Derived>
     //void faces(const Eigen::MatrixBase<Derived> &V) const;
     std::map<int, std::map<int, int>> face_adjacency_map() const;

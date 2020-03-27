@@ -2,6 +2,7 @@
 #include <mandoline/construction/face_collapser.hpp>
 #include <catch2/catch.hpp>
 #include <iterator>
+#include <mandoline/tools/edges_to_plcurves.hpp>
 
 using E = std::array<int, 2>;
 using namespace mandoline::construction;
@@ -25,7 +26,7 @@ TEST_CASE("Polygon", "[face_collapser]") {
 
 
         FaceCollapser fc(edges);
-        fc.bake(V,false);
+        fc.bake(V, false);
 
 
         {
@@ -45,7 +46,7 @@ TEST_CASE("Polygon", "[face_collapser]") {
 
         fc = FaceCollapser(edges);
         fc.set_edge_for_removal(E{ { 1, 0 } });
-        fc.bake(V,false);
+        fc.bake(V, false);
 
         {
             auto faces = fc.faces_no_holes();
@@ -82,7 +83,7 @@ TEST_CASE("Polygon with Center", "[face_collapser]") {
 
 
         FaceCollapser fc(edges);
-        fc.bake(V,false);
+        fc.bake(V, false);
 
 
         {
@@ -110,7 +111,7 @@ TEST_CASE("Polygon with Center", "[face_collapser]") {
 
         fc = FaceCollapser(edges);
         fc.set_edge_for_removal(E{ { 1, 0 } });
-        fc.bake(V,false);
+        fc.bake(V, false);
 
         {
             auto faces = fc.faces_no_holes();
@@ -155,7 +156,7 @@ TEST_CASE("Near Axis Fan", "[face_collapser]") {
 
         FaceCollapser fc(edges);
         fc.set_edge_for_removal(E{ { 1, 0 } });
-        fc.bake(V,false);
+        fc.bake(V, false);
 
         {
             auto faces = fc.faces_no_holes();
@@ -197,7 +198,7 @@ TEST_CASE("Near Diagonal Fan", "[face_collapser]") {
 
         FaceCollapser fc(edges);
         fc.set_edge_for_removal(E{ { 1, 0 } });
-        fc.bake(V,false);
+        fc.bake(V, false);
 
         {
             auto faces = fc.faces_no_holes();
@@ -219,8 +220,8 @@ TEST_CASE("Near Diagonal Fan", "[face_collapser]") {
 
 TEST_CASE("Polygon with hole", "[face_collapser]") {
     // two diff sized polygons
-    for(int N = 3; N < 10; ++N) {
-        for(int M = 3; M < 10; ++M) {
+    for (int N = 3; N < 10; ++N) {
+        for (int M = 3; M < 10; ++M) {
 
             mtao::ColVecs2d V(2, N + M);
 
@@ -280,7 +281,7 @@ TEST_CASE("Polygon with hole", "[face_collapser]") {
                         auto ll = *l.begin();
                         std::sort(ll.begin(), ll.end());
                         for (auto &&[i, v] : mtao::iterator::enumerate(ll)) {
-                            REQUIRE(i+N == v);
+                            REQUIRE(i + N == v);
                         }
                     }
                 }
@@ -288,5 +289,89 @@ TEST_CASE("Polygon with hole", "[face_collapser]") {
                 REQUIRE(num_double_loops == 1);
             }
         }
+    }
 }
+
+TEST_CASE("EdgeToPLCurve", "[face_collapser]") {
+    mtao::ColVecs2d V(2, 6);
+
+    V.col(0) << 0, 0;
+    V.col(1) << 1, 0;
+    V.col(2) << 0, 1;
+    V.col(3) << 0, 2;
+    V.col(4) << 2, 2;
+    V.col(5) << 2, 4;
+
+    mtao::ColVecs2i E(2, 5);
+
+    E.col(0) << 0, 1;
+    E.col(1) << 1, 2;
+    E.col(2) << 2, 0;
+    E.col(3) << 2, 3;
+    E.col(4) << 4, 5;
+
+    {
+        // only closed curves
+        auto r = mandoline::tools::edge_to_plcurves(V, E, true);
+        for (auto &&[curve, closedness] : r) {
+            std::sort(curve.begin(), curve.end());
+            CHECK(closedness == true);
+            if (curve.size() == 2) {
+                CHECK(curve[0] == 4);
+                CHECK(curve[1] == 5);
+            } else if (curve.size() == 3) {
+                CHECK(curve[0] == 0);
+                CHECK(curve[1] == 1);
+                CHECK(curve[2] == 2);
+            } else if (curve.size() == 5) {
+                CHECK(curve[0] == 0);
+                CHECK(curve[1] == 1);
+                CHECK(curve[2] == 2);
+                CHECK(curve[3] == 2);
+                CHECK(curve[4] == 3);
+            }
+        }
+    }
+    {
+        // only open pieces allowed
+        auto r = mandoline::tools::edge_to_plcurves(V, E, false);
+        for (auto &&[curve, closedness] : r) {
+            std::sort(curve.begin(), curve.end());
+            if (curve.size() == 2) {
+                CHECK(closedness == false);
+                CHECK(curve[0] == 4);
+                CHECK(curve[1] == 5);
+            } else if (curve.size() == 3) {
+                CHECK(closedness == true);
+                CHECK(curve[0] == 0);
+                CHECK(curve[1] == 1);
+                CHECK(curve[2] == 2);
+            } else if (curve.size() == 5) {
+                CHECK(closedness == false);
+                CHECK(curve[0] == 0);
+                CHECK(curve[1] == 1);
+                CHECK(curve[2] == 2);
+                CHECK(curve[3] == 2);
+                CHECK(curve[4] == 3);
+            }
+        }
+    }
+    {
+        E.resize(2, 3);
+        E.col(0) << 0, 1;
+        E.col(1) << 1, 2;
+        E.col(2) << 2, 3;
+        // only open pieces allowed
+        std::cout << E << std::endl;
+        auto r = mandoline::tools::edge_to_plcurves(V, E, false);
+        for (auto &&[curve, closedness] : r) {
+            std::sort(curve.begin(), curve.end());
+            std::copy(curve.begin(), curve.end(), std::ostream_iterator<int>(std::cout, ","));
+            std::cout << std::endl;
+            CHECK(closedness == false);
+            CHECK(curve[0] == 0);
+            CHECK(curve[1] == 1);
+            CHECK(curve[2] == 2);
+        }
+    }
 }

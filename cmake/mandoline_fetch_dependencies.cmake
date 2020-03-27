@@ -1,6 +1,12 @@
 include(FetchContent REQUIRED)
 
 
+set(MTAO_COMMIT f66978111af108f6665459918d759f08702a0cab)
+set(PROTOBUF_COMMIT v3.11.3)
+set(LIBIGL_COMMIT v2.1.0)
+set(CATCH_COMMIT v2.9.1)
+set(CGAL_COMMIT releases/CGAL-5.0.1)
+
 function(fetch_dep REPO_NAME GIT_REPO GIT_TAG ADD_SUBDIR)
     FetchContent_Declare(
         ${REPO_NAME}
@@ -33,7 +39,7 @@ if(MTAO_PATH)
 else()
 
     fetch_dep(mtao https://github.com/mtao/core.git 
-        5562c0309ebbd3548f1665255f11b24a37bfd33d
+        ${MTAO_COMMIT}
         ON)
     set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${mtao_SOURCE_DIR}/cmake")
 endif()
@@ -66,7 +72,7 @@ option(LIBIGL_SKIP_DOWNLOAD "Skip downloading external libraries" ON)
 if(LIBIGL_PATH)
     ADD_SUBDIRECTORY("${LIBIGL_PATH}" ${CMAKE_BINARY_DIR}/libigl EXCLUDE_FROM_ALL)
 else()
-    fetch_dep(libigl https://github.com/libigl/libigl.git v2.1.0 ON)
+    fetch_dep(libigl https://github.com/libigl/libigl.git ${LIBIGL_COMMIT} ON)
 endif()
 
 if(USE_OPENGL)
@@ -77,7 +83,7 @@ endif()
 find_package(Protobuf)
 if(NOT Protobuf_FOUND)
     option(protobuf_BUILD_TESTS "PROTOBUF BUILD TESTS" OFF)
-    fetch_dep(protobuf https://github.com/protocolbuffers/protobuf.git v3.11.3 ON)
+    fetch_dep(protobuf https://github.com/protocolbuffers/protobuf.git ${PROTOBUF_COMMIT} ON)
 
 endif()
 if(HANDLE_SELF_INTERSECTIONS)
@@ -90,7 +96,7 @@ if(HANDLE_SELF_INTERSECTIONS)
         fetch_dep(
             CGAL
             https://github.com/CGAL/cgal.git
-            releases/CGAL-5.0.1
+            ${CGAL_COMMIT}
             ON
             )
 
@@ -121,7 +127,7 @@ if(MANDOLINE_BUILD_TESTING)
         fetch_dep(
             catch2
             https://github.com/catchorg/Catch2.git
-            v2.9.1
+            ${CATCH_COMMIT}
             ON
             )
     endif()

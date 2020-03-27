@@ -200,9 +200,11 @@ SET(TOOLS_HDRS
 
 SET(TOOLS2_SRCS
     src/tools/plcurve_io.cpp
+    src/tools/edges_to_plcurves.cpp
     )
 SET(TOOLS2_HDRS
     include/mandoline/tools/plcurve_io.hpp
+    include/mandoline/tools/edges_to_plcurves.hpp
     )
 
 ADD_LIBRARY(cutmesh2_obj OBJECT ${CUTMESH2_SRCS} ${CUTMESH2_HDRS})
