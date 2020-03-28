@@ -80,6 +80,7 @@ jobs:
                 command: 'cmake --build build --target test'
 
 workflows:
+    version: 2
     build-linux:
         jobs:
             - build-linux
