@@ -1,7 +1,7 @@
 version: 2
 
 jobs:
-    build:
+    build-linux:
         docker:
             - image: "ubuntu:devel"
         steps:
@@ -40,7 +40,7 @@ jobs:
                 name: Running tests 
                 command: 'cmake --build build --target test'
 
-    build:
+    build-osx:
         macos:
             xcode: 11.4.0
         environment:
