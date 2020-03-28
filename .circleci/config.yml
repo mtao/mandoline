@@ -79,3 +79,11 @@ jobs:
                 name: Running tests 
                 command: 'cmake --build build --target test'
 
+workflows:
+    build-linux:
+        jobs:
+            - build-linux
+
+    build-osx:
+        jobs:
+            - build-osx
