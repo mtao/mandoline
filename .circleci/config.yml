@@ -40,3 +40,42 @@ jobs:
                 name: Running tests 
                 command: 'cmake --build build --target test'
 
+    build:
+        macos:
+            xcode: 11.4.0
+        environment:
+            HOMEBREW_NO_AUTO_UPDATE: 1
+
+        steps:
+            - checkout
+            - run:
+                name: Installing git
+                command: 'brew install git'
+            - run:
+                name: Installing cmake
+                command: 'brew install  cmake'
+            - run:
+                name: Installing boost threads
+                command: 'brew install  boost'
+            - run:
+                name: Installing mpfr
+                command: 'brew install  mpfr'
+            - run:
+                name: Installing numerical libs
+                command: 'brew install  eigen'
+            - run:
+                name: Installing graphics libs
+                command: 'brew install  glfw png++'
+            - run:
+                name: Installing protobuf
+                command: 'brew install  protobuf'
+            - run:
+                name: Making CMake build files
+                command: 'cmake -H. -Bbuild -DCMAKE_BUILD_TYPE="Release" -DBUILD_TESTING=ON'
+            - run:
+                name: Building Mandoline
+                command: 'cmake --build build -j 2'
+            - run:
+                name: Running tests 
+                command: 'cmake --build build --target test'
+
