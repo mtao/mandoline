@@ -62,13 +62,13 @@ class CutCellEdgeGenerator : public mtao::geometry::grid::StaggeredGrid<double, 
     using GridDatab = mtao::geometry::grid::GridDataD<bool, D>;
 
 
-
     //returns a new mesh and a set of boundary vertices
     std::tuple<mtao::geometry::mesh::HalfEdgeMesh, std::set<Edge>> compute_planar_hem(const std::vector<VType> &GV, const ColVecs &V, const Edges &E, const GridDatab &interior_cell_mask) const;
     // auxilliary call for if we haven't created t
     std::tuple<mtao::geometry::mesh::HalfEdgeMesh, std::set<Edge>> compute_planar_hem(const std::vector<VType> &GV, const Edges &E, const GridDatab &interior_cell_mask) const;
     // internal call that has no awareness of grid vertices / grid pruning
     std::tuple<mtao::geometry::mesh::HalfEdgeMesh, std::set<Edge>> compute_planar_hem(const ColVecs &V, const Edges &E, const GridDatab &interior_cell_mask) const;
+    std::tuple<mtao::geometry::mesh::HalfEdgeMesh, std::set<Edge>> compute_planar_hem(const std::map<std::array<int,2>, std::tuple<int,bool>>& tangent_map, const ColVecs &T, const Edges &E, const GridDatab &interior_cell_mask) const;
 
 
     virtual void bake();
@@ -191,9 +191,9 @@ class CutCellEdgeGenerator : public mtao::geometry::grid::StaggeredGrid<double, 
 
     std::tuple<coord_type, std::array<double, D>> grid_coord(const Vec &v) const;
     ColVecs compact_vertices() const;
-    ColVecs V() const; // the non-grid velocities (from crossings)
-    ColVecs all_V() const; // all of the vertices grid 
-    ColVecs all_GV() const; // all vertices in index/grid space
+    ColVecs V() const;// the non-grid velocities (from crossings)
+    ColVecs all_V() const;// all of the vertices grid
+    ColVecs all_GV() const;// all vertices in index/grid space
     VecVector stl_V() const;
 
 
@@ -225,7 +225,7 @@ class CutCellEdgeGenerator : public mtao::geometry::grid::StaggeredGrid<double, 
         }
     }
 
-    bool is_valid_cell_coord(const coord_type& c) const {
+    bool is_valid_cell_coord(const coord_type &c) const {
         return StaggeredGrid::cell_grid().valid_index(c);
     }
     bool is_valid_grid_index(int idx) const {
@@ -297,6 +297,5 @@ template<int D>
 class CutCellGenerator {};
 
 }// namespace mandoline::construction
-
 
 #include "mandoline/construction/generator_impl.hpp"

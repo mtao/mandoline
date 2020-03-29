@@ -6,6 +6,7 @@
 
 namespace mandoline {
 
+// The indices must be in the order of the parent edge
 template<int D>
 struct CutMeshEdge : public CoordMaskedEdge<D> {
 

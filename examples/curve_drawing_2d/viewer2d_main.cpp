@@ -27,119 +27,123 @@ using namespace mtao::logging;
 using namespace Magnum::Math::Literals;
 
 
+class MeshViewer : public mtao::opengl::Window2 {
+  public:
+    std::optional<mandoline::CutCellMesh<2>> ccm;
+    bool show_multi = false;
+    int index = 0;
+    PLCurve2 curve;
+    Eigen::AlignedBox<float, 2> bbox;
+    std::array<int, 2> N{ { 5, 5 } };
 
 
-class MeshViewer: public mtao::opengl::Window2 {
-    public:
+    mtao::opengl::Vector2 cursor;
 
-        std::optional<mandoline::CutCellMesh<2>> ccm;
-        bool show_multi = false;
-        int index = 0;
-        PLCurve2 curve;
-        Eigen::AlignedBox<float,2> bbox;
-        std::array<int,2> N{{5,5}};
+    bool show_wireframes = false;
 
+    float scale = 1.1;
+    float region_center_scale = 0.0;
+    bool do_slice = false;
+    mtao::ColVectors<double, 4> colors;
+    mtao::ColVectors<double, 2> cachedV;
+    mtao::ColVectors<int, 2> cachedE;
+    mtao::Vec2f harmonic_dir = mtao::Vec2f::UnitX();
 
-        mtao::opengl::Vector2 cursor;
+    int face_index = -1;
+    enum ColorType : char {
+        Random,
+        Regions,
+        Harmonic,
+        Harmonic_RHS
+    };
 
-        bool show_wireframes = false;
+    ColorType color_type = ColorType::Random;
 
-        float scale = 1.1;
-        float region_center_scale = 0.0;
-        bool do_slice = false;
-        mtao::ColVectors<double,4> colors;
-        mtao::ColVectors<double,2> cachedV;
-        mtao::ColVectors<int,2> cachedE;
-        mtao::Vec2f harmonic_dir = mtao::Vec2f::UnitX(); 
-
-        int face_index = -1;
-        enum ColorType: char {
-            Random, Regions, Harmonic, Harmonic_RHS
-        };
-
-        ColorType color_type = ColorType::Random;
-
-        mtao::Vec2f origin = mtao::Vec2f::Zero(), direction = mtao::Vec2f::Unit(1);
+    mtao::Vec2f origin = mtao::Vec2f::Zero(), direction = mtao::Vec2f::Unit(1);
 
 
-        int size() const { return colors.cols(); }
+    int size() const { return colors.cols(); }
 
 
+    MeshViewer(const Arguments &args) : Window2(args) {
+        //mtao::logging::make_logger().set_level(mtao::logging::Level::Off);
+        mtao::logging::make_logger("profiler").set_level(mtao::logging::Level::Off);
+        bbox.min().setConstant(-1);
+        bbox.max().setConstant(1);
+        //Corrade::Utility::Arguments myargs;
+        //myargs.addArgument("filename").parse(args.argc,args.argv);
+        //std::string filename = myargs.value("filename");
 
-        MeshViewer(const Arguments& args): Window2(args) {
-            //mtao::logging::make_logger().set_level(mtao::logging::Level::Off);
-            mtao::logging::make_logger("profiler").set_level(mtao::logging::Level::Off);
-            bbox.min().setConstant(-1);
-            bbox.max().setConstant(1);
-            //Corrade::Utility::Arguments myargs;
-            //myargs.addArgument("filename").parse(args.argc,args.argv);
-            //std::string filename = myargs.value("filename");
-
-            update_bbox();
-
-
-            bbox_drawable = mtao::opengl::make_drawable(bbox_mesh, _flat_shader, drawables());
-            bbox_mesh.setParent(&root());
-            bbox_drawable->deactivate();
-            bbox_drawable->activate_edges();
-
-            bbox_drawable->data().color = 0xffffff_rgbf;
+        update_bbox();
 
 
-            curve_drawable= new mtao::opengl::Drawable<Magnum::Shaders::Flat2D>{curve_mesh,_flat_shader, curve_drawgroup};
-            curve_mesh.setParent(&root());
-            curve_drawable->deactivate();
-            cutcell_drawable= new mtao::opengl::Drawable<Magnum::Shaders::VertexColor2D>{cutcell_mesh,vcolor_shader, background_drawgroup};
-            cutcell_mesh.setParent(&root());
-            cutcell_drawable->deactivate();
+        bbox_drawable = mtao::opengl::make_drawable(bbox_mesh, _flat_shader, drawables());
+        bbox_mesh.setParent(&root());
+        bbox_drawable->deactivate();
+        bbox_drawable->activate_edges();
 
-            cutcell_face_drawable= new mtao::opengl::Drawable<Magnum::Shaders::Flat2D>{cutcell_face_mesh,_flat_shader, background_drawgroup};
-            cutcell_face_mesh.setParent(&root());
-            cutcell_face_drawable->deactivate();
+        bbox_drawable->data().color = 0xffffff_rgbf;
 
 
-            grid_mesh.setParent(&root());
-            grid_drawable = new mtao::opengl::Drawable<Magnum::Shaders::Flat2D>(grid_mesh, _flat_shader, background_drawgroup);
-            grid_drawable->deactivate();
+        curve_drawable = new mtao::opengl::Drawable<Magnum::Shaders::Flat2D>{ curve_mesh, _flat_shader, curve_drawgroup };
+        curve_mesh.setParent(&root());
+        curve_drawable->deactivate();
+        cutcell_drawable = new mtao::opengl::Drawable<Magnum::Shaders::VertexColor2D>{ cutcell_mesh, vcolor_shader, background_drawgroup };
+        cutcell_mesh.setParent(&root());
+        cutcell_drawable->deactivate();
 
-            reset_curve();
+        cutcell_face_drawable = new mtao::opengl::Drawable<Magnum::Shaders::Flat2D>{ cutcell_face_mesh, _flat_shader, curve_drawgroup };
+        cutcell_face_mesh.setParent(&root());
+        cutcell_face_drawable->deactivate();
 
+
+        grid_mesh.setParent(&root());
+        grid_drawable = new mtao::opengl::Drawable<Magnum::Shaders::Flat2D>(grid_mesh, _flat_shader, background_drawgroup);
+        grid_drawable->deactivate();
+
+        reset_curve();
+
+        Corrade::Utility::Arguments myargs;
+        if (args.argc > 1) {
+            myargs.addArgument("filename").parse(args.argc, args.argv);
+            std::string filename = myargs.value("filename");
+            curve.load(filename);
         }
+    }
 
-        void update_bbox() {
-            bbox_mesh.set_bbox(bbox);
+    void update_bbox() {
+        bbox_mesh.set_bbox(bbox);
+    }
+    void draw() override;
+    void gui() override;
+    void update_edges();
+    void update_curve();
+    void reset_curve();
+    void clear_curve();
+    void update_faces();
+    void update_ccm();
+    void update_colors();// doesnt upload the colors to anything
 
-        }
-        void draw() override;
-        void gui() override;
-        void update_edges();
-        void update_curve();
-        void reset_curve();
-        void clear_curve();
-        void update_faces();
-        void update_ccm();
-        void update_colors(); // doesnt upload the colors to anything
+    void mouseMoveEvent(MouseMoveEvent &event) override;
+    void mousePressEvent(MouseEvent &event) override;
+    void update_face(int idx);
 
-        void mouseMoveEvent(MouseMoveEvent& event) override;
-        void mousePressEvent(MouseEvent& event) override;
-        void update_face(int idx);
-    private:
-        Magnum::SceneGraph::DrawableGroup2D background_drawgroup, curve_drawgroup;
+  private:
+    Magnum::SceneGraph::DrawableGroup2D background_drawgroup, curve_drawgroup;
 
 
-        Magnum::Shaders::Flat2D _flat_shader;
-        Magnum::Shaders::VertexColor2D vcolor_shader;
-        mtao::opengl::objects::Mesh<2> curve_mesh;
-        mtao::opengl::objects::Mesh<2> cutcell_mesh;
-        mtao::opengl::objects::Mesh<2> cutcell_face_mesh;
-        mtao::opengl::objects::Grid<2> grid_mesh;
-        mtao::opengl::objects::BoundingBox<2> bbox_mesh;
-        mtao::opengl::Drawable<Magnum::Shaders::Flat2D>* bbox_drawable = nullptr;
-        mtao::opengl::Drawable<Magnum::Shaders::Flat2D>* grid_drawable = nullptr;
-        mtao::opengl::Drawable<Magnum::Shaders::Flat2D>* curve_drawable = nullptr;
-        mtao::opengl::Drawable<Magnum::Shaders::VertexColor2D>* cutcell_drawable = nullptr;
-        mtao::opengl::Drawable<Magnum::Shaders::Flat2D>* cutcell_face_drawable = nullptr;
-
+    Magnum::Shaders::Flat2D _flat_shader;
+    Magnum::Shaders::VertexColor2D vcolor_shader;
+    mtao::opengl::objects::Mesh<2> curve_mesh;
+    mtao::opengl::objects::Mesh<2> cutcell_mesh;
+    mtao::opengl::objects::Mesh<2> cutcell_face_mesh;
+    mtao::opengl::objects::Grid<2> grid_mesh;
+    mtao::opengl::objects::BoundingBox<2> bbox_mesh;
+    mtao::opengl::Drawable<Magnum::Shaders::Flat2D> *bbox_drawable = nullptr;
+    mtao::opengl::Drawable<Magnum::Shaders::Flat2D> *grid_drawable = nullptr;
+    mtao::opengl::Drawable<Magnum::Shaders::Flat2D> *curve_drawable = nullptr;
+    mtao::opengl::Drawable<Magnum::Shaders::VertexColor2D> *cutcell_drawable = nullptr;
+    mtao::opengl::Drawable<Magnum::Shaders::Flat2D> *cutcell_face_drawable = nullptr;
 };
 void MeshViewer::draw() {
     Magnum::GL::Renderer::disable(Magnum::GL::Renderer::Feature::DepthTest);
@@ -151,15 +155,23 @@ void MeshViewer::draw() {
     camera().draw(curve_drawgroup);
 }
 
-void MeshViewer::mouseMoveEvent(MouseMoveEvent& event) {
+void MeshViewer::mouseMoveEvent(MouseMoveEvent &event) {
     Window2::mouseMoveEvent(event);
     cursor = localPosition(event.position());
+    if(event.modifiers() & MouseEvent::Modifier::Shift) {
+
+        int ofi = face_index;
+        face_index = ccm->cell_index(mtao::Vec2d(cursor.x(),cursor.y()));
+        if(ofi != face_index) {
+            update_face(face_index);
+        }
+    }
 }
-void MeshViewer::mousePressEvent(MouseEvent& event) {
+void MeshViewer::mousePressEvent(MouseEvent &event) {
     Window2::mousePressEvent(event);
-    if(!ImGui::GetIO().WantCaptureMouse) {
-        if(event.button() == MouseEvent::Button::Left) {
-            mtao::Vec2d p(cursor.x(),cursor.y());
+    if (!ImGui::GetIO().WantCaptureMouse) {
+        if (event.button() == MouseEvent::Button::Left) {
+            mtao::Vec2d p(cursor.x(), cursor.y());
             curve.add_point(p);
             update_curve();
         }
@@ -172,74 +184,78 @@ void MeshViewer::clear_curve() {
 void MeshViewer::reset_curve() {
 
     curve.clear();
-    if(!curve.is_closed()) {
+    if (!curve.is_closed()) {
         curve.toggle_closed();
     }
-    curve.add_point(mtao::Vec2d(-.3,-.3));
-    curve.add_point(mtao::Vec2d(-.3,.3));
-    curve.add_point(mtao::Vec2d(.3,.3));
-    curve.add_point(mtao::Vec2d(.3,-.3));
+    curve.add_point(mtao::Vec2d(-.3, -.3));
+    curve.add_point(mtao::Vec2d(-.3, .3));
+    curve.add_point(mtao::Vec2d(.3, .3));
+    curve.add_point(mtao::Vec2d(.3, -.3));
 }
 
 void MeshViewer::gui() {
     {
-        const char* items[] = { "Random", "Regions", "Harmonic", "Harmonid_RHS" };
+        const char *items[] = { "Random", "Regions", "Harmonic", "Harmonid_RHS" };
         int current_item = int(color_type);
-        if(ImGui::Combo("Color Type", &current_item, items, 4)) {
+        if (ImGui::Combo("Color Type", &current_item, items, 4)) {
             color_type = static_cast<ColorType>(current_item);
             update_faces();
         }
     }
 
 
-    if(ImGui::InputInt2("N", N.data()))  {
+    if (ImGui::InputInt2("N", N.data())) {
         //update_bbox();
     }
 
-    if(ImGui::InputInt("Face index", &face_index))  {
-        if(ccm) {
+    if (ImGui::InputInt("Face index", &face_index)) {
+        if (ccm) {
             int nf = ccm->num_faces();
-            face_index = std::clamp<int>(face_index,0,nf-1);
+            face_index = std::clamp<int>(face_index, 0, nf - 1);
         }
         update_face(face_index);
     }
-    if(ImGui::SliderFloat2("min", bbox.min().data(),-2,2))  {
-        bbox.min() = (bbox.min().array() < bbox.max().array()).select(bbox.min(),bbox.max());
+    if (ImGui::SliderFloat2("min", bbox.min().data(), -20, 20)) {
+        bbox.min() = (bbox.min().array() < bbox.max().array()).select(bbox.min(), bbox.max());
         update_bbox();
     }
-    if(ImGui::SliderFloat2("max", bbox.max().data(),-2,2))  {
-        bbox.max() = (bbox.min().array() > bbox.max().array()).select(bbox.min(),bbox.max());
+    if (ImGui::SliderFloat2("max", bbox.max().data(), -20, 20)) {
+        bbox.max() = (bbox.min().array() > bbox.max().array()).select(bbox.min(), bbox.max());
         update_bbox();
     }
 
     {
         bool value = curve.is_closed();
-        if(ImGui::Checkbox("Closed",&value)) {
+        if (ImGui::Checkbox("Closed", &value)) {
             curve.toggle_closed();
             update_curve();
         }
     }
     {
-        if(ImGui::Button("Make CCM")) {
+        if (ImGui::Button("Make CCM")) {
             update_ccm();
 
             update_curve();
         }
-        if(ImGui::Button("Clear Curve")) {
+        if (ImGui::Button("Clear Curve")) {
             clear_curve();
 
             update_curve();
         }
-        if(ImGui::Button("Reset Curve")) {
+        if (ImGui::Button("Reset Curve")) {
             reset_curve();
             update_curve();
         }
     }
 
-    if(ImGui::SliderFloat2("Harmonid cir", harmonic_dir.data(),-1,1))  {
+    if (ImGui::SliderFloat2("Harmonid cir", harmonic_dir.data(), -1, 1)) {
         update_faces();
     }
-    ImGui::Text("Cursor position (%f,%f)", cursor.x(),cursor.y());
+    if(ccm) {
+    ImGui::Text("Cursor position (%f,%f) cell: %d", cursor.x(), cursor.y(), face_index);
+    } else {
+    ImGui::Text("Cursor position (%f,%f)", cursor.x(), cursor.y());
+    }
 }
 
 void MeshViewer::update_edges() {
@@ -249,11 +265,11 @@ void MeshViewer::update_curve() {
     auto points = curve.points();
     auto V = curve.points().cast<float>().eval();
     auto E = curve.edges();
-    if(V.size() == 0) {
+    if (V.size() == 0) {
         curve_drawable->deactivate();
     } else {
-        if(E.size() > 0) {
-            curve_mesh.setEdgeBuffer(V,E);
+        if (E.size() > 0) {
+            curve_mesh.setEdgeBuffer(V, E);
             curve_drawable->activate_edges();
         } else {
             curve_mesh.setVertexBuffer(V);
@@ -267,13 +283,12 @@ void MeshViewer::update_ccm() {
     auto stlp = curve.stl_points();
 
 
-    auto grid = mtao::geometry::grid::StaggeredGrid2d::from_bbox(bbox.cast<double>(),N);
-    mandoline::construction::CutCellGenerator<2> ccg(stlp,grid);
+    auto grid = mtao::geometry::grid::StaggeredGrid2d::from_bbox(bbox.cast<double>(), N);
+    mandoline::construction::CutCellGenerator<2> ccg(stlp, grid);
     ccg.add_boundary_elements(E.cast<int>());
     ccg.bake();
 
     ccm = ccg.generate();
-
 
 
     //set_colors(ccm.active_grid_cell_mask);
@@ -281,17 +296,17 @@ void MeshViewer::update_ccm() {
     {
         auto V = ccm->vertices();
         auto E = ccm->cut_edges_eigen();
-        mtao::ColVectors<float,3> ccg_cols_edge(3,E.cols());
+        mtao::ColVectors<float, 3> ccg_cols_edge(3, E.cols());
         ccg_cols_edge.setZero();
-        for(int i = 0; i < ccg_cols_edge.cols(); ++i) {
-            ccg_cols_edge(i%3,i) = 1;
+        for (int i = 0; i < ccg_cols_edge.cols(); ++i) {
+            ccg_cols_edge(i % 3, i) = 1;
         }
-        mtao::ColVectors<float,3> ccg_cols(3,V.cols());
+        mtao::ColVectors<float, 3> ccg_cols(3, V.cols());
         ccg_cols.setZero();
-        for(int i = 0; i < ccm->StaggeredGrid::vertex_size(); ++i) {
+        for (int i = 0; i < ccm->StaggeredGrid::vertex_size(); ++i) {
             ccg_cols.col(i).setConstant(.7);
         }
-        cutcell_mesh.setEdgeBuffer(V.cast<float>().eval(),E.cast<unsigned int>().eval());
+        cutcell_mesh.setEdgeBuffer(V.cast<float>().eval(), E.cast<unsigned int>().eval());
         cutcell_drawable->deactivate();
 
         ccm->faces();
@@ -299,7 +314,7 @@ void MeshViewer::update_ccm() {
         grid_drawable->activate_edges();
         auto r = ccm->regions();
         std::set<int> regions;
-        for(int i = 0; i < r.size(); ++i) {
+        for (int i = 0; i < r.size(); ++i) {
             regions.insert(r(i));
         }
         std::cout << "Region count: " << regions.size() << std::endl;
@@ -309,47 +324,53 @@ void MeshViewer::update_ccm() {
 
 
 void MeshViewer::update_face(int idx) {
-    if(!ccm) return;
+    if (!ccm) return;
 
-    if(idx < 0 || idx >= ccm->num_cells()) return;
+    if (idx < 0 || idx >= ccm->num_cells()) return;
     auto c = ccm->cell(idx);
+    if(c.size() == 0) { return; }
     auto d = *c.begin();
-    if(d.size() < 3) return;
-    auto F = mtao::geometry::mesh::earclipping(ccm->vertices(),d);
-    cutcell_face_mesh.setTriangleBuffer(F.cast<unsigned int>());
-    cutcell_drawable->activate_triangles();
+    if (d.size() < 3) return;
+    std::cout << mtao::eigen::stl2eigen(d).transpose() << std::endl;
+    auto V = ccm->vertices();
+    auto F = mtao::geometry::mesh::earclipping(V, d);
+    std::cout << "=====\n" << F << std::endl;
+    cutcell_face_mesh.setTriangleBuffer(V.cast<float>(), F.cast<unsigned int>());
+    //cutcell_face_mesh.setTriangleBuffer(F.cast<unsigned int>());
+    cutcell_face_drawable->activate_triangles();
 }
 
 void MeshViewer::update_faces() {
-    if(!ccm) return;
+    if (!ccm) return;
 
     update_colors();
     std::vector<std::tuple<mtao::ColVecs3i, mtao::Vec4d>> FCs;
-    for(int i = 0; i < ccm->num_cells(); ++i) {
+    for (int i = 0; i < ccm->num_cells(); ++i) {
         FCs.reserve(ccm->num_cells());
         auto c = ccm->cell(i);
-        auto&& d = *c.begin();
-        auto F = mtao::geometry::mesh::earclipping(ccm->vertices(),d);
+        auto &&d = *c.begin();
+        auto F = mtao::geometry::mesh::earclipping(ccm->vertices(), d);
         FCs.emplace_back(std::move(F), colors.col(i));
     }
-    auto [V,F,C] = mtao::geometry::mesh::stack_meshes(ccm->vertices(), FCs);
+    auto [V, F, C] = mtao::geometry::mesh::stack_meshes(ccm->vertices(), FCs);
+    spdlog::error("nV/nF/nC: {} {} {}", V.cols(), F.cols(), C.cols());
 
-    cutcell_mesh.setTriangleBuffer(V.cast<float>(),F.cast<unsigned int>());
+    cutcell_face_mesh.setVertexBuffer(V.cast<float>().eval());
+    cutcell_mesh.setTriangleBuffer(V.cast<float>(), F.cast<unsigned int>());
     cutcell_mesh.setColorBuffer(C.cast<float>().eval());
     cutcell_drawable->activate_triangles();
-
 }
 void MeshViewer::update_colors() {
-    if(!ccm) return;
-    colors.resize(4,ccm->num_cells());
+    if (!ccm) return;
+    colors.resize(4, ccm->num_cells());
     auto region_colors = [&]() {
         mtao::VecXi R = ccm->regions();
-        int num_regions = R.maxCoeff()+1;
-        mtao::ColVecs4d C(4,num_regions);
+        int num_regions = R.maxCoeff() + 1;
+        mtao::ColVecs4d C(4, num_regions);
         C.setRandom();
         C.row(3).setConstant(1);
 
-        for(int i = 0; i < R.size(); ++i) {
+        for (int i = 0; i < R.size(); ++i) {
             colors.col(i) = C.col(R(i));
         }
     };
@@ -358,15 +379,14 @@ void MeshViewer::update_colors() {
     };
 
     auto get_rhs = [&]() {
-
         mtao::Vec2d dir = harmonic_dir.cast<double>();
         mtao::VecXd u(ccm->num_edges());
         u.setZero();
         for (auto &&[eidx, edge] : mtao::iterator::enumerate(ccm->cut_edges())) {
-            if(edge.external_boundary) {
-                auto [oc,b] = *edge.external_boundary;
-                if(oc == -2) {
-                    u(eidx) = (b?-1:1) * dir(edge.unbound_axis());
+            if (edge.external_boundary) {
+                auto [oc, b] = *edge.external_boundary;
+                if (oc == -2) {
+                    u(eidx) = (b ? -1 : 1) * dir(edge.unbound_axis());
                 } else {
                     u(eidx) = 0;
                 }
@@ -400,33 +420,33 @@ void MeshViewer::update_colors() {
         colors.row(1).array() = 0;
     };
     auto harmonic_colors = [&]() {
-            Eigen::SparseMatrix<double> L = mandoline::operators::laplacian(*ccm);
-            //std::cout << L << std::endl;
+        Eigen::SparseMatrix<double> L = mandoline::operators::laplacian(*ccm);
+        //std::cout << L << std::endl;
 
-            mtao::VecXd b = get_rhs();
-            mtao::VecXd x(b.rows());
-            x.setZero();
-            mtao::solvers::linear::CholeskyPCGSolve(L,b,x);
-            x /= x.cwiseAbs().maxCoeff();
-            colors.row(0) = x;
-            colors.row(2) = -x;
-            colors.row(1).array() = 0;
+        mtao::VecXd b = get_rhs();
+        mtao::VecXd x(b.rows());
+        x.setZero();
+        mtao::solvers::linear::CholeskyPCGSolve(L, b, x);
+        x /= x.cwiseAbs().maxCoeff();
+        colors.row(0) = x;
+        colors.row(2) = -x;
+        colors.row(1).array() = 0;
     };
-    switch(color_type) {
-        case ColorType::Regions:
-            region_colors();
-            break;
-        case ColorType::Random:
-            random_colors();
-            break;
-        case ColorType::Harmonic:
-            harmonic_colors();
-            break;
-        case ColorType::Harmonic_RHS:
-            harmonic_rhs_colors();
-            break;
+    switch (color_type) {
+    case ColorType::Regions:
+        region_colors();
+        break;
+    case ColorType::Random:
+        random_colors();
+        break;
+    case ColorType::Harmonic:
+        harmonic_colors();
+        break;
+    case ColorType::Harmonic_RHS:
+        harmonic_rhs_colors();
+        break;
     }
-    colors.noalias() = (colors.array() > 0).select(colors,0);
+    colors.noalias() = (colors.array() > 0).select(colors, 0);
     colors.row(3).setConstant(1);
 }
 

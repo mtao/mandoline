@@ -131,15 +131,15 @@ int CutCellMesh<2>::cell_index(const VecCRef &p) const {
             }
         }
     } else {
-        return exterior_cell_index;
+        return exterior_cell_index + num_cutfaces();
     }
     return -1;
 }
 
 std::set<std::vector<int>> CutCellMesh<2>::cell(int index) const {
-    if (index < num_cutcells()) {
+    if (index < num_cutfaces()) {
         return m_faces.at(index).indices;
-    } else if (int nidx = index - num_cutcells(); nidx < exterior_grid.num_cells()) {
+    } else if (int nidx = index - num_cutfaces(); nidx < exterior_grid.num_cells()) {
         std::vector<int> r;
 
         coord_type cidx = exterior_grid.cell_coord(nidx);

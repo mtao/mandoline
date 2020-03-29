@@ -21,7 +21,7 @@ struct FaceCollapser {
     using coord_type = std::array<int, 3>;
     //FaceCollapser(const std::map<int,std::set<std::vector<int>>>& faces);
     FaceCollapser(const std::set<Edge> &edges);
-    FaceCollapser(const mtao::ColVecs2i& edges);
+    FaceCollapser(const mtao::ColVecs2i &edges);
 
 
     // reinterpret undirected edge graph as a sparse adjacency map
@@ -32,16 +32,17 @@ struct FaceCollapser {
     int face(const Edge &e) const;
 
 
-    // merge edge face ids
+    // merge edge face ids. optionally one can pass in a set of tangent vectors and a map from edge indices into the list of tangent vectors
     template<typename Derived>
-    void unify_boundary_loops(const Eigen::MatrixBase<Derived> &V);
+    void unify_boundary_loops(const Eigen::MatrixBase<Derived> &V, const std::map<Edge, std::tuple<int, bool>> &cut_parent_map = {}, const mtao::ColVecs2d &T = {});
     // bake the face structure. for now it is only merge, but could be more?
+    // merge edge face ids. optionally one can pass in a set of tangent vectors and a map from edge indices into the list of tangent vectors
     template<typename Derived>
-    void bake(const Eigen::MatrixBase<Derived> &V, bool nonsimple_faces = true);
+    void bake(const Eigen::MatrixBase<Derived> &V, bool nonsimple_faces = true, const std::map<Edge, std::tuple<int, bool>> &cut_parent_map = {}, const mtao::ColVecs2d &T = {});
 
 
-    // NOTE: is_inside 
-    template<typename Derived, bool RightIsBigger=true>
+    // NOTE: is_inside
+    template<typename Derived, bool RightIsBigger = true>
     bool is_inside(const Eigen::MatrixBase<Derived> &V, const std::vector<int> &a, const std::vector<int> &b) const;
     template<typename Derived>
     bool is_inside_no_topology(const Eigen::MatrixBase<Derived> &V, const std::vector<int> &a, const std::vector<int> &b) const;
@@ -71,7 +72,8 @@ struct FaceCollapser {
     // indicate that a single directed edges in on the outside
     void set_edge_for_removal(const Edge &e);
 
-    const std::map<Edge, std::tuple<int, bool>>& edge_to_face() const { return m_edge_to_face; }
+    const std::map<Edge, std::tuple<int, bool>> &edge_to_face() const { return m_edge_to_face; }
+
   private:
     // a directed edge maps to a face identity and whether this is the same order as the input
     std::map<Edge, std::tuple<int, bool>> m_edge_to_face;
@@ -82,8 +84,8 @@ struct FaceCollapser {
 };
 
 template<typename Derived>
-void FaceCollapser::bake(const Eigen::MatrixBase<Derived> &V, bool nonsimple_faces) {
-    unify_boundary_loops(V);
+void FaceCollapser::bake(const Eigen::MatrixBase<Derived> &V, bool nonsimple_faces, const std::map<Edge, std::tuple<int, bool>> &cut_parent_map, const mtao::ColVecs2d &T) {
+    unify_boundary_loops(V, cut_parent_map, T);
     finalize();
 
     if (nonsimple_faces) {
@@ -91,7 +93,8 @@ void FaceCollapser::bake(const Eigen::MatrixBase<Derived> &V, bool nonsimple_fac
     }
 }
 template<typename Derived>
-void FaceCollapser::unify_boundary_loops(const Eigen::MatrixBase<Derived> &V) {
+void FaceCollapser::unify_boundary_loops(const Eigen::MatrixBase<Derived> &V, const std::map<Edge, std::tuple<int, bool>> &cut_parent_map, const mtao::ColVecs2d &T) {
+    const bool use_parent_tangents = cut_parent_map.size() > 0 && T.size() > 0;
     // for each neighorhood
     for (auto [a, bs] : collect_edges()) {
 
@@ -99,8 +102,19 @@ void FaceCollapser::unify_boundary_loops(const Eigen::MatrixBase<Derived> &V) {
         std::vector<int> indices(bs.begin(), bs.end());
         auto va = V.col(a);
         mtao::ColVecs2d D(2, bs.size());
-        for (auto [i, j] : mtao::iterator::enumerate(indices)) {
-            D.col(i) = V.col(j) - va;
+        if (use_parent_tangents) {
+            for (auto [i, j] : mtao::iterator::enumerate(indices)) {
+                std::array<int, 2> e{ { a, j } };
+                std::sort(e.begin(), e.end());
+                auto [parent_eid, flip_sgn] = cut_parent_map.at(e);
+                auto t = T.col(parent_eid);
+                D.col(i) = (flip_sgn ? -1 : 1) * t;
+            }
+
+        } else {
+            for (auto [i, j] : mtao::iterator::enumerate(indices)) {
+                D.col(i) = V.col(j) - va;
+            }
         }
         std::vector<char> quadrants(bs.size());
         constexpr static std::array<int, 4> __quadrants{ { 4, 1, 3, 2 } };
@@ -162,7 +176,7 @@ void FaceCollapser::merge_faces(const Eigen::MatrixBase<Derived> &V) {
 
     for (auto &&[fidx, vol] : vols) {
         ds.add_node(fidx);
-        if(fidx == -1) continue;
+        if (fidx == -1) continue;
         if (vol > 0) {
             positive_areas.push_back(fidx);
         } else if (vol < 0) {
@@ -189,8 +203,8 @@ void FaceCollapser::merge_faces(const Eigen::MatrixBase<Derived> &V) {
             if (nvol > vol) {// positive loops cant have negative loops larger than them!
                 break;
             } else if (auto &nface = faces[nfidx];
-                    is_inside(V, nface, face)) {
-                ds.join(fidx,nfidx);
+                       is_inside(V, nface, face)) {
+                ds.join(fidx, nfidx);
                 //ret.emplace(std::move(nface));
                 //removed.emplace(fidx);
             }
@@ -204,7 +218,7 @@ void FaceCollapser::merge_faces(const Eigen::MatrixBase<Derived> &V) {
         //ret.emplace(std::move(face));
     }
 
-    for(auto&& n: ds.nodes) {
+    for (auto &&n : ds.nodes) {
         int root = ds.get_root(n.data).data;
     }
     std::map<int, int> reindexer;
@@ -223,100 +237,6 @@ void FaceCollapser::merge_faces(const Eigen::MatrixBase<Derived> &V) {
         int root = ds.get_root(c).data;
         c = reindexer[root];
     }
-    /*
-
-            //the vertices that make each cell
-            std::map<int,std::vector<int>> CM;
-            std::map<int,std::set<int>> CMs;
-            for(auto&& he: cell_halfedges) {
-                auto&& v = CM[he] = cell_he(he);
-                CMs[he] = std::set<int>(v.begin(),v.end());
-            }
-
-            for(auto&& he: cell_halfedges) {
-                int cell = cell_index(he);
-                ds.add_node(cell);
-                ds.add_node(cell_index(dual_index(he)));
-            }
-            for(auto&& ohe: outer_hes) {
-                int ocell = cell_index(ohe);
-                //int docell = cell_index(dual_index(ohe));
-                for(auto&& ihe: interior_hes) {
-                    int icell = cell_index(ihe);
-                    int dicell = cell_index(dual_index(ihe));
-                    if(ocell == icell || dicell == ocell) {
-                        continue;
-                    } else {
-                        if( is_inside(V,edge(ohe),CM[ihe])) {
-                            auto&& potential_parent = CMs[ohe];
-                            auto&& potential_child = CMs[ihe];
-                            //if there's some random edge connecting these two we need to find it
-                            if(std::includes(potential_parent.begin(),potential_parent.end(),potential_child.begin(),potential_child.end())) {
-                                auto&& child = CM[ihe];
-                                auto&& parent = CM[ohe];
-                                std::set<std::array<int,2>> edges;
-                                for(int i = 0; i < parent.size(); ++i) {
-                                    std::array<int,2> e;
-                                    e[0] = parent[i];
-                                    e[1] = parent[(i+1)%parent.size()];
-                                    std::sort(e.begin(),e.end());
-                                    edges.emplace(e);
-                                }
-                                for(int i = 0; i < child.size(); ++i) {
-                                    std::array<int,2> e;
-                                    e[0] = child[i];
-                                    e[1] = child[(i+1)%child.size()];
-                                    std::sort(e.begin(),e.end());
-                                    if(edges.find(e) == edges.end()) {
-                                        auto v = (V.col(e[0]) + V.col(e[1]))/2;
-                                        if(is_inside(V,edge(ohe),v)) {
-                                            halfedge_partial_ordering[ohe].insert(ihe);
-                                            break;
-                                        }
-                                    }
-                                }
-                            } else {
-                                halfedge_partial_ordering[ohe].insert(ihe);
-                            }
-                        }
-                    }
-                }
-
-            }
-
-            std::map<int,std::set<int>> ordered_partial_ordering;
-            std::set<int> seen_cells;
-            for(auto&& [h, hs]: halfedge_partial_ordering) {
-                ordered_partial_ordering[hs.size()].insert(h);
-            }
-            for(auto&& pr: ordered_partial_ordering) {
-                auto&& hs = std::get<1>(pr);
-                for(auto&& h: hs) {
-                    int cell = cell_index(h);
-                    auto&& children = halfedge_partial_ordering[h];
-
-                    for(auto&& che: children) {
-                        if(seen_cells.find(che) == seen_cells.end()) {
-                            int ci = cell_index(che);
-                            ds.join(cell,ci);
-                            seen_cells.emplace(che);
-                        }
-                    }
-                }
-            }
-            ds.reduce_all();
-            {
-
-                auto ci = cell_indices();
-                for(int i = 0; i < size(); ++i) {
-                    int c = ci(i);
-                    if(ds.has_node(c)) {
-                        int root = ds.get_root(ci(i)).data;
-                        cell_indices()(i) = root;
-                    }
-                }
-            }
-            */
 }
 template<typename Derived>
 std::map<int, typename Derived::Scalar> FaceCollapser::volumes(const Eigen::MatrixBase<Derived> &V) const {

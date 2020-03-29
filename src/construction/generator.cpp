@@ -226,5 +226,61 @@ auto CutCellEdgeGenerator<2>::compute_planar_hem(const ColVecs &V, const Edges &
     return { ehem, boundary_edges };
 }
 
+template<>
+auto CutCellEdgeGenerator<2>::compute_planar_hem(const std::map<std::array<int,2>, std::tuple<int,bool>>& tangent_map, const ColVecs &T, const Edges &E, const GridDatab &interior_cell_mask) const -> std::tuple<mtao::geometry::mesh::HalfEdgeMesh, std::set<Edge>> {
+
+    print_gridb(interior_cell_mask);
+    auto t = mtao::logging::profiler("computing planar hem", false, "profiler");
+    using namespace mtao::geometry::mesh;
+
+    bool adaptive = interior_cell_mask.empty();
+    HalfEdgeMesh hem;
+    {
+        //std::cout << E << std::endl;
+        //auto t = mtao::logging::timer("Making halfedge mesh");
+        auto TT = T;
+        TT.row(0) = T.row(1);
+        TT.row(1) = T.row(0);
+        hem = HalfEdgeMesh::from_edges(E);
+        hem.make_topology(tangent_map, TT);
+        //ehem = EmbeddedHalfEdgeMesh<double,2>::from_edges(VV,E);
+    }
+    //auto ehem = EmbeddedHalfEdgeMesh<double,2>::from_edges(ret.vertices(),ret.cut_edges);
+
+
+    {
+        //auto t = mtao::logging::timer("Generating topology");
+    }
+
+    std::set<Edge> boundary_edges;
+
+    { // create the boundary edge data
+
+        if (!adaptive) {
+            //auto t = mtao::logging::timer("actual looping in mask");
+            coord_type shape = interior_cell_mask.shape();
+            for (auto &&s : shape) {
+                s++;
+            }
+            mtao::geometry::grid::utils::multi_loop(shape, [&](const coord_type &c) {
+                for (int i = 0; i < 2; ++i) {
+                    auto cc = c;
+                    cc[i]--;
+
+
+                    bool c_valid = (!interior_cell_mask.valid_index(c)) || interior_cell_mask(c);
+                    bool cc_valid = (!interior_cell_mask.valid_index(cc)) || interior_cell_mask(cc);
+                    if (c_valid ^ cc_valid) {
+                        Edge isarr = StaggeredGrid::edge(1 - i, c);
+                        std::sort(isarr.begin(), isarr.end());
+                        boundary_edges.insert(isarr);
+                    }
+                }
+            });
+        } else {
+        }
+    }
+    return { hem, boundary_edges };
+}
 
 }// namespace mandoline::construction
