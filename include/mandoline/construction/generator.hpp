@@ -13,6 +13,8 @@
 #include "mandoline/construction/cutdata.hpp"
 #include "mandoline/cutface.hpp"
 #include <iterator>
+#include <mtao/geometry/mesh/halfedge.hpp>
+#include <mtao/type_utils.h>
 
 #define USE_INTERIOR_MASK
 
@@ -68,7 +70,7 @@ class CutCellEdgeGenerator : public mtao::geometry::grid::StaggeredGrid<double, 
     std::tuple<mtao::geometry::mesh::HalfEdgeMesh, std::set<Edge>> compute_planar_hem(const std::vector<VType> &GV, const Edges &E, const GridDatab &interior_cell_mask) const;
     // internal call that has no awareness of grid vertices / grid pruning
     std::tuple<mtao::geometry::mesh::HalfEdgeMesh, std::set<Edge>> compute_planar_hem(const ColVecs &V, const Edges &E, const GridDatab &interior_cell_mask) const;
-    std::tuple<mtao::geometry::mesh::HalfEdgeMesh, std::set<Edge>> compute_planar_hem(const std::map<std::array<int,2>, std::tuple<int,bool>>& tangent_map, const ColVecs &T, const Edges &E, const GridDatab &interior_cell_mask) const;
+    std::tuple<mtao::geometry::mesh::HalfEdgeMesh, std::set<Edge>> compute_planar_hem(const std::map<std::array<int, 2>, std::tuple<int, bool>> &tangent_map, const ColVecs &T, const Edges &E, const GridDatab &interior_cell_mask) const;
 
 
     virtual void bake();
@@ -169,6 +171,7 @@ class CutCellEdgeGenerator : public mtao::geometry::grid::StaggeredGrid<double, 
         }
     }
 
+    // returns crossing according to the world index size. 
     auto &&crossing(int idx) const { return m_crossings[idx - grid_vertex_size()]; }
 
     size_t total_vertex_size() const { return m_crossings.size() + grid_vertex_size(); }
@@ -274,7 +277,7 @@ class CutCellEdgeGenerator : public mtao::geometry::grid::StaggeredGrid<double, 
     const GridDatab &active_grid_cell_mask() const {
         return m_active_grid_cell_mask;
     }
-    bool is_active_cell(const coord_type& c) const;
+    bool is_active_cell(const coord_type &c) const;
 
   protected:
     CutData<D> m_data;
@@ -289,6 +292,7 @@ class CutCellEdgeGenerator : public mtao::geometry::grid::StaggeredGrid<double, 
     std::vector<CoordMaskedEdge<D>> m_grid_edges;
     std::vector<CutMeshEdge<D>> m_cut_edges;
     std::vector<CutMeshFace<D>> m_cut_faces;
+    std::conditional_t<D == 2, mtao::geometry::mesh::HalfEdgeMesh, mtao::types::empty> m_hem;
 
     GridDatab m_active_grid_cell_mask;
 };

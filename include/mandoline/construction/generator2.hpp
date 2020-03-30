@@ -16,7 +16,6 @@ class CutCellGenerator<2> : public CutCellEdgeGenerator<2> {
     void add_boundary_elements(const BoundaryElements &E);
     void bake_faces() override;
     void extra_metadata(CutCellMesh<2> &mesh) const;
-    mtao::geometry::mesh::HalfEdgeMesh hem;
 
     mtao::map<int, CutFace<D>> m_faces;
     std::set<int> mesh_face_indices;

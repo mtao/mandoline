@@ -1,4 +1,5 @@
 #pragma once
+#include <iterator>
 
 #include <algorithm>
 #include <array>
@@ -11,6 +12,7 @@
 #include <mtao/geometry/mesh/triangle_fan.hpp>
 #include <mtao/geometry/trigonometry.hpp>
 #include <mtao/geometry/winding_number.hpp>
+#include <spdlog/spdlog.h>
 
 
 namespace mandoline::construction {
@@ -96,22 +98,29 @@ template<typename Derived>
 void FaceCollapser::unify_boundary_loops(const Eigen::MatrixBase<Derived> &V, const std::map<Edge, std::tuple<int, bool>> &cut_parent_map, const mtao::ColVecs2d &T) {
     const bool use_parent_tangents = cut_parent_map.size() > 0 && T.size() > 0;
     // for each neighorhood
+
     for (auto [a, bs] : collect_edges()) {
 
         // sort indices by quadrant and cross product
         std::vector<int> indices(bs.begin(), bs.end());
-        auto va = V.col(a);
         mtao::ColVecs2d D(2, bs.size());
         if (use_parent_tangents) {
+            auto va = V.col(a);
             for (auto [i, j] : mtao::iterator::enumerate(indices)) {
                 std::array<int, 2> e{ { a, j } };
-                std::sort(e.begin(), e.end());
+
+                bool eidx_flip = e[0] > e[1];
+                if (eidx_flip) {
+                    std::swap(e[0], e[1]);
+                }
                 auto [parent_eid, flip_sgn] = cut_parent_map.at(e);
                 auto t = T.col(parent_eid);
-                D.col(i) = (flip_sgn ? -1 : 1) * t;
+                D.col(i) = (flip_sgn ^ eidx_flip ? -1 : 1) * t;
+                //std::cout << (V.col(j) - va).transpose() << " == " << D.col(i).transpose() << std::endl;
             }
 
         } else {
+            auto va = V.col(a);
             for (auto [i, j] : mtao::iterator::enumerate(indices)) {
                 D.col(i) = V.col(j) - va;
             }
@@ -163,6 +172,7 @@ void FaceCollapser::unify_boundary_loops(const Eigen::MatrixBase<Derived> &V, co
 
 template<typename Derived>
 void FaceCollapser::merge_faces(const Eigen::MatrixBase<Derived> &V) {
+    spdlog::debug("FaceCollapser merging faces");
     auto vols = volumes(V);
     std::map<int, std::set<int>> halfedge_partial_ordering;
     auto faces = faces_no_holes();
@@ -205,6 +215,7 @@ void FaceCollapser::merge_faces(const Eigen::MatrixBase<Derived> &V) {
             } else if (auto &nface = faces[nfidx];
                        is_inside(V, nface, face)) {
                 ds.join(fidx, nfidx);
+                //std::cout << fidx << " contains " << nfidx << std::endl;
                 //ret.emplace(std::move(nface));
                 //removed.emplace(fidx);
             }

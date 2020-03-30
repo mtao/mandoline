@@ -207,6 +207,7 @@ std::map<int, std::set<std::vector<int>>> FaceCollapser::faces() const {
     return ret;
 }
 void FaceCollapser::finalize() {
+    spdlog::debug("FaceCollapser Finalizing");
     face_ds.reduce_all();
 
     std::map<int, int> reindexer;

@@ -51,7 +51,7 @@ target_include_directories(mandoline_headers INTERFACE
   $<INSTALL_INTERFACE:include> ${CMAKE_CURRENT_BINARY_DIR}
 )
 TARGET_LINK_LIBRARIES(mandoline_headers PUBLIC INTERFACE Eigen3::Eigen
-    mtao::headers mtao::geometry igl::core protobuf::libprotobuf
+    mtao::headers mtao::geometry igl::core protobuf::libprotobuf tbb
     )
 
 

@@ -16,8 +16,8 @@ jobs:
                 name: Installing cmake
                 command: 'DEBIAN_FRONTEND=noninteractive apt-get install -y cmake'
             - run:
-                name: Installing boost threads
-                command: 'apt-get install -y libboost-thread-dev'
+                name: Installing boost threads and tbb
+                command: 'apt-get install -y libboost-thread-dev libtbb-dev'
             - run:
                 name: Installing mpfr
                 command: 'apt-get install -y libmpfr-dev libmpfrc++-dev'

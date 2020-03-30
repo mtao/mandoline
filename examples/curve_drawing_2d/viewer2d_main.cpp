@@ -1,6 +1,7 @@
 #include "mtao/geometry/mesh/boundary_facets.h"
 #include "mtao/geometry/bounding_box.hpp"
 #include <mtao/types.hpp>
+#include <tbb/parallel_for.h>
 #include "mtao/opengl/Window.h"
 #include <iostream>
 #include "imgui.h"
@@ -16,6 +17,7 @@
 #include <Corrade/Utility/Arguments.h>
 #include "plcurve2.hpp"
 #include "mandoline/construction/generator2.hpp"
+#include "mandoline/construction/face_collapser.hpp"
 #include <Magnum/GL/Renderer.h>
 #include <mtao/geometry/mesh/stack_meshes.hpp>
 #include <mtao/solvers/linear/preconditioned_conjugate_gradient.hpp>
@@ -56,7 +58,12 @@ class MeshViewer : public mtao::opengl::Window2 {
         Harmonic,
         Harmonic_RHS
     };
+    enum InterfaceMode : char {
+        CurveEdit,
+        Browse
+    };
 
+    InterfaceMode ui_mode = CurveEdit;
     ColorType color_type = ColorType::Random;
 
     mtao::Vec2f origin = mtao::Vec2f::Zero(), direction = mtao::Vec2f::Unit(1);
@@ -107,7 +114,27 @@ class MeshViewer : public mtao::opengl::Window2 {
         if (args.argc > 1) {
             myargs.addArgument("filename").parse(args.argc, args.argv);
             std::string filename = myargs.value("filename");
+            spdlog::warn("Reading file [{}]", filename);
             curve.load(filename);
+            auto p = curve.points();
+            {
+                using namespace mandoline::construction;
+                auto edges = curve.edges().cast<int>().eval();
+                FaceCollapser fc(edges);
+                fc.bake(p, false);
+                auto f = fc.faces_no_holes();
+                std::cout << "input facecollapser size: " << f.size() << std::endl;
+            }
+
+            bbox.min() = bbox.min().cwiseMin(p.rowwise().minCoeff().cast<float>());
+            bbox.max() = bbox.max().cwiseMax(p.rowwise().maxCoeff().cast<float>());
+            bbox.min().array() -= .1f;
+            bbox.max().array() += .1f;
+            std::cout << "Updating curve" << std::endl;
+            update_curve();
+            std::cout << "Updating bbox" << std::endl;
+            update_bbox();
+            ui_mode = InterfaceMode::Browse;
         }
     }
 
@@ -158,11 +185,12 @@ void MeshViewer::draw() {
 void MeshViewer::mouseMoveEvent(MouseMoveEvent &event) {
     Window2::mouseMoveEvent(event);
     cursor = localPosition(event.position());
-    if(event.modifiers() & MouseEvent::Modifier::Shift) {
+    if (ui_mode == InterfaceMode::CurveEdit) {
+    } else if (ui_mode == InterfaceMode::Browse) {
 
         int ofi = face_index;
-        face_index = ccm->cell_index(mtao::Vec2d(cursor.x(),cursor.y()));
-        if(ofi != face_index) {
+        face_index = ccm->cell_index(mtao::Vec2d(cursor.x(), cursor.y()));
+        if (ofi != face_index) {
             update_face(face_index);
         }
     }
@@ -170,10 +198,21 @@ void MeshViewer::mouseMoveEvent(MouseMoveEvent &event) {
 void MeshViewer::mousePressEvent(MouseEvent &event) {
     Window2::mousePressEvent(event);
     if (!ImGui::GetIO().WantCaptureMouse) {
-        if (event.button() == MouseEvent::Button::Left) {
-            mtao::Vec2d p(cursor.x(), cursor.y());
-            curve.add_point(p);
-            update_curve();
+        if (ui_mode == InterfaceMode::CurveEdit) {
+            if (event.button() == MouseEvent::Button::Left) {
+                mtao::Vec2d p(cursor.x(), cursor.y());
+                curve.add_point(p);
+                update_curve();
+            }
+        } else {
+            int idx = ccm->cell_index(mtao::Vec2d(cursor.x(), cursor.y()));
+            if (idx >= 0 && idx < ccm->num_cells()) {
+                auto c = ccm->cell(idx);
+                if (c.size() > 0) {
+                    auto d = *c.begin();
+                    std::cout << mtao::eigen::stl2eigen(d).transpose() << std::endl;
+                }
+            }
         }
     }
 }
@@ -195,6 +234,15 @@ void MeshViewer::reset_curve() {
 
 void MeshViewer::gui() {
     {
+        const char *items[] = { "CurveEdit", "Browse" };
+        int current_item = int(ui_mode);
+        if (ImGui::Combo("Interface Mode", &current_item, items, 2)) {
+            ui_mode = static_cast<InterfaceMode>(current_item);
+        }
+    }
+    {
+
+
         const char *items[] = { "Random", "Regions", "Harmonic", "Harmonid_RHS" };
         int current_item = int(color_type);
         if (ImGui::Combo("Color Type", &current_item, items, 4)) {
@@ -251,10 +299,10 @@ void MeshViewer::gui() {
     if (ImGui::SliderFloat2("Harmonid cir", harmonic_dir.data(), -1, 1)) {
         update_faces();
     }
-    if(ccm) {
-    ImGui::Text("Cursor position (%f,%f) cell: %d", cursor.x(), cursor.y(), face_index);
+    if (ccm) {
+        ImGui::Text("Cursor position (%f,%f) cell: %d", cursor.x(), cursor.y(), face_index);
     } else {
-    ImGui::Text("Cursor position (%f,%f)", cursor.x(), cursor.y());
+        ImGui::Text("Cursor position (%f,%f)", cursor.x(), cursor.y());
     }
 }
 
@@ -296,23 +344,25 @@ void MeshViewer::update_ccm() {
     {
         auto V = ccm->vertices();
         auto E = ccm->cut_edges_eigen();
-        mtao::ColVectors<float, 3> ccg_cols_edge(3, E.cols());
-        ccg_cols_edge.setZero();
-        for (int i = 0; i < ccg_cols_edge.cols(); ++i) {
-            ccg_cols_edge(i % 3, i) = 1;
-        }
-        mtao::ColVectors<float, 3> ccg_cols(3, V.cols());
-        ccg_cols.setZero();
-        for (int i = 0; i < ccm->StaggeredGrid::vertex_size(); ++i) {
-            ccg_cols.col(i).setConstant(.7);
-        }
+        //mtao::ColVectors<float, 3> ccg_cols_edge(3, E.cols());
+        //ccg_cols_edge.setZero();
+        //for (int i = 0; i < ccg_cols_edge.cols(); ++i) {
+        //    ccg_cols_edge(i % 3, i) = 1;
+        //}
+        //mtao::ColVectors<float, 3> ccg_cols(3, V.cols());
+        //ccg_cols.setZero();
+        //for (int i = 0; i < ccm->StaggeredGrid::vertex_size(); ++i) {
+        //    ccg_cols.col(i).setConstant(.7);
+        //}
         cutcell_mesh.setEdgeBuffer(V.cast<float>().eval(), E.cast<unsigned int>().eval());
         cutcell_drawable->deactivate();
 
-        ccm->faces();
+        spdlog::warn("Making gird draable");
+        //ccm->faces();
         grid_mesh.set(ccm->vertex_grid());
         grid_drawable->activate_edges();
         auto r = ccm->regions();
+        spdlog::warn("Writing regions");
         std::set<int> regions;
         for (int i = 0; i < r.size(); ++i) {
             regions.insert(r(i));
@@ -328,13 +378,11 @@ void MeshViewer::update_face(int idx) {
 
     if (idx < 0 || idx >= ccm->num_cells()) return;
     auto c = ccm->cell(idx);
-    if(c.size() == 0) { return; }
+    if (c.size() == 0) { return; }
     auto d = *c.begin();
     if (d.size() < 3) return;
-    std::cout << mtao::eigen::stl2eigen(d).transpose() << std::endl;
     auto V = ccm->vertices();
     auto F = mtao::geometry::mesh::earclipping(V, d);
-    std::cout << "=====\n" << F << std::endl;
     cutcell_face_mesh.setTriangleBuffer(V.cast<float>(), F.cast<unsigned int>());
     //cutcell_face_mesh.setTriangleBuffer(F.cast<unsigned int>());
     cutcell_face_drawable->activate_triangles();
@@ -343,15 +391,33 @@ void MeshViewer::update_face(int idx) {
 void MeshViewer::update_faces() {
     if (!ccm) return;
 
+    spdlog::warn("updating faces");
+
     update_colors();
     std::vector<std::tuple<mtao::ColVecs3i, mtao::Vec4d>> FCs;
-    for (int i = 0; i < ccm->num_cells(); ++i) {
-        FCs.reserve(ccm->num_cells());
-        auto c = ccm->cell(i);
-        auto &&d = *c.begin();
-        auto F = mtao::geometry::mesh::earclipping(ccm->vertices(), d);
-        FCs.emplace_back(std::move(F), colors.col(i));
-    }
+    FCs.resize(ccm->num_cells());
+    spdlog::warn("making meshes");
+    auto verts = ccm->vertices();
+    //tbb::parallel_for(tbb::blocked_range<size_t>(0, ccm->num_cells()), [&](const tbb::blocked_range<size_t> &range) {
+    //    for (size_t idx = range.begin(); idx != range.end(); ++idx) {
+    for(int idx = 0; idx < ccm->num_cells(); ++idx) {
+        //spdlog::info("Getting cell {}", idx);
+            auto c = ccm->cell(idx);
+            if (c.size() > 0) {
+                auto &&d = *c.begin();
+                //std::copy(d.begin(),d.end(),std::ostream_iterator<int>(std::cout,","));
+                //std::cout << std::endl;
+
+                //std::cout << idx << " => " << mtao::geometry::curve_volume(verts, d) << std::endl;
+                auto F = mtao::geometry::mesh::earclipping(verts, d);
+                FCs[idx] = std::tuple<mtao::ColVecs3i, mtao::Vec4d>{ std::move(F), colors.col(idx) };
+            }
+            //spdlog::info("{} / {}", idx, ccm->num_cells());
+        }
+    //});
+
+
+    spdlog::warn("stacking meshes");
     auto [V, F, C] = mtao::geometry::mesh::stack_meshes(ccm->vertices(), FCs);
     spdlog::error("nV/nF/nC: {} {} {}", V.cols(), F.cols(), C.cols());
 
@@ -361,24 +427,29 @@ void MeshViewer::update_faces() {
     cutcell_drawable->activate_triangles();
 }
 void MeshViewer::update_colors() {
+    spdlog::warn("updating colors");
     if (!ccm) return;
     colors.resize(4, ccm->num_cells());
     auto region_colors = [&]() {
+        spdlog::warn("computing region colors");
         mtao::VecXi R = ccm->regions();
         int num_regions = R.maxCoeff() + 1;
         mtao::ColVecs4d C(4, num_regions);
         C.setRandom();
         C.row(3).setConstant(1);
 
-        for (int i = 0; i < R.size(); ++i) {
-            colors.col(i) = C.col(R(i));
-        }
+        tbb::parallel_for(tbb::blocked_range<size_t>(0, R.size()), [&](const tbb::blocked_range<size_t> &range) {
+            for(size_t idx = range.begin(); idx != range.end(); ++idx) {
+            colors.col(idx) = C.col(R(idx));
+            } });
     };
     auto random_colors = [&]() {
+        spdlog::warn("computing random colors");
         colors.setRandom();
     };
 
     auto get_rhs = [&]() {
+        spdlog::warn("computing rhs");
         mtao::Vec2d dir = harmonic_dir.cast<double>();
         mtao::VecXd u(ccm->num_edges());
         u.setZero();
@@ -411,6 +482,7 @@ void MeshViewer::update_colors() {
         return b;
     };
     auto harmonic_rhs_colors = [&]() {
+        spdlog::warn("harmonic rhs colors");
         Eigen::SparseMatrix<double> L = mandoline::operators::laplacian(*ccm);
 
         mtao::VecXd x = get_rhs();
@@ -420,6 +492,7 @@ void MeshViewer::update_colors() {
         colors.row(1).array() = 0;
     };
     auto harmonic_colors = [&]() {
+        spdlog::warn("harmonic colors");
         Eigen::SparseMatrix<double> L = mandoline::operators::laplacian(*ccm);
         //std::cout << L << std::endl;
 
@@ -446,6 +519,7 @@ void MeshViewer::update_colors() {
         harmonic_rhs_colors();
         break;
     }
+    spdlog::warn("Picked out colors");
     colors.noalias() = (colors.array() > 0).select(colors, 0);
     colors.row(3).setConstant(1);
 }

@@ -18,7 +18,6 @@ TEST_CASE("2D", "[boundary,exterior_grid]") {
         ccg.add_boundary_elements(E);
         ccg.bake();
         auto ccm = ccg.generate();
-        /*
     std::cout << "Faces: " << std::endl;
     for(auto&& [i,f]: mtao::iterator::enumerate(ccm.m_faces)) {
         std::cout << i << " ";
@@ -41,7 +40,6 @@ TEST_CASE("2D", "[boundary,exterior_grid]") {
         std::cout << std::endl;
         
     }
-    */
 
 
         {
@@ -69,6 +67,7 @@ TEST_CASE("2D", "[boundary,exterior_grid]") {
         }
     };
 
+    SECTION("Loop");
     V.col(0) = mtao::Vec2d(1.5, 1.5);
     V.col(1) = mtao::Vec2d(1.5, 2.5);
     V.col(2) = mtao::Vec2d(2.5, 2.5);
@@ -79,6 +78,7 @@ TEST_CASE("2D", "[boundary,exterior_grid]") {
     E.col(2) = mtao::Vec2i(2, 3);
     E.col(3) = mtao::Vec2i(3, 0);
     make_test();
+    SECTION("Loop Inverted");
     E.col(0) = mtao::Vec2i(1, 0);
     E.col(1) = mtao::Vec2i(2, 1);
     E.col(2) = mtao::Vec2i(3, 2);

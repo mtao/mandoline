@@ -3,6 +3,8 @@
 #include <mtao/eigen/stl2eigen.hpp>
 #include <mtao/colvector_loop.hpp>
 #include <mtao/geometry/mesh/edge_tangents.hpp>
+#include <tbb/parallel_for.h>
+
 
 namespace mandoline::construction {
 template<>
@@ -27,31 +29,55 @@ void CutCellGenerator<2>::add_boundary_elements(const BoundaryElements &E) {
 
 void CutCellGenerator<2>::bake_faces() {
 
+    spdlog::warn("Making edges");
     std::vector<Edge> edges;
     edges.reserve(m_cut_edges.size() + m_grid_edges.size());
-    std::transform(m_cut_edges.begin(), m_cut_edges.end(), std::inserter(ret, ret.end()), [](auto &&e) {
+    std::transform(m_cut_edges.begin(), m_cut_edges.end(), std::back_inserter(edges), [](auto &&e) {
         return e.indices;
     });
-    std::transform(m_grid_edges.begin(), m_grid_edges.end(), std::inserter(ret, ret.end()), [](auto &&e) {
+    std::transform(m_grid_edges.begin(), m_grid_edges.end(), std::back_inserter(edges), [](auto &&e) {
         return e.indices;
     });
 
+    spdlog::warn("Making tangents");
     int nE = data().nE();
     mtao::ColVecs2d T(2, nE + 2);
-    T.topLeftCorner(2, nE) = mtao::geometry::mesh::edge_tangents(mtao::eigen::stl2eigen(origV()), data().E(), true);
+    T.topLeftCorner(2, nE) = mtao::geometry::mesh::edge_tangents(mtao::eigen::stl2eigen(origV()), data().E());
+    //std::vector<bool> origESigns(nE);
+    auto get_t = [&](size_t parent_idx, size_t idx) {
+        if(idx < grid_vertex_size()) {
+            return data().get_edge_coord(parent_idx,grid_vertex(idx));
+        } else {
+            return data().get_edge_coord(parent_idx,crossing(idx));
+        }
+    };
+    /*
+    tbb::parallel_for(tbb::blocked_range<size_t>(0,nE),[&](const tbb::blocked_range<size_t>& range) {
+            for(size_t idx = range.begin(); idx != range.end(); ++idx) {
+            auto e = data().E().col(idx);
+            origESigns[idx] = e(1) > e(0);
+
+            }
+    });
+    */
     T.col(nE) << 1, 0;
-    T.col(nE) << 0, 1;
+    T.col(nE+1) << 0, 1;
+    spdlog::warn("Making tangent edge map (cutedges)");
     std::map<std::array<int, 2>, std::tuple<int, bool>> edge_map;
-    std::transform(m_cut_edges.begin(), m_cut_edges.end(), std::inserter(edge_map, edge_map.end()), [](auto &&e) {
+    std::transform(m_cut_edges.begin(), m_cut_edges.end(), std::inserter(edge_map, edge_map.end()), [&](auto &&e) -> std::pair<std::array<int,2>,std::tuple<int,bool>>{
         std::array<int, 2> ei = e.indices;
         bool flip_sign = ei[0] > ei[1];
         if (flip_sign) {
             std::swap(ei[0], ei[1]);
         }
-        return { ei, std::make_tuple(e.parent_eid, flip_sign) };
+        double a = get_t(e.parent_eid, ei[0]);
+        double b = get_t(e.parent_eid, ei[1]);
+        bool rel_flip = b < a;
+        return { ei, std::make_tuple(e.parent_eid, flip_sign ^ rel_flip) };
         ;
     });
-    std::transform(m_grid_edges.begin(), m_grid_edges.end(), std::inserter(edge_map, edge_map.end()), [&](auto &&e) {
+    spdlog::warn("Making tangent edge map (grid)");
+    std::transform(m_grid_edges.begin(), m_grid_edges.end(), std::inserter(edge_map, edge_map.end()), [&](auto &&e) -> std::pair<std::array<int,2>,std::tuple<int,bool>>{
         std::array<int, 2> ei = e.indices;
         bool flip_sign = ei[0] > ei[1];
         if (flip_sign) {
@@ -60,21 +86,40 @@ void CutCellGenerator<2>::bake_faces() {
         int ubx = e.unbound_axis();
         auto a = GV(ei[0]);
         auto b = GV(ei[1]);
-        bool sgn = (a.coord[ubx] > b.coord[ubx]) || (a.coord[ubx] == b.coord[ubx] && a.quot(ubx) > b.quot(ubx));
+        bool sgn = flip_sign ^ (a.coord[ubx] > b.coord[ubx]) || (a.coord[ubx] == b.coord[ubx] && a.quot(ubx) > b.quot(ubx));
         std::tuple<int, bool> tp{ nE + ubx, sgn };
         return { ei, tp };
     });
-    std::tie(hem, std::ignore) = compute_planar_hem(edge_map, T, mtao::eigen::stl2eigen(edges), m_active_grid_cell_mask);
+
+#if defined(USE_TANGENT_PLANAR_HEM_2)
+    spdlog::warn("Tangent-based planar hem compute");
+    std::tie(m_hem, std::ignore) = compute_planar_hem(edge_map, T, mtao::eigen::stl2eigen(edges), m_active_grid_cell_mask);
+#else
+        //Eigen::MatrixXi hem_edges = m_hem.edges();
+        //spdlog::warn("Done");
+        std::tie(m_hem, std::ignore) = compute_planar_hem(all_GV(), mtao::eigen::stl2eigen(edges), m_active_grid_cell_mask);
+        //if(hem_edges == m_hem.edges()) {
+        //    spdlog::warn("FAILED to make equal HEM!");
+        //}
+#endif
+    {
+        auto VV = all_GV();
+
+        FaceCollapser fc(mtao::eigen::stl2eigen(edges));
+        fc.bake(VV,false,edge_map, T);
+        auto f = fc.faces();
+        std::cout << "facecollapser size: " << f.size() << std::endl;
+    }
 
     std::vector<bool> active(data().nE());// edges that sit on an axis
     auto &&ti = data().edge_intersections();
     std::transform(ti.begin(), ti.end(), active.begin(), [](auto &&ti) {
-        return ti.active();
+            return ti.active();
     });
     cut_cell_to_primal_map.clear();
 
 
-    mtao::logging::debug() << "Number of faces: " << hem.cell_halfedges().size();
+    mtao::logging::debug() << "Number of faces: " << m_hem.cell_halfedges().size();
 
     for (auto &&[i, f] : mtao::iterator::enumerate(m_cut_faces)) {
         cut_cell_to_primal_map[i] = f.parent_fid;
@@ -161,8 +206,8 @@ CutCellMesh<2> CutCellEdgeGenerator<2>::generate_faces() const {
         };
 
         auto VV = all_GV();
-        auto vols = hem.signed_areas(VV);
-        auto mesh_faces = hem.cells_multi_component_map();
+        auto vols = m_hem.signed_areas(VV);
+        auto mesh_faces = m_hem.cells_multi_component_map();
         for (auto &&[i, v] : mesh_faces) {
             CutFace<2> F;
             F.indices = v;
@@ -171,16 +216,42 @@ CutCellMesh<2> CutCellEdgeGenerator<2>::generate_faces() const {
                 for (auto &&v : F.indices) {
                     vol += mtao::geometry::curve_volume(VV, v);
                 }
-                if (vol > 0 && !is_boundary_facet(F)) {
+                const bool has_neg_vol = vol < -.5;
+                const bool is_boundary = is_boundary_facet(F);
+                if (!has_neg_vol && !is_boundary) {
                     ret.m_faces.emplace_back(std::move(F));
+                } else {
+                    int gvs = grid_vertex_size();
+                    if(has_neg_vol) {
+                        std::cout << "Neg area: " << std::string(F) << ": " << vol << std::endl;
+                        for(auto&& v: F.indices) {
+                            for(auto&& i: v) {
+                                if (i < gvs) {
+                                    std::cout << "GV(";
+                                    auto v = vertex_unindex(i);
+                                    std::copy(v.begin(), v.end(), std::ostream_iterator<int>(std::cout, ","));
+                                    std::cout << ")";
+                                    std::cout << " => ";
+                                } else {
+                                    std::cout << std::string(crossing(i)) << " => ";
+                                    //std::cout << VV.col(i).transpose() << " => ";
+                                }
+                            }
+                            std::cout << std::endl;
+                        }
+                    }
                 }
-            }
+            } 
         }
     }
+
 
     mtao::logging::debug() << "Filling cell-grid ownership";
     for (auto &&[idx, f] : mtao::iterator::enumerate(ret.m_faces)) {
         auto c = f.possible_cells([&](int idx) { return AV.at(idx).coord; });
+        if(c.size() != 1) {
+            std::cout << std::string(f) << std::endl;
+        }
         assert(c.size() == 1);
         int grid_cell = StaggeredGrid::cell_index(*c.begin());
         ret.cell_grid_ownership[grid_cell].insert(idx);
@@ -250,9 +321,11 @@ CutCellMesh<2> CutCellEdgeGenerator<2>::generate_faces() const {
 
     mtao::logging::debug() << "Original vertices: " << origV().size();
     ret.m_origV.resize(2, origV().size());
-    for (int i = 0; i < origV().size(); ++i) {
-        ret.m_origV.col(i) = origV()[i];
-    }
+    tbb::parallel_for(tbb::blocked_range<size_t>(0,origV().size()),[&](const tbb::blocked_range<size_t>& range) {
+            for(size_t idx = range.begin(); idx != range.end(); ++idx) {
+            ret.m_origV.col(idx) = origV()[idx];
+            }
+            });
     ret.m_origE = data().E();
     return ret;
 }

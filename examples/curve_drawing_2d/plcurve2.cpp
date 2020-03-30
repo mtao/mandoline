@@ -103,6 +103,7 @@ void PLCurve2::load(const std::string &filename) {
         E.array() += 1;
     }
     auto c = mandoline::tools::edge_to_plcurves(V, E, true);
+    std::cout << "Read " << c.size() << " plcurves" << std::endl;
     curves.clear();
     curves.resize(c.size());
     std::transform(c.begin(), c.end(), curves.begin(), [&](auto &&pr) -> std::tuple<mtao::vector<Vec>, bool> {
