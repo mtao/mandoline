@@ -10,7 +10,7 @@ Eigen::SparseMatrix<double> barycentric_matrix(const CutCellMesh<3> &ccm) {
     Eigen::SparseMatrix<double> A(ccm.vertex_size(), ccm.origV().cols());
     std::vector<Eigen::Triplet<double>> trips;
     std::map<std::array<int, 2>, double> mp;
-    for (auto &&[fid, btf] : ccm.mesh_faces()) {
+    for (auto &&[fid, btf] : ccm.mesh_cut_faces()) {
         auto t = btf.sparse_matrix_entries(ccm.cut_faces()[fid], ccm.origF());
         std::copy(t.begin(), t.end(), std::inserter(mp, mp.end()));
     }
@@ -42,7 +42,7 @@ Eigen::SparseMatrix<double> face_barycentric_volume_matrix(const CutCellMesh<3> 
     }
     Eigen::SparseMatrix<double> A(ccm.face_size(), face_size);
     std::vector<Eigen::Triplet<double>> trips;
-    for (auto &&[fid, btf] : ccm.mesh_faces()) {
+    for (auto &&[fid, btf] : ccm.mesh_cut_faces()) {
         double vol = btf.volume() * 2;//proportion of 2 is required because barycentric coordinates live in a unit triangle
         trips.emplace_back(fid, btf.parent_fid, vol);
     }

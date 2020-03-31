@@ -38,7 +38,7 @@ bool CutCellMesh<3>::is_adaptive_cell(int index) const {
     return index >= 0 && index >= m_cells.size();
 }
 bool CutCellMesh<3>::is_mesh_face(int idx) const {
-    return m_mesh_faces.find(idx) != m_mesh_faces.end();
+    return m_mesh_cut_faces.find(idx) != m_mesh_cut_faces.end();
 }
 auto CutCellMesh<3>::cell_volumes() const -> VecX {
     return operators::cell_volumes(*this);
@@ -314,7 +314,7 @@ void CutCellMesh<3>::write_obj(const std::string &prefix, const std::set<int> &i
 
 std::vector<bool> CutCellMesh<3>::boundary_faces() const {
     std::vector<bool> ret(m_faces.size(), false);
-    for (auto &&[m, _] : m_mesh_faces) {
+    for (auto &&[m, _] : m_mesh_cut_faces) {
         ret[m] = true;
     }
     return ret;
@@ -500,7 +500,7 @@ void CutCellMesh<3>::serialize(protobuf::CutMeshProto &cmp) const {
         cmp.add_foldedfaces(i);
     }
     auto &&mf = *cmp.mutable_mesh_faces();
-    for (auto &&[idx, bmf] : m_mesh_faces) {
+    for (auto &&[idx, bmf] : m_mesh_cut_faces) {
         auto &b = mf[idx];
         b.set_parent_id(bmf.parent_fid);
         for (int j = 0; j < bmf.barys.cols(); ++j) {
@@ -578,7 +578,7 @@ CutCellMesh<3> CutCellMesh<3>::from_proto(const protobuf::CutMeshProto &cmp) {
         for (int i = 0; i < bssize; ++i) {
             B.col(i) = protobuf::deserialize(btf.barycentric_coordinates(i));
         }
-        ret.m_mesh_faces[idx] = { B, pid };
+        ret.m_mesh_cut_faces[idx] = { B, pid };
     }
 
     for (auto &&[a, b] : cmp.cubes()) {

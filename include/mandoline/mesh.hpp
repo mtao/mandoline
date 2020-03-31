@@ -116,7 +116,7 @@ struct CutCellMeshBase : public mtao::geometry::grid::StaggeredGrid<double, D> {
     Edges cut_edges_eigen() const;
     const ColVecs &origV() const { return m_origV; }
     const mtao::ColVecs2i &origE() const { return m_origE; }
-    const mtao::map<int, InterpolatedEdge> &mesh_edges() const { return m_mesh_edges; }
+    const mtao::map<int, InterpolatedEdge> &mesh_cut_edges() const { return m_mesh_cut_edges; }
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   protected:
@@ -128,7 +128,7 @@ struct CutCellMeshBase : public mtao::geometry::grid::StaggeredGrid<double, D> {
 
     GridDatab m_active_grid_cell_mask;
     std::vector<CutEdge<D>> m_cut_edges;
-    std::map<int, InterpolatedEdge> m_mesh_edges;
+    std::map<int, InterpolatedEdge> m_mesh_cut_edges;
 };
 template<int D>
 struct CutCellMesh;

@@ -159,7 +159,7 @@ void write_cutmesh2_plcurve(const mandoline::CutCellMesh<2> &ccm, const std::str
     for (auto &&[idx, ce] : mtao::iterator::enumerate(ccm.cut_edges())) {
         ofs << idx << ", " << ce.indices[0] << ", " << ce.indices[1] << ", ";
         if (ce.is_mesh_edge()) {
-            auto &&ie = ccm.mesh_edges().at(idx);
+            auto &&ie = ccm.mesh_cut_edges().at(idx);
             if (use_boundary_conditions) {
                 auto pe = inputE.col(ce.as_edge_id());
                 if (ie.ts(0) > ie.ts(1)) {

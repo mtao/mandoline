@@ -886,7 +886,7 @@ CutCellMesh<D> CutCellEdgeGenerator<D>::generate_edges() const {
                     t = data().get_edge_coord(ce.parent_eid,crossing(vi));
                 }
             }
-            ret.m_mesh_edges[eidx] = InterpolatedEdge{ ts, ce.parent_eid };
+            ret.m_mesh_cut_edges[eidx] = InterpolatedEdge{ ts, ce.parent_eid };
         }
     }
     return ret;

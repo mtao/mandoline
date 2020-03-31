@@ -39,7 +39,7 @@ struct CutCellMesh<3> : public CutCellMeshBase<3, CutCellMesh<3>> {
     const auto &cells() const { return m_cells; }
     const AdaptiveGrid &adaptive_grid() const { return m_adaptive_grid; }
     const mtao::ColVecs3i &origF() const { return m_origF; }
-    const mtao::map<int, BarycentricTriangleFace> &mesh_faces() const { return m_mesh_faces; }
+    const mtao::map<int, BarycentricTriangleFace> &mesh_cut_faces() const { return m_mesh_cut_faces; }
 
 
     //info on cells
@@ -153,7 +153,7 @@ struct CutCellMesh<3> : public CutCellMeshBase<3, CutCellMesh<3>> {
     AdaptiveGrid m_adaptive_grid;
 
     // a map from cut-faces to their intrinsic representation on a mesh face
-    mtao::map<int, BarycentricTriangleFace> m_mesh_faces;
+    mtao::map<int, BarycentricTriangleFace> m_mesh_cut_faces;
 
     //Original mesh
     mtao::ColVecs2i m_origE;

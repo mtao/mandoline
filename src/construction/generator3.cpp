@@ -76,7 +76,7 @@ CutCellMesh<3> CutCellGenerator<3>::generate() const {
                 B.col(idx) = data().get_face_bary(cutface.parent_fid, crossing(i));
             }
         }
-        ccm.m_mesh_faces[idx] = BarycentricTriangleFace{ std::move(B), cutface.parent_fid };
+        ccm.m_mesh_cut_faces[idx] = BarycentricTriangleFace{ std::move(B), cutface.parent_fid };
     }
     //ccm.mesh_faces = redx(mesh_face_indices);
     for (auto &&[a, b] : mtao::iterator::zip(ccm.m_axial_faces, axis_face_indices)) {

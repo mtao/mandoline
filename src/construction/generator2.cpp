@@ -98,7 +98,7 @@ void CutCellGenerator<2>::bake_faces() {
         //Eigen::MatrixXi hem_edges = m_hem.edges();
         //spdlog::warn("Done");
         std::tie(m_hem, std::ignore) = compute_planar_hem(all_GV(), mtao::eigen::stl2eigen(edges), m_active_grid_cell_mask);
-        //if(hem_edges == m_hem.edges()) {
+        //if(hem_edges != m_hem.edges()) {
         //    spdlog::warn("FAILED to make equal HEM!");
         //}
 #endif
