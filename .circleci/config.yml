@@ -35,7 +35,7 @@ jobs:
                 command: 'cmake -H. -Bbuild -DCMAKE_BUILD_TYPE="Release" -DBUILD_TESTING=ON'
             - run:
                 name: Building Mandoline
-                command: 'cmake --build build -j 2'
+                command: 'cmake --build build -j 2 -- target all'
             - run:
                 name: Running tests 
                 command: 'cmake --build build --target test'
@@ -74,7 +74,7 @@ jobs:
                 command: 'cmake -H. -Bbuild -DCMAKE_BUILD_TYPE="Release" -DBUILD_TESTING=ON'
             - run:
                 name: Building Mandoline
-                command: 'cmake --build build -j 2'
+                command: 'cmake --build build -j 2 -- target all'
             - run:
                 name: Running tests 
                 command: 'cmake --build build --target test'
