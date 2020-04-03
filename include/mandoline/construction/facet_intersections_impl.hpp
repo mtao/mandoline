@@ -191,7 +191,7 @@ void EdgeIntersections<D>::bake(const std::optional<SGType> &grid) {
             }
             lc /= es.size();
             auto &v = mm[lc];
-            if (v.edge_index = -1) {
+            if (v.edge_index == -1) {
                 v = *eptr;
                 v.edge_coord = lc;
             } else {

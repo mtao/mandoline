@@ -9,10 +9,8 @@ namespace mandoline::construction {
 struct CutmeshGenerator_Imgui : public DeformingGeometryConstructor {
     CutmeshGenerator_Imgui(const mtao::ColVecs3d &V, const mtao::ColVecs3i &F, const mtao::geometry::grid::StaggeredGrid3d &grid, int adaptive_level = 0, std::optional<double> threshold = {});
     static CutmeshGenerator_Imgui create(const mtao::ColVecs3d &V, const mtao::ColVecs3i &F, double bbox_scale = 1.1, const std::array<int, 3> &N = std::array<int, 3>{ { 5, 5, 5 } }, int adaptive_level = 0, std::optional<double> threshold = {});
-    CutmeshGenerator_Imgui(const CutmeshGenerator_Imgui &) = default;
     CutmeshGenerator_Imgui(CutmeshGenerator_Imgui &&) = default;
     CutmeshGenerator_Imgui &operator=(CutmeshGenerator_Imgui &&) = default;
-    CutmeshGenerator_Imgui &operator=(const CutmeshGenerator_Imgui &) = default;
     using DeformingGeometryConstructor::update_grid;
     using DeformingGeometryConstructor::update_vertices;
     using DeformingGeometryConstructor::bake;

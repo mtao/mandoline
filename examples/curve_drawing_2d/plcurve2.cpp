@@ -98,7 +98,9 @@ auto PLCurve2::points() const -> ColVecs {
     return P;
 }
 void PLCurve2::load(const std::string &filename) {
-    auto [V, E] = mtao::geometry::mesh::read_obj2D(filename);
+    mtao::ColVecs2d V;
+    mtao::ColVecs2i E;
+    std::tie(V,E) = mtao::geometry::mesh::read_obj2D(filename);
     if (E.minCoeff() < 0) {
         E.array() += 1;
     }
