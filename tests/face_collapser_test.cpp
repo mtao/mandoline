@@ -332,6 +332,7 @@ TEST_CASE("EdgeToPLCurve", "[face_collapser]") {
             }
         }
     }
+    std::cout << std::endl;
     {
         // only open pieces allowed
         auto r = mandoline::tools::edge_to_plcurves(V, E, false);
@@ -356,6 +357,27 @@ TEST_CASE("EdgeToPLCurve", "[face_collapser]") {
             }
         }
     }
+    std::cout << std::endl;
+    {
+        E.resize(2, 3);
+        E.col(0) << 0, 1;
+        E.col(1) << 1, 2;
+        E.col(2) << 2, 0;
+        // only open pieces allowed
+        std::cout << E << std::endl;
+        auto r = mandoline::tools::edge_to_plcurves(V, E, false);
+        std::cout << "R.size() : " << r.size() << std::endl;
+        for (auto &&[curve, closedness] : r) {
+            std::sort(curve.begin(), curve.end());
+            std::copy(curve.begin(), curve.end(), std::ostream_iterator<int>(std::cout, ","));
+            std::cout << std::endl;
+            CHECK(closedness == true);
+            CHECK(curve[0] == 0);
+            CHECK(curve[1] == 1);
+            CHECK(curve[2] == 2);
+        }
+    }
+    std::cout << std::endl;
     {
         E.resize(2, 3);
         E.col(0) << 0, 1;
@@ -364,10 +386,11 @@ TEST_CASE("EdgeToPLCurve", "[face_collapser]") {
         // only open pieces allowed
         std::cout << E << std::endl;
         auto r = mandoline::tools::edge_to_plcurves(V, E, false);
+        std::cout << "R.size() : " << r.size() << std::endl;
         for (auto &&[curve, closedness] : r) {
-            std::sort(curve.begin(), curve.end());
             std::copy(curve.begin(), curve.end(), std::ostream_iterator<int>(std::cout, ","));
             std::cout << std::endl;
+            std::sort(curve.begin(), curve.end());
             CHECK(closedness == false);
             CHECK(curve[0] == 0);
             CHECK(curve[1] == 1);
