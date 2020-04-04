@@ -27,16 +27,16 @@ std::vector<std::tuple<std::vector<int>, bool>> edge_to_plcurves(
         double ovol = mtao::geometry::brep_volume(V,E);
         r.erase(std::remove_if(r.begin(),r.end(),[&](auto&& pr){
                     auto&& [vec, closed] = pr;
-                    std::copy(vec.begin(),vec.end(),std::ostream_iterator<int>(std::cout,","));
+                    //std::copy(vec.begin(),vec.end(),std::ostream_iterator<int>(std::cout,","));
                     if(closed) {
                     double vol = mtao::geometry::curve_volume(V, vec);
                     //std::cout << " vols: " << vol << "/" << ovol;
                     //std::cout << "(" << (vol * ovol < 1e-10) << ")";
                     //std::cout << std::endl;
-                    return vol * ovol < 1e-10;
+                    return vol * ovol < -1e-10;
 
                     } else {
-                    std::cout << std::endl;
+                    //std::cout << std::endl;
                     return false;
                     }
                     }), r.end());
