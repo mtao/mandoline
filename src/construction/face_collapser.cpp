@@ -147,7 +147,9 @@ auto FaceCollapser::face_edges() const -> std::map<int, std::set<Edge>> {
     std::map<int, std::set<Edge>> ret;
     for (auto [edge, face_w_sign] : edge_to_face()) {
         std::array<int, 2> e = edge;
-        std::sort(e.begin(), e.end());
+        if(std::get<1>(face_w_sign)) {
+            std::swap(e[0],e[1]);
+        }
         ret[std::get<0>(face_w_sign)].insert(e);
     }
     return ret;
