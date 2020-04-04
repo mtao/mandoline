@@ -4,7 +4,6 @@
 #include <mtao/eigen/stl2eigen.hpp>
 #include <mtao/iterator/enumerate.hpp>
 #include <mtao/colvector_loop.hpp>
-#include <mtao/reindexer.hpp>
 #include <iostream>
 #include <iterator>
 #include <algorithm>

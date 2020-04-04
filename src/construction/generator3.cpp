@@ -7,7 +7,6 @@
 #include <mtao/eigen/stl2eigen.hpp>
 #include <mtao/iterator/enumerate.hpp>
 #include <mtao/logging/logger.hpp>
-#include <mtao/reindexer.hpp>
 #include "mandoline/construction/subgrid_transformer.hpp"
 #include <variant>
 #include "mandoline/construction/cell_collapser.hpp"
