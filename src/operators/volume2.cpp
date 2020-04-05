@@ -1,6 +1,7 @@
 #include "mandoline/operators/volume2.hpp"
 #include "mandoline/operators/interpolation2.hpp"
 #include "mandoline/operators/volume_impl.hpp"
+#include <spdlog/spdlog.h>
 
 #include <iostream>
 
@@ -9,18 +10,32 @@ namespace mandoline::operators {
 mtao::VecXd face_volumes(const CutCellMesh<2> &ccm, bool from_triangulation) {
 
     mtao::VecXd FV(ccm.cut_faces().size());
+    auto V = ccm.vertices();
     if (from_triangulation) {
         for (auto &&[i, face] : mtao::iterator::enumerate(ccm.cut_faces())) {
-            auto V = ccm.vertices();
             if (face.triangulation) {
                 auto &&T = *face.triangulation;
                 FV(i) = mtao::geometry::volumes(V, T).sum();
+            } else  {
+                spdlog::warn("Face-volumes called with missing face-volume (idx={})", i);
+                double& v = FV(i) = 0;
+                for(auto&& loop: face.indices) {
+                v += mtao::geometry::curve_volume(V,loop);
+                }
             }
         }
-        FV = mtao::eigen::vstack(FV, face_volumes(ccm.exterior_grid));
     } else {
-        FV = face_volumes(ccm.exterior_grid);
+        for (auto &&[i, face] : mtao::iterator::enumerate(ccm.cut_faces())) {
+                double& v = FV(i) = 0;
+                for(auto&& loop: face.indices) {
+                v += mtao::geometry::curve_volume(V,loop);
+                }
+        }
+
+
+
     }
+    FV = mtao::eigen::vstack(FV, cell_volumes(ccm.exterior_grid));
 
     if (FV.minCoeff() < 0) {
         mtao::logging::warn() << "Negative face area! warn mtao because this shouldn't happen";

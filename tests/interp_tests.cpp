@@ -41,4 +41,15 @@ TEST_CASE("2D", "[interpolation]") {
         REQUIRE(min == Approx(1));
         REQUIRE(max == Approx(1));
     }
+    {
+        Eigen::SparseMatrix<double> E = mandoline::operators::face_grid_volume_matrix(ccm);
+        std::cout << E << std::endl;
+        REQUIRE(E.rows() == ccm.num_faces());
+        REQUIRE(E.cols() == ccm.Base::form_size<2>());
+        auto CS = Eigen::MatrixXd(E).colwise().sum();
+        double min = CS.minCoeff();
+        double max = CS.maxCoeff();
+        REQUIRE(min == Approx(1));
+        REQUIRE(max == Approx(1));
+    }
 }

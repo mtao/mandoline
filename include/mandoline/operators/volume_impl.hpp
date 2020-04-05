@@ -31,4 +31,9 @@ mtao::VecXd boundary_facet_volumes(const ExteriorGrid<D> &eg) {
     }
     return R;
 }
+template<int D>
+mtao::VecXd cell_volumes(const ExteriorGrid<D> &eg) {
+    auto vol = eg.dx().prod();
+    return mtao::VecXd::Constant(eg.num_cells(),vol);
+}
 }// namespace mandoline::operators

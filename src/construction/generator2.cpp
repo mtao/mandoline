@@ -183,10 +183,6 @@ CutCellMesh<2> CutCellEdgeGenerator<2>::generate_faces() const {
 
     ret.m_active_grid_cell_mask = m_active_grid_cell_mask;
     ret.exterior_grid = ExteriorGrid<2>(*this, m_active_grid_cell_mask);
-    ret.active_cell_mask.resize(ret.cell_size());
-    ret.active_cell_mask.setConstant(1);
-
-    ret.active_cell_mask.topRows(m_active_grid_cell_mask.size()) = m_active_grid_cell_mask.as_eigen_vector().cast<double>();
 
 
     mtao::logging::debug() << "Making cut-faces";

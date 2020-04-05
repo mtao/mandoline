@@ -114,4 +114,28 @@ Eigen::SparseMatrix<double> edge_grid_volume_matrix(const CutCellMesh<2> &ccm) {
     //A = sums.asDiagonal() * A;
     return A;
 }
+
+//mesh face -> cut face
+Eigen::SparseMatrix<double> face_grid_volume_matrix(const CutCellMesh<2> &ccm) {
+
+    double dv = ccm.dx().prod();
+    mtao::VecXd vols_fracs = face_volumes(ccm) / dv;
+    Eigen::SparseMatrix<double> A(ccm.num_faces(), ccm.StaggeredGrid::cell_size());
+    std::vector<Eigen::Triplet<double>> trips;
+    for (auto &&[gcind, cfinds] : ccm.cell_grid_ownership) {
+        for(auto&& cfind: cfinds) {
+        trips.emplace_back(cfind, gcind, vols_fracs(cfind));
+        }
+    }
+    int offset = ccm.num_cutfaces();
+    for(auto&& [idx,c]: mtao::iterator::enumerate(ccm.exterior_grid.cell_coords())) {
+        trips.emplace_back(idx+offset, ccm.StaggeredGrid::cell_index(c), 1);
+
+    }
+    A.setFromTriplets(trips.begin(), trips.end());
+    //for(int i = 0; i < A.cols(); ++i) {
+    //    A.col(i) /= A.col(i).sum();
+    //}
+    return A;
+}
 }// namespace mandoline::operators

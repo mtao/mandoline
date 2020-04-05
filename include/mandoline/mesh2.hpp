@@ -45,9 +45,10 @@ struct CutCellMesh<2> : public CutCellMeshBase<2, CutCellMesh<2>> {
     VecX halfedge_orientations;
     std::map<int, int> halfedge_to_edge_index;
     std::map<int, std::set<int>> cell_grid_ownership;
-    std::map<int, std::set<int>> edge_grid_ownership;
-    std::map<Edge, int> edge_vertices_to_edge_index;
-    VecX active_cell_mask;
+    //std::map<int, std::set<int>> edge_grid_ownership;
+    //std::map<Edge, int> edge_vertices_to_edge_index;
+
+    // should use exterior_grid instead
 
 };
 }// namespace mandoline
