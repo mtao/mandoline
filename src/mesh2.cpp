@@ -31,6 +31,22 @@ int CutCellMesh<2>::num_edges() const {
     return exterior_grid.num_boundary_facets() + num_cutedges();
 }
 
+auto CutCellMesh<2>::centroids() const -> ColVecs {
+    ColVecs C(2,num_cells());
+
+    auto V = vertices();
+    for(auto&& [idx, face]: mtao::iterator::enumerate(cut_faces())) {
+        C.col(idx) = face.brep_centroid(V);
+    }
+
+    auto EC = C.rightCols(exterior_grid.num_cells());
+    for(auto&& [idx,c]: mtao::iterator::enumerate(exterior_grid.cell_coords())) {
+        EC.col(idx) = exterior_grid.cell_grid().vertex(c);
+    }
+    return C;
+
+}
+
 mtao::ColVectors<int, 3> CutCellMesh<2>::faces() const {
     std::vector<std::vector<int>> mycells;
     for (int i = 0; i < num_cells(); ++i) {

@@ -196,7 +196,7 @@ struct CutFace<2> : public CutFaceBase<2> {
     template<typename Derived, typename PType>
         bool is_inside(const Eigen::MatrixBase<Derived> &V, const Eigen::MatrixBase<PType>& p) const;
     template<typename Derived>
-    mtao::Vec2d brep_centroid(const Eigen::MatrixBase<Derived> &V, bool use_triangulation = false) const;
+    mtao::Vec2d brep_centroid(const Eigen::MatrixBase<Derived> &V) const;
 
     template<typename Derived>
     double brep_volume(const Eigen::MatrixBase<Derived> &V, bool use_triangulation = false) const;

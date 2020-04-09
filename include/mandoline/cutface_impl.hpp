@@ -81,6 +81,20 @@ void CutFaceBase<D>::update_mask(const std::vector<Vertex<D>> &V, const mtao::ge
     }
 }
 
+template<typename Derived>
+mtao::Vec2d CutFace<2>::brep_centroid(const Eigen::MatrixBase<Derived> &V) const {
+    mtao::Vec2d ret = mtao::Vec2d::Zero();
+    double tot_vol = 0;
+    for (auto &&i : indices) {
+        mtao::Vec2d cent = mtao::geometry::curve_centroid(V,i);
+        double vol = mtao::geometry::curve_volume(V,i);
+        ret += cent * vol;
+        tot_vol += vol;
+    }
+
+    ret /= tot_vol;
+    return ret;
+}
 
 template<typename Derived>
 mtao::Vec3d CutFace<3>::brep_centroid(const Eigen::MatrixBase<Derived> &V, bool use_triangulation) const {

@@ -23,6 +23,7 @@ struct CutCellMesh<2> : public CutCellMeshBase<2, CutCellMesh<2>> {
     int grid_cell_index(const coord_type& c) const { return cell_grid().index(c); }
     //ColVecs dual_vertices() const;
     mtao::ColVectors<int, 3> faces() const;
+    ColVecs centroids() const;
     std::set<std::vector<int>> cell(int index) const;
 
     int get_cell_index(const VecCRef&) const;

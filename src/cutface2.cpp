@@ -42,6 +42,7 @@ mtao::ColVecs3i CutFace<2>::triangulate_earclipping(const mtao::ColVecs2d &V) co
     return mtao::geometry::mesh::earclipping(V, indices);
 }
 
+
 std::tuple<mtao::ColVecs2d, mtao::ColVecs3i> CutFace<2>::triangulate_triangle(const mtao::ColVecs2d &V, bool do_add_vertices) const {
 
     //collect the number of edges
