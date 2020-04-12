@@ -612,7 +612,7 @@ std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> CutCellMesh<3>::triangulate_face(in
     if (V.cols() > 0) {
         return { vertex_grid().world_coord(V), F };
     } else {
-        return { {}, F };
+        return { mtao::ColVecs3d{}, F };
     }
 }
 
@@ -772,7 +772,7 @@ std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> CutCellMesh<3>::triangulated_cell(i
             */
     } else {
         if (use_base) {
-            return { {}, m_adaptive_grid.triangulated(idx) };
+            return { mtao::ColVecs3d{}, m_adaptive_grid.triangulated(idx) };
         }
     }
     return {};
