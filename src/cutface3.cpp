@@ -24,11 +24,11 @@ mtao::ColVecs3i CutFace<3>::triangulate(const std::array<mtao::ColVecs2d, 3> &V)
 }
 std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> CutFace<3>::triangulate(const std::array<mtao::ColVecs2d, 3> &V, bool add_vertices) const {
     if (is_mesh_face()) {
-        return { {}, triangulate_fan() };
+        return { mtao::ColVecs3d{}, triangulate_fan() };
     } else {
         int id = as_axial_id()[0];
         if (indices.size() == 1) {
-            return { {}, triangulate_earclipping(V[id]) };
+            return { mtao::ColVecs3d{}, triangulate_earclipping(V[id]) };
         } else {
             return triangulate_triangle(V[id], add_vertices);
         }
@@ -37,10 +37,10 @@ std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> CutFace<3>::triangulate(const std::
 std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> CutFace<3>::triangulate(const mtao::ColVecs2d &V, bool add_vertices) const {
 
     if (is_mesh_face()) {
-        return { {}, triangulate_fan() };
+        return { mtao::ColVecs3d{}, triangulate_fan() };
     } else {
         if (indices.size() == 1) {
-            return { {}, triangulate_earclipping(V) };
+            return { mtao::ColVecs3d{}, triangulate_earclipping(V) };
         } else {
             return triangulate_triangle(V, add_vertices);
         }
