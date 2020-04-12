@@ -1,0 +1,26 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: get-cmake
+      uses: lukka/get-cmake@v3.17.1
+    - name: Install deps
+      run: sudo apt install -y  gcc g++ libboost-thread-dev libtbb-dev libmpfr-dev libmpfrc++-dev libeigen3-dev libblas-dev liblapack-dev libcgal-dev libglfw3-dev libgl-dev libpng++-dev libxinerama-dev xorg-dev protobuf-compiler
+    - name: cmake stuff
+      run: cmake -H. -Bbuild -DCMAKE_BUILD_TYPE="Debug" -DBUILD_TESTING=ON
+    - name: make
+      run: cmake --build build -j 2 --target all
+    - name: make check
+      run: cmake --build build --target test
