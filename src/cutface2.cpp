@@ -19,10 +19,10 @@ void CutFace<2>::cache_triangulation(const mtao::ColVecs3i &F) {
 std::tuple<mtao::ColVecs2d, mtao::ColVecs3i> CutFace<2>::triangulate(const mtao::ColVecs2d &V, bool add_vertices) const {
 
     if (is_mesh_face()) {
-        return { {}, triangulate_fan() };
+        return { mtao::ColVecs2d{}, triangulate_fan() };
     } else {
         if (indices.size() == 1) {
-            return { {}, triangulate_earclipping(V) };
+            return { mtao::ColVecs2d{}, triangulate_earclipping(V) };
         } else {
             return triangulate_triangle(V, add_vertices);
         }
