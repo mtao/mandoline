@@ -20,6 +20,9 @@ bool volume_check(const mandoline::CutCellMesh<3>&);
 //face topological utilization
 bool paired_boundary(const mandoline::CutCellMesh<3>&);
 
+// exterior cells should have valence 6
+bool exterior_cell_valence_counts(const mandoline::CutCellMesh<3>&);
+
 
 //UTILITY
 //
@@ -34,6 +37,8 @@ Eigen::VectorXd brep_region_volumes(const mtao::ColVecs3d& V, const mtao::ColVec
 //for a set of vertices that comprise a face, list the set of potential cells that it resides within
 std::set<std::array<int,3>> possible_cells(const mandoline::CutCellMesh<3>& ccm, const std::vector<int>& face);
 
+// each exterior grid entry should have valence 6
+std::map<int,int> exterior_grid_valences(const mandoline::CutCellMesh<3>&);
 
 bool cut_normals_match_parents(const mandoline::CutCellMesh<3>& ccm);
 //bool cut_tangents_match_parents(const mandoline::CutCellMesh<2>& ccm);

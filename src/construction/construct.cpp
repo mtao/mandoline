@@ -17,7 +17,6 @@ CutCellMesh<3> from_grid(const mtao::ColVecs3d &V, const mtao::ColVecs3i &F, con
     }
     CutCellGenerator<3> ccg(stlp, grid, {});
 
-    ccg.adaptive = true;
     ccg.adaptive_level = level;
     {
         auto t = mtao::logging::profiler("generator_bake", false, "profiler");
@@ -35,7 +34,6 @@ CutCellMesh<3> from_grid_unnormalized(const mtao::ColVecs3d &V, const mtao::ColV
 
 DeformingGeometryConstructor::DeformingGeometryConstructor(const mtao::ColVecs3d &V, const mtao::ColVecs3i &F, const mtao::geometry::grid::StaggeredGrid3d &grid, int adaptive_level, std::optional<double> threshold) : _ccg(new CutCellGenerator<3>(V, grid, threshold)) {
 
-    _ccg->adaptive = true;
     _ccg->adaptive_level = adaptive_level;
     assert(F.size() > 0);
     assert(V.size() > 0);
@@ -76,6 +74,7 @@ void DeformingGeometryConstructor::bake() {
         _ccg->bake();
         _dirty = false;
     }
+    spdlog::trace("DeoformingGeometryConstructor Done Baking");
 }
 CutCellMesh<3> DeformingGeometryConstructor::emit() const {
 

@@ -5,17 +5,17 @@
 namespace mandoline::operators {
 
 Eigen::SparseMatrix<double> boundary(const CutCellMesh<3> &ccm, bool include_domain_boundary) {
-    auto trips = boundary_triplets(ccm.adaptive_grid(), ccm.faces().size(), include_domain_boundary);
+    auto trips = boundary_triplets(ccm.exterior_grid(), ccm.faces().size(), include_domain_boundary);
     Eigen::SparseMatrix<double> B(ccm.face_size(), ccm.cell_size());
 
-    auto g = ccm.adaptive_grid().cell_ownership_grid();
+    auto g = ccm.exterior_grid().cell_ownership_grid();
 
     for (auto &&c : ccm.cells()) {
         int region = c.region;
         for (auto &&[fidx, s] : c) {
             auto &f = ccm.faces()[fidx];
             if(include_domain_boundary || !(f.external_boundary && std::get<0>(*f.external_boundary) == -2)) {
-                trips.emplace_back(fidx, c.index, s ? 1 : -1);
+                trips.emplace_back(fidx, c.index, s ? -1 : 1);
             }
         }
     }
@@ -50,7 +50,7 @@ std::set<int> grid_boundary_faces(const CutCellMesh<3> &ccm) {
     }
     // adaptive grid part
     int fidx_offset = ccm.cut_face_size();
-    auto adret = grid_boundary_faces(ccm.adaptive_grid(),fidx_offset);
+    auto adret = grid_boundary_faces(ccm.exterior_grid(),fidx_offset);
     ret.merge(adret);
     return ret;
 }

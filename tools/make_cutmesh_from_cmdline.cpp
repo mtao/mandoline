@@ -108,7 +108,6 @@ construction::CutCellGenerator<3> make_generator(const mtao::ColVecs3d& VV, cons
     }
     std::string obj_filename = result["mesh_file"].as<std::string>();
     int adaptive_level = result["adaptivity_level"].as<int>();
-    bool adaptive = adaptive_level >= 0;
 
     std::string Ns = result["shape"].as<std::string>();
     std::array<int,3> N;
@@ -183,11 +182,10 @@ construction::CutCellGenerator<3> make_generator(const mtao::ColVecs3d& VV, cons
         auto sg = CutCellMesh<3>::StaggeredGrid::from_bbox(bbox,N,true);
         ccg = construction::CutCellGenerator<3>(stlp,sg, {});
     }
-    if(adaptive) {
-        ccg.adaptive = adaptive;
-        if(adaptive_level >= 0) {
-            ccg.adaptive_level = adaptive_level;
-        }
+    if(adaptive_level >= 0) {
+        ccg.adaptive_level = adaptive_level;
+    } else {
+        ccg.adaptive_level = 0;
     }
     {
         auto t = mtao::logging::profiler("generator_bake",false,"profiler");

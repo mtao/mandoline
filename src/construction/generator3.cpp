@@ -10,7 +10,10 @@
 #include "mandoline/construction/subgrid_transformer.hpp"
 #include <variant>
 #include "mandoline/construction/cell_collapser.hpp"
+#if defined(MANDOLINE_USE_ADAPTIVE_GRID)
 #include "mandoline/construction/adaptive_grid_factory.hpp"
+#else 
+#endif
 using namespace mtao::iterator;
 using namespace mtao::logging;
 
@@ -35,16 +38,18 @@ CutCellMesh<3> CutCellGenerator<3>::generate() const {
     //extra_metadata(ccm);
     ccm.m_faces.clear();
     ccm.m_faces.resize(faces().size());
-    if (adaptive) {
-        if (!adaptive_grid) {
-            warn() << "Adaptive grid doesn't exist, is there no room for it?";
-        } else {
-            ccm.m_adaptive_grid = *adaptive_grid;
-            if (adaptive_grid_regions) {
-                ccm.m_adaptive_grid_regions = *adaptive_grid_regions;
-            }
+#if defined(MANDOLINE_USE_ADAPTIVE_GRID)
+    if (!adaptive_grid) {
+        warn() << "Adaptive grid doesn't exist, is there no room for it?";
+    } else {
+        ccm.m_exterior_grid = *adaptive_grid;
+        if (adaptive_grid_regions) {
+            ccm.m_adaptive_grid_regions = *adaptive_grid_regions;
         }
     }
+#else
+    ccm.m_exterior_grid = *exterior_grid;
+#endif
 
     //ccm.triangulated_cut_faces.resize(faces().size());
     mtao::map<int, int> reindexer;
@@ -158,6 +163,12 @@ void CutCellGenerator<3>::extra_metadata(CutCellMesh<3> &mesh) const {
 
 
 void CutCellGenerator<3>::clear() {
+#if defined(MANDOLINE_USE_ADAPTIVE_GRID)
+    adaptive_grid_regions = {};
+    adaptive_grid = {};
+#else
+    exterior_grid = {};
+#endif
     cut_cell_to_primal_map.clear();
     origN = {};
     axis_hem_data = {};
@@ -287,20 +298,29 @@ void CutCellGenerator<3>::bake_cells() {
         cell_boundaries.resize(cb.size());
         for (auto &&[a, b] : mtao::iterator::zip(cell_boundaries, cb)) {
             a.insert(b.begin(), b.end());
+            for(auto&& [fidx,sgn]: a) {
+                auto&& f = m_faces[fidx];
+                if(f.external_boundary) {
+                    std::get<1>(*f.external_boundary) = !sgn;
+                }
+            }
         }
     }
-    if (adaptive) {
+#if defined(MANDOLINE_USE_ADAPTIVE_GRID)
         auto t = mtao::logging::profiler("Adaptive grid", false, "profiler");
         assert(m_active_grid_cell_mask.shape() == cell_shape());
         auto adaptive_grid_factory = AdaptiveGridFactory(m_active_grid_cell_mask);
         adaptive_grid_factory.make_cells(adaptive_level);
         adaptive_grid = adaptive_grid_factory.create();
-    }
+#else
+        exterior_grid = ExteriorGrid<3>(*this, m_active_grid_cell_mask);
+#endif
 
     {
         auto &&cells = cell_boundaries;
         int max_cell_id = cells.size();
-        if (adaptive) {
+#if defined(MANDOLINE_USE_ADAPTIVE_GRID)
+        {
             //make cell names unique
             int cbsize = cells.size();
             auto &ag = *adaptive_grid;
@@ -313,6 +333,7 @@ void CutCellGenerator<3>::bake_cells() {
             }
             max_cell_id = cbsize + ag.m_cells.size();
         }
+#endif
         mtao::data_structures::DisjointSet<int> cell_ds;
         {
             auto t = mtao::logging::profiler("region disjoint set construction", false, "profiler");
@@ -324,21 +345,23 @@ void CutCellGenerator<3>::bake_cells() {
                     cell_ds.add_node(max_cell_id + a);
                 }
             }
-            if (adaptive) {
+#if defined(MANDOLINE_USE_ADAPTIVE_GRID)
+            {
                 auto &ag = *adaptive_grid;
                 auto grid = ag.cell_ownership_grid();
-                auto ag_faces = ag.faces(grid);
+                auto ag_faces = ag.faces();
                 for (auto &&[c, b] : ag.cells()) {
                     cell_ds.add_node(c);
                 }
                 for (auto &&f : ag_faces) {
                     auto &&[a, b] = f.dual_edge;
                     if (a >= 0 && b >= 0) {
-                        cell_ds.join(a, b);
+                        cell_ds.join(grid.get(a), grid.get(b));
                         //spdlog::info("ad{} <=> ad{}", a,b);
                     }
                 }
                 for (auto &&[id, f] : faces()) {
+                    if(f.is_mesh_face()) { continue; }
                     if (f.external_boundary) {
                         auto &[cid, s] = *f.external_boundary;
                         if (cid >= 0) {
@@ -348,6 +371,7 @@ void CutCellGenerator<3>::bake_cells() {
                     }
                 }
             }
+#endif
 
             for (auto [cid, faces] : mtao::iterator::enumerate(cells)) {
                 for (auto &&[fid, s] : faces) {
@@ -419,7 +443,8 @@ void CutCellGenerator<3>::bake_cells() {
             cells[i].region = reindexer[cell_ds.get_root(i).data];
             regions.insert(cells[i].region);
         }
-        if (adaptive) {
+#if defined(MANDOLINE_USE_ADAPTIVE_GRID)
+        {
 
             auto &ag = *adaptive_grid;
             auto &agr = *(adaptive_grid_regions = std::map<int, int>());
@@ -427,6 +452,8 @@ void CutCellGenerator<3>::bake_cells() {
                 agr[cid] = reindexer[cell_ds.get_root(cid).data];
             }
         }
+#endif
+
 
 
         warn() << "Region count: " << regions.size();
@@ -458,6 +485,7 @@ void CutCellGenerator<3>::bake_cells() {
             */
     }
     mtao::logging::debug() << "Cell count: " << cell_boundaries.size();
+    spdlog::warn("Exterior grid face size: {}", adaptive_grid->num_faces());
 }
 mtao::Vec3d CutCellGenerator<3>::area_normal(const std::vector<int> &F) const {
     auto V = all_GV();

@@ -31,10 +31,13 @@ class CutCellGenerator<3> : public CutCellEdgeGenerator<3> {
     void bake_faces() override;
     void bake_cells() override;
     void update_active_grid_cell_mask();
-    bool adaptive = true;
+#if defined(MANDOLINE_USE_ADAPTIVE_GRID)
     std::optional<int> adaptive_level = 0;
     std::optional<AdaptiveGrid> adaptive_grid;
     std::optional<std::map<int, int>> adaptive_grid_regions;
+#else
+    std::optional<ExteriorGrid<3>> exterior_grid;;
+#endif
     void set_region_map(const std::map<int, std::set<int>> &region_vertices);
     void bake() override;
     void clear() override;

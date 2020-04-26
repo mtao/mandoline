@@ -3,6 +3,9 @@
 
 
 namespace mandoline {
+
+template<int D>
+ExteriorGrid<D>::ExteriorGrid(const Base &g) : Base(g) {}
 template<int D>
 ExteriorGrid<D>::ExteriorGrid(const Base &g, const GridDatab &cell_mask) : Base(g), m_cell_indices(cell_mask.shape()) {
     assert(g.cell_shape() == cell_mask.shape());

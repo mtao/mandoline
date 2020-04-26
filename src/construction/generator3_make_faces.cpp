@@ -253,6 +253,7 @@ void CutCellGenerator<3>::compute_faces() {
         auto t = mtao::logging::timer("Computing input mesh faces");
         compute_faces_axis(i);
     }
+    // the sign must be determined by the cell it shares, we just write to external_boundary and let generate_celll fill in the signs
     for (auto &&[fidx, f] : m_faces) {
         auto &&I = f.indices;
         if (f.mask().count() == 1) {
@@ -277,27 +278,34 @@ void CutCellGenerator<3>::compute_faces() {
                     std::cout << "SET WASNT LEXICOGRAPHICAL ORDER SOMEHOW?" << std::endl;
                 }
                 if (pca[0][idx] < 0) {
-                    f.external_boundary = { -2, 1 };
+                    f.external_boundary = { -2, 0 };
                 } else if (pca[1][idx] >= cell_shape()[idx]) {
                     f.external_boundary = { -2, 0 };
                 } else if (I.size() == 1 && I.begin()->size() == 4) {//should always be a grid cell!
                     bool pa = is_active_cell(pca[0]);
                     bool na = is_active_cell(pca[1]);
-                    bool sign = (idx%2==1);
+                                //spdlog::info("boundary region {} {} {} => {} {} {}"
+                                //        , pca[0][0]
+                                //        , pca[0][1]
+                                //        , pca[0][2]
+                                //        , pca[1][0]
+                                //        , pca[1][1]
+                                //        , pca[1][2]
+                                //        );
                     if (na ^ pa) {//active inactive boundary
                         if (pa) {
                             if(is_valid_cell_coord(pca[0])) {
                                 int pi = cell_index(pca[0]);
-                                f.external_boundary = { pi, sign };
+                                f.external_boundary = { pi, 0};
                             } else {
-                                f.external_boundary = { -2, sign };
+                                f.external_boundary = { -2, 0};
                             }
                         } else {
                             if(is_valid_cell_coord(pca[1])) {
                                 int ni = cell_index(pca[1]);
-                                f.external_boundary = { ni, !sign };
+                                f.external_boundary = { ni, 0};
                             } else {
-                                f.external_boundary = { -2, sign };
+                                f.external_boundary = { -2, 0};
                             }
                         }
                     }

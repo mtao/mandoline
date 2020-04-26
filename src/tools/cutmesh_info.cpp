@@ -42,7 +42,7 @@ namespace mandoline::tools {
             if(size_t size = ccm.cut_cell_size(); size > 0) {
                 std::cout << size << " cut-cells, ";
             }
-            if(size_t size = ccm.adaptive_grid().num_cells(); size > 0) {
+            if(size_t size = ccm.exterior_grid().num_cells(); size > 0) {
                 std::cout << size << " cubic/adaptive-cells";
             }
             std::cout << ")" << std::endl;
@@ -63,7 +63,7 @@ namespace mandoline::tools {
             if(size_t size = ccm.cut_face_size(); size > 0) {
                 std::cout << size << " cut-faces, ";
             }
-            if(size_t size = ccm.adaptive_grid().num_faces(); size > 0) {
+            if(size_t size = ccm.exterior_grid().num_faces(); size > 0) {
                 std::cout << size << " cubic/adaptive-faces";
             }
             std::cout << ")" << std::endl;

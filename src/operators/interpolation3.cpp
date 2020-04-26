@@ -86,7 +86,7 @@ Eigen::SparseMatrix<double> trilinear_matrix(const CutCellMesh<3> &ccm) {
 }
 //grid face -> cut face
 Eigen::SparseMatrix<double> face_grid_volume_matrix(const CutCellMesh<3> &ccm, bool include_mesh_cutfaces) {
-    auto trips = ccm.adaptive_grid().grid_face_projection(ccm.cut_faces().size());
+    auto trips = ccm.exterior_grid().grid_face_projection(ccm.cut_faces().size());
     auto FV = ccm.face_volumes();
     auto &dx = ccm.dx();
     mtao::Vec3d gfv;

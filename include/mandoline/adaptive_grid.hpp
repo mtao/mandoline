@@ -76,11 +76,17 @@ class AdaptiveGrid : public mtao::geometry::grid::StaggeredGrid<double, 3> {
     AdaptiveGrid(AdaptiveGrid &&) = default;
     AdaptiveGrid &operator=(const AdaptiveGrid &) = default;
     AdaptiveGrid &operator=(AdaptiveGrid &&) = default;
-    AdaptiveGrid(const Base &b, const std::map<int, Cell> &cells = {}) : Base(b), m_cells(cells) { make_faces(); }
+    AdaptiveGrid(const Base &b, const std::map<int, Cell> &cells = {}) : Base(b), m_cells(cells) { 
+        if(!cells.empty()) {
+        make_faces(); 
+        }
+    }
     std::array<int, 4> face(const Cell &c, int axis, bool sign) const;
     std::array<int, 4> face(int idx, int axis, bool sign) const;
     mtao::ColVecs3i triangulated(int idx) const;
     mtao::ColVecs3i triangulated(const Cell &c) const;
+    mtao::ColVecs3i triangulated_face(size_t idx, bool invert=false) const;
+    mtao::ColVecs3i triangulated_face(const Face&f, bool invert=false) const;
     mtao::ColVecs3d boundary_centroids() const;
     void cell_centroids(mtao::ColVecs3d &) const;
     GridData3i cell_ownership_grid() const;
@@ -103,6 +109,7 @@ class AdaptiveGrid : public mtao::geometry::grid::StaggeredGrid<double, 3> {
     mtao::ColVecs2i edges() const;
     std::vector<Face> faces(const GridData3i &grid) const;
     const std::vector<Face> &faces() const { return m_faces; }
+    const Face &face(size_t face_index) const { return m_faces.at(face_index); }
     void make_faces();
     static GridData3i grid_from_cells(const coord_type &shape, const std::map<int, Cell> &cells);
     std::vector<Eigen::Triplet<double>> grid_face_projection(int min_edge_index) const;

@@ -9,7 +9,6 @@
 #include <map>
 #include <vector>
 #include "cutmesh.pb.h"
-#include "mandoline/adaptive_grid.hpp"
 #include <set>
 #include <mtao/geometry/grid/grid_data.hpp>
 #include <mtao/geometry/grid/staggered_grid.hpp>

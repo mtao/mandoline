@@ -34,6 +34,7 @@ class ExteriorGrid : public mtao::geometry::grid::StaggeredGrid<double, D>
     ExteriorGrid() = default;
     // takes in a cell that indicates true for cells inside the stencil
     ExteriorGrid(const Base& sg, const GridDatab &cell_mask);
+    ExteriorGrid(const Base& sg);
     ExteriorGrid(const ExteriorGrid &) = default;
     ExteriorGrid(ExteriorGrid &&) = default;
     ExteriorGrid &operator=(const ExteriorGrid &) = default;

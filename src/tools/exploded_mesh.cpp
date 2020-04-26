@@ -20,7 +20,7 @@ MeshExploder::MeshExploder(const CutCellMesh<3> &ccm) {
         gc = ccm.cell_grid().vertex(c.grid_cell);
     }
 
-    auto &&AG = ccm.adaptive_grid();
+    auto &&AG = ccm.exterior_grid();
 
     for (auto &&[idx, cell] : AG.cells()) {
         auto F = AG.triangulated(idx);

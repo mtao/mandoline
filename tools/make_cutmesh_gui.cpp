@@ -198,6 +198,12 @@ class MeshViewer : public mtao::opengl::Window3 {
             }
 #endif
         }
+        {// check exterior grid valences
+    spdlog::warn("gui side Exterior grid face size: {}", ccm->exterior_grid().num_faces());
+            if(!exterior_cell_valence_counts(*ccm)) {
+                std::cout << "Bad exterior cell valences!" << std::endl;
+            }
+        }
         {
             auto g = ccm->Base::vertex_grid();
             auto s = g.shape();

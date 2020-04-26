@@ -2,6 +2,7 @@
 #include "mandoline/operators/boundary3.hpp"
 #include <mtao/eigen/stl2eigen.hpp>
 #include <set>
+#include <spdlog/spdlog.h>
 #include "mandoline/proto_util.hpp"
 #include <iterator>
 #include <mtao/logging/logger.hpp>
@@ -174,6 +175,26 @@ mtao::ColVecs3i AdaptiveGrid::triangulated(const Cell &c) const {
     });
 }
 
+mtao::ColVecs3i AdaptiveGrid::triangulated_face(size_t index, bool invert) const {
+    return triangulated_face(face(index),invert);
+}
+mtao::ColVecs3i AdaptiveGrid::triangulated_face(const Face&f, bool invert) const {
+    int a = vertex_index(f.vertex(0,0));
+    int b = vertex_index(f.vertex(1,0));
+    int c = vertex_index(f.vertex(1,1));
+    int d = vertex_index(f.vertex(0,1));
+
+    mtao::ColVecs3i F(3,2);
+    if(invert) {
+        F.col(0) << a, c, d;
+          F.col(1) << a, b, c;
+    } else {
+        F.col(0) << a, c, b;
+        F.col(1) << a, d, c;
+    }
+    return F;
+}
+
 auto AdaptiveGrid::boundary_face_mask() const -> mtao::VecXd {
 
     mtao::VecXd M = mtao::VecXd::Ones(num_faces());
@@ -211,7 +232,11 @@ auto AdaptiveGrid::boundary_triplets(int offset, bool domain_boundary) const -> 
 }
 auto AdaptiveGrid::faces(const GridData3i &grid) const -> std::vector<Face> {
     auto myless = [](const Face &a, const Face &b) {
+        if(a.axis() == b.axis()) {
         return std::less<Edge>()(a.dual_edge, b.dual_edge);
+        } else {
+            return a.axis() < b.axis();
+        }
     };
     std::set<Face, decltype(myless)> faces(myless);
     auto add_bdry = [&](int d, int a, int b) {
@@ -242,6 +267,7 @@ auto AdaptiveGrid::faces(const GridData3i &grid) const -> std::vector<Face> {
                     corner[d] += width;
                 }
             }
+            //spdlog::info("Adding dual edge {} {}",dual_edge[0],dual_edge[1]);
             faces.emplace(Square{ corner, axis, width }, dual_edge);
         }
     };
@@ -254,14 +280,19 @@ auto AdaptiveGrid::faces(const GridData3i &grid) const -> std::vector<Face> {
                 for (int &c = abc[2] = 0; c < shape[2]; ++c) {
                     bool low = abc[d] == 0;
                     bool high = abc[d] == shape[d] - 1;
-                    if (low ^ high) {
-                        if (low) {
-                            add_bdry(d, -2, grid(abc));
-                        } else {
-                            // if we're high we have to go down one grid cell
-                            coord_type tmp = abc;
-                            tmp[d]--;
-                            add_bdry(d, grid(tmp), -2);
+                    //fmt::print("{} {} {}\n", a,b,c);
+                    if (low) {// if one of htem but not when theres both
+                        int val = grid(abc);
+                        if(val >= 0) {
+                            add_bdry(d, -2, val);
+                        }
+                    } else if (high) {
+                        // if we're high we have to go down one grid cell
+                        coord_type tmp = abc;
+                        tmp[d]--;
+                        int val = grid(tmp);
+                        if(val >= 0) {
+                            add_bdry(d, val, -2);
                         }
                     } else {
                         int pidx = cell_index(abc);

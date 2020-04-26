@@ -21,7 +21,7 @@ mtao::VecXd cell_volumes(const CutCellMesh<3> &ccm) {
     }
 
 
-    return mtao::eigen::vstack(V, ccm.adaptive_grid().cell_volumes());
+    return mtao::eigen::vstack(V, ccm.exterior_grid().cell_volumes());
 }
 mtao::VecXd face_volumes(const CutCellMesh<3> &ccm, bool from_triangulation) {
 
@@ -34,7 +34,7 @@ mtao::VecXd face_volumes(const CutCellMesh<3> &ccm, bool from_triangulation) {
                 FV(i) = mtao::geometry::volumes(V, T).sum();
             }
         }
-        FV = mtao::eigen::vstack(FV, ccm.adaptive_grid().face_volumes());
+        FV = mtao::eigen::vstack(FV, ccm.exterior_grid().face_volumes());
     } else {
         //Use barycentric for tri-mesh cut-faces, planar areas for axial cut-faces, and let the adaptive grid do it's thing
         auto trimesh_vols = mtao::geometry::volumes(ccm.origV(), ccm.origF());
@@ -56,9 +56,9 @@ mtao::VecXd face_volumes(const CutCellMesh<3> &ccm, bool from_triangulation) {
                 }
             }
         } else {
-            FV.resize(ccm.adaptive_grid().num_faces());
+            FV.resize(ccm.exterior_grid().num_faces());
         }
-        FV.tail(ccm.adaptive_grid().num_faces()) = ccm.adaptive_grid().face_volumes();
+        FV.tail(ccm.exterior_grid().num_faces()) = ccm.exterior_grid().face_volumes();
     }
 
     if (FV.minCoeff() < 0) {
@@ -73,7 +73,7 @@ mtao::VecXd dual_edge_lengths(const CutCellMesh<3> &ccm) {
     mtao::VecXd DL = mtao::VecXd::Zero(ccm.face_size());
 
     auto &dx = ccm.Base::dx();
-    auto g = ccm.adaptive_grid().cell_ownership_grid();
+    auto g = ccm.exterior_grid().cell_ownership_grid();
     for (auto &&c : ccm.cells()) {
         auto &gc = c.grid_cell;
         for (auto &&[fidx, s] : c) {
@@ -81,7 +81,7 @@ mtao::VecXd dual_edge_lengths(const CutCellMesh<3> &ccm) {
             if (f.external_boundary) {
                 auto [cid, s] = *f.external_boundary;
                 if (cid >= 0) {
-                    auto &&c = ccm.adaptive_grid().cell(g.get(cid));
+                    auto &&c = ccm.exterior_grid().cell(g.get(cid));
                     mtao::Vec3d C = c.center();
                     C.array() -= .5;
                     C -= mtao::eigen::stl2eigen(gc).cast<double>();
@@ -97,7 +97,7 @@ mtao::VecXd dual_edge_lengths(const CutCellMesh<3> &ccm) {
             DL(fidx) = dx(ba);
         }
     }
-    auto ADL = ccm.adaptive_grid().dual_edge_lengths();
+    auto ADL = ccm.exterior_grid().dual_edge_lengths();
     DL.tail(ADL.rows()) = ADL;
     return DL;
 }

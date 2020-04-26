@@ -46,6 +46,15 @@ IF(HANDLE_SELF_INTERSECTIONS)
 ENDIF(HANDLE_SELF_INTERSECTIONS)
 
 add_library(mandoline_headers INTERFACE)
+TARGET_COMPILE_DEFINITIONS(mandoline_headers
+    INTERFACE -DMANDOLINE_USE_ADAPTIVE_GRID
+    -DUSE_FLOP_FREE_ANGLE_COMPUTATION
+    )
+
+IF(OpenMP_Found)
+    target_compile_definitions(mandoline_headers INTERFACE -DMTAO_OPENMP)
+ENDIF(OpenMP_Found)
+
 target_include_directories(mandoline_headers INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include> ${CMAKE_CURRENT_BINARY_DIR}
@@ -223,13 +232,8 @@ TARGET_LINK_LIBRARIES(construction_obj PUBLIC mtao::headers mtao::geometry igl::
 TARGET_LINK_LIBRARIES(tools_obj PUBLIC mtao::headers mtao::geometry igl::core mandoline_headers protobuf::libprotobuf)
 TARGET_LINK_LIBRARIES(tools2_obj PUBLIC mandoline_headers mtao::headers mtao::geometry igl::core mandoline_headers protobuf::libprotobuf)
 
-ADD_DEFINITIONS(-g)
-IF(OpenMP_Found)
-    ADD_DEFINITIONS(-DMTAO_OPENMP)
-ENDIF(OpenMP_Found)
 
 
-ADD_DEFINITIONS(-DUSE_FLOP_FREE_ANGLE_COMPUTATION)
 ADD_LIBRARY(mandoline
     $<TARGET_OBJECTS:cutmesh_proto>
     $<TARGET_OBJECTS:cutmesh2_obj>
@@ -299,10 +303,8 @@ if(USE_OPENGL)
 endif()
 
 IF(HANDLE_SELF_INTERSECTIONS)
-    FOREACH(TARG mandoline mandoline2 mandoline3 construction_obj)
-        TARGET_COMPILE_DEFINITIONS(${TARG}
-            PUBLIC -DMANDOLINE_HANDLE_SELF_INTERSECTIONS)
-    ENDFOREACH()
+    TARGET_COMPILE_DEFINITIONS(mandoline_headers
+        INTERFACE -DMANDOLINE_HANDLE_SELF_INTERSECTIONS)
 ENDIF(HANDLE_SELF_INTERSECTIONS)
 
 ADD_SUBDIRECTORY(examples EXCLUDE_FROM_ALL)

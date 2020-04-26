@@ -19,7 +19,7 @@ mtao::VecXd grid_boundary_mask(const CutCellMesh<3> &ccm) {
             }
         }
     }
-    M.tail(ccm.adaptive_grid().num_faces()) = ccm.adaptive_grid().grid_boundary_face_mask();
+    M.tail(ccm.exterior_grid().num_faces()) = ccm.exterior_grid().grid_boundary_face_mask();
     return M;
 }
 

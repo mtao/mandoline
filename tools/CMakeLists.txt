@@ -8,7 +8,7 @@ TARGET_LINK_LIBRARIES(cutmesh_maker mandoline cxxopts)
 ADD_DEFINITIONS(-g)
 
 ADD_EXECUTABLE(cutmesh_to_obj cutmesh_to_obj.cpp)
-TARGET_LINK_LIBRARIES(cutmesh_to_obj cutmesh_maker mandoline OpenMP::OpenMP_CXX mtao::common)
+TARGET_LINK_LIBRARIES(cutmesh_to_obj cutmesh_maker mandoline OpenMP::OpenMP_CXX mtao::common fmt)
 ADD_EXECUTABLE(write_to_obj write_to_obj.cpp)
 TARGET_LINK_LIBRARIES(write_to_obj cutmesh_maker mandoline OpenMP::OpenMP_CXX mtao::common)
 ADD_EXECUTABLE(obj_to_cutmesh obj_to_cutmesh.cpp)
@@ -42,8 +42,9 @@ IF(HANDLE_SELF_INTERSECTIONS)
         validation/faces_fully_utilized.cpp validation/paired_boundary.cpp validation/pcwn_count.cpp validation/possible_cells.cpp
         validation/grid_cells.cpp
         validation/region_volumes.cpp
+        validation/external_cell_valences.cpp
         )
-    TARGET_LINK_LIBRARIES(cutmesh_validation gmp CGAL mpfr 
+    TARGET_LINK_LIBRARIES(cutmesh_validation gmp CGAL mpfr  fmt
         mandoline)
 
     ADD_EXECUTABLE(validate_cutmesh
