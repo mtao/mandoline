@@ -86,7 +86,7 @@ auto CutCellEdgeGenerator<D>::colvecs_to_vecvector(const ColVecs &V) -> VecVecto
 template<int D>
 CutCellEdgeGenerator<D>::CutCellEdgeGenerator(const ColVecs &V, const StaggeredGrid &g, std::optional<double> threshold) : CutCellEdgeGenerator(colvecs_to_vecvector(V), g, threshold) {}
 template<int D>
-CutCellEdgeGenerator<D>::CutCellEdgeGenerator(const VecVector &V, const StaggeredGrid &g, std::optional<double> threshold) : StaggeredGrid(g), m_data(g.vertex_grid()), m_origV(V) {
+CutCellEdgeGenerator<D>::CutCellEdgeGenerator(const VecVector &V, const StaggeredGrid &g, std::optional<double> threshold) : StaggeredGrid(g), m_data(g.vertex_grid()), m_origV(V), m_active_grid_cell_mask(g.cell_shape()) {
     assert(g.vertex_grid().valid());
 
     //CutCellEdgeGenerator<D>::CutCellEdgeGenerator(const VecVector& V, const StaggeredGrid& g, std::optional<double> threshold): StaggeredGrid(g), m_origV(V) {
@@ -141,6 +141,7 @@ template<int D>
 void CutCellEdgeGenerator<D>::update_grid(const StaggeredGrid &sg) {
     StaggeredGrid::operator=(sg);
     m_data.update_grid(sg);
+    m_active_grid_cell_mask.resize(sg.cell_shape());
 }
 template<int D>
 void CutCellEdgeGenerator<D>::update_vertices(const ColVecs &V, const std::optional<double> &threshold) {

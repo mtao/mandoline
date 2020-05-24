@@ -1,5 +1,6 @@
 #pragma once
 #include "mandoline/exterior_grid.hpp"
+#include <spdlog/spdlog.h>
 
 
 namespace mandoline {

@@ -203,6 +203,7 @@ void MeshViewer::reset_curve() {
     curve.add_point(mtao::Vec2d(-.3, .3));
     curve.add_point(mtao::Vec2d(.3, .3));
     curve.add_point(mtao::Vec2d(.3, -.3));
+    update_curve();
 }
 
 void MeshViewer::gui() {
@@ -295,6 +296,7 @@ void MeshViewer::update_curve() {
 //
 //}
 void MeshViewer::update_ccm() {
+    constructor.bake();
     ccm = constructor.emit();
 
 

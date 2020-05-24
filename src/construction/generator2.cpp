@@ -190,15 +190,20 @@ CutCellMesh<2> CutCellEdgeGenerator<2>::generate_faces() const {
     {
         auto is_boundary_facet = [&](const CutFace<2> &f) {
             auto c = f.possible_cells([&](int idx) { return AV.at(idx).coord; });
+            // each cell should only lie in one cell. if this doesn't belong in a cell we're on the boundary
             if (c.empty()) {
                 return true;
             } else if (c.size() == 1) {
                 coord_type a = *c.begin();
-                assert(m_active_grid_cell_mask.valid_index(a));
-
-                return m_active_grid_cell_mask(a);
+                // if the cell is a valid cell 
+                if(m_active_grid_cell_mask.valid_index(a)) {
+                    return m_active_grid_cell_mask(a);
+                } else {
+                    // toss the external grid cells
+                    return true;
+                }
             }
-            return false;
+            return true;
         };
 
         auto VV = all_GV();
@@ -212,6 +217,7 @@ CutCellMesh<2> CutCellEdgeGenerator<2>::generate_faces() const {
                 for (auto &&v : F.indices) {
                     vol += mtao::geometry::curve_volume(VV, v);
                 }
+                // only count things that are _fairly_ negative as negative (this isn't very robust)
                 const bool has_neg_vol = vol < -.5;
                 const bool is_boundary = is_boundary_facet(F);
                 if (!has_neg_vol && !is_boundary) {
