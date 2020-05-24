@@ -44,7 +44,7 @@ DeformingGeometryConstructor::DeformingGeometryConstructor(const mtao::ColVecs3d
         _dirty = false;
     }
 }
-DeformingGeometryConstructor::DeformingGeometryConstructor(): _ccg{std::make_unique<CutCellGenerator<3>>(std::array<int,3>{{2,2,2}})} {}
+DeformingGeometryConstructor::DeformingGeometryConstructor() : _ccg{ std::make_unique<CutCellGenerator<3>>(std::array<int, 3>{ { 2, 2, 2 } }) } {}
 DeformingGeometryConstructor::~DeformingGeometryConstructor() {}
 void DeformingGeometryConstructor::set_adaptivity(int res) {
     _ccg->adaptive_level = res;
@@ -85,22 +85,6 @@ void DeformingGeometryConstructor::bake() {
     spdlog::trace("DeoformingGeometryConstructor Done Baking");
 }
 CutCellMesh<3> DeformingGeometryConstructor::emit() const {
-
-    /*
-            auto&& C = _ccg->crossings();
-            for(auto&& c: C) {
-                for(int d = 0; d < 3; ++d)
-                {
-                if(c.vertex().coord[d] == 0) {
-                    if(c.vertex().quot(d) < 1e-5) {
-                    std::cout << "Low quot " << std::string(c) << std::endl;
-                    }
-                } else if(c.vertex().coord[d] < 0) {
-                    std::cout << "WTF <0 ?" << std::string(c) << std::endl;
-                }
-            }
-            }
-            */
     return _ccg->generate();
 }
 
@@ -112,14 +96,13 @@ DeformingGeometryConstructor &DeformingGeometryConstructor::operator=(DeformingG
 }
 bool DeformingGeometryConstructor::valid() const {
 
-    if(!_ccg) {
+    if (!_ccg) {
         spdlog::warn("No CCG object, constructor should have made it; ask a dev to fix this");
         return false;
     }
-    if(!_ccg->valid()) {
+    if (!_ccg->valid()) {
         return false;
     }
     return true;
-
 }
 }// namespace mandoline::construction

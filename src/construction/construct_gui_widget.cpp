@@ -3,18 +3,17 @@
 #include <spdlog/spdlog.h>
 namespace mandoline::construction {
 
-    CutmeshGeneratorGui::CutmeshGeneratorGui(Magnum::Shaders::Flat3D& shader, Magnum::SceneGraph::DrawableGroup3D& group): mtao::opengl::objects::Grid<3>{}, mtao::opengl::Drawable<Magnum::Shaders::Flat3D>{*this, shader, group} {
-      mtao::opengl::Drawable<Magnum::Shaders::Flat3D>::deactivate();
-      mtao::opengl::Drawable<Magnum::Shaders::Flat3D>::activate_edges();
-    }
-
-CutmeshGeneratorGui::CutmeshGeneratorGui(Magnum::Shaders::Flat3D& shader, Magnum::SceneGraph::DrawableGroup3D& group, const mtao::ColVecs3d &V, const mtao::ColVecs3i &F, const mtao::geometry::grid::StaggeredGrid3d &grid, int adaptive_level, std::optional<double> threshold)
-  : DeformingGeometryConstructor(V, F, grid, adaptive_level, threshold), mtao::opengl::objects::Grid<3>{grid.vertex_grid()}, mtao::opengl::Drawable<Magnum::Shaders::Flat3D>{*this, shader, group}, bbox(grid.bbox()), N(grid.vertex_shape()), use_cube(false), adaptive_level(adaptive_level), threshold(threshold) {
-      mtao::opengl::Drawable<Magnum::Shaders::Flat3D>::deactivate();
-      mtao::opengl::Drawable<Magnum::Shaders::Flat3D>::activate_edges();
-
+CutmeshGeneratorGui::CutmeshGeneratorGui(Magnum::Shaders::Flat3D &shader, Magnum::SceneGraph::DrawableGroup3D &group) : mtao::opengl::objects::Grid<3>{}, mtao::opengl::Drawable<Magnum::Shaders::Flat3D>{ *this, shader, group } {
+    mtao::opengl::Drawable<Magnum::Shaders::Flat3D>::deactivate();
+    mtao::opengl::Drawable<Magnum::Shaders::Flat3D>::activate_edges();
 }
-CutmeshGeneratorGui CutmeshGeneratorGui::create(Magnum::Shaders::Flat3D& shader, Magnum::SceneGraph::DrawableGroup3D& group,const mtao::ColVecs3d &V, const mtao::ColVecs3i &F, double bbox_scale, const std::array<int, 3> &N, int adaptive_level, std::optional<double> threshold) {
+
+CutmeshGeneratorGui::CutmeshGeneratorGui(Magnum::Shaders::Flat3D &shader, Magnum::SceneGraph::DrawableGroup3D &group, const mtao::ColVecs3d &V, const mtao::ColVecs3i &F, const mtao::geometry::grid::StaggeredGrid3d &grid, int adaptive_level, std::optional<double> threshold)
+  : DeformingGeometryConstructor(V, F, grid, adaptive_level, threshold), mtao::opengl::objects::Grid<3>{ grid.vertex_grid() }, mtao::opengl::Drawable<Magnum::Shaders::Flat3D>{ *this, shader, group }, bbox(grid.bbox()), N(grid.vertex_shape()), use_cube(false), adaptive_level(adaptive_level), threshold(threshold) {
+    mtao::opengl::Drawable<Magnum::Shaders::Flat3D>::deactivate();
+    mtao::opengl::Drawable<Magnum::Shaders::Flat3D>::activate_edges();
+}
+CutmeshGeneratorGui CutmeshGeneratorGui::create(Magnum::Shaders::Flat3D &shader, Magnum::SceneGraph::DrawableGroup3D &group, const mtao::ColVecs3d &V, const mtao::ColVecs3i &F, double bbox_scale, const std::array<int, 3> &N, int adaptive_level, std::optional<double> threshold) {
     auto bbox = mtao::geometry::bounding_box(V);
     bbox = mtao::geometry::expand_bbox(bbox, bbox_scale);
     auto s = bbox.sizes().eval();
@@ -26,7 +25,7 @@ CutmeshGeneratorGui CutmeshGeneratorGui::create(Magnum::Shaders::Flat3D& shader,
         }
     }
     auto g = mtao::geometry::grid::StaggeredGrid3d::from_bbox(bbox, N);
-    return CutmeshGeneratorGui(shader,group,V, F, g, adaptive_level, threshold);
+    return CutmeshGeneratorGui(shader, group, V, F, g, adaptive_level, threshold);
 }
 
 void CutmeshGeneratorGui::set_bbox(const Eigen::AlignedBox<float, 3> &bbox_, float scale) {
@@ -64,22 +63,17 @@ bool CutmeshGeneratorGui::gui() {
 }
 
 
-void CutmeshGeneratorGui::update_grid(const mtao::geometry::grid::StaggeredGrid3d& grid) {
-    N = grid.vertex_shape();
-    bbox = grid.bbox().cast<float>();
+void CutmeshGeneratorGui::update_grid(const mtao::geometry::grid::StaggeredGrid3d &grid) {
     DeformingGeometryConstructor::update_grid(grid);
-    if(valid()) {
+    if (valid()) {
         mtao::opengl::objects::Grid<3>::set(grid.vertex_grid());
     }
-
-
 }
 void CutmeshGeneratorGui::update_grid() {
-    int min = *std::min_element(N.begin(),N.end());
-    if(min < 2) {
+    int min = *std::min_element(N.begin(), N.end());
+    if (min < 2) {
         spdlog::warn("Grid shape is too small ({} {} {}) (min must be >= 2)", N[0], N[1], N[2]);
         return;
-
     }
     auto sg = staggered_grid();
     update_grid(sg);
@@ -91,8 +85,13 @@ mtao::geometry::grid::StaggeredGrid3d
 }
 
 mandoline::CutCellMesh<3> CutmeshGeneratorGui::generate() {
-    bake();
-    return emit();
+    if (valid()) {
+        bake();
+        return emit();
+    } else {
+        spdlog::warn("Generated from an invalid input");
+        return {};
+    }
 }
 void CutmeshGeneratorGui::update_vertices_and_bbox(const mtao::ColVecs3d &V, double bbox_scale, const std::optional<double> &threshold) {
     update_vertices(V, threshold);

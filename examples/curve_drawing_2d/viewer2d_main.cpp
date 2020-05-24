@@ -17,7 +17,7 @@
 #include <Corrade/Utility/Arguments.h>
 #include "plcurve2.hpp"
 #include "mandoline/construction/generator2.hpp"
-#include "mandoline/construction/construct_imgui2.hpp"
+#include "mandoline/construction/construct2_gui_widget.hpp"
 #include "mandoline/construction/face_collapser.hpp"
 #include <Magnum/GL/Renderer.h>
 #include <mtao/geometry/mesh/stack_meshes.hpp>
@@ -32,9 +32,7 @@ using namespace Magnum::Math::Literals;
 
 class MeshViewer : public mtao::opengl::Window2 {
   public:
-      using Base = CutmeshGenerator2_Imgui;
     std::optional<mandoline::CutCellMesh<2>> ccm;
-    std::optional<mandoline::construction::CutmeshGenerator2_Imgui> constructor;
     bool show_multi = false;
     int index = 0;
     PLCurve2 curve;
@@ -73,22 +71,14 @@ class MeshViewer : public mtao::opengl::Window2 {
     int size() const { return colors.cols(); }
 
 
-    MeshViewer(const Arguments &args) : Window2(args) {
+    MeshViewer(const Arguments &args) : Window2(args), constructor(_flat_shader, drawables()) {
         //mtao::logging::make_logger().set_level(mtao::logging::Level::Off);
         mtao::logging::make_logger("profiler").set_level(mtao::logging::Level::Off);
         //Corrade::Utility::Arguments myargs;
         //myargs.addArgument("filename").parse(args.argc,args.argv);
         //std::string filename = myargs.value("filename");
 
-        update_bbox();
-
-
-        bbox_drawable = mtao::opengl::make_drawable(bbox_mesh, _flat_shader, drawables());
-        bbox_mesh.setParent(&root());
-        bbox_drawable->deactivate();
-        bbox_drawable->activate_edges();
-
-        bbox_drawable->data().color = 0xffffff_rgbf;
+        constructor.setParent(&root());
 
 
         curve_drawable = new mtao::opengl::Drawable<Magnum::Shaders::Flat2D>{ curve_mesh, _flat_shader, curve_drawgroup };
@@ -101,11 +91,6 @@ class MeshViewer : public mtao::opengl::Window2 {
         cutcell_face_drawable = new mtao::opengl::Drawable<Magnum::Shaders::Flat2D>{ cutcell_face_mesh, _flat_shader, curve_drawgroup };
         cutcell_face_mesh.setParent(&root());
         cutcell_face_drawable->deactivate();
-
-
-        grid_mesh.setParent(&root());
-        grid_drawable = new mtao::opengl::Drawable<Magnum::Shaders::Flat2D>(grid_mesh, _flat_shader, background_drawgroup);
-        grid_drawable->deactivate();
 
         reset_curve();
 
@@ -125,21 +110,13 @@ class MeshViewer : public mtao::opengl::Window2 {
                 std::cout << "input facecollapser size: " << f.size() << std::endl;
             }
 
-            bbox.min() = bbox.min().cwiseMin(p.rowwise().minCoeff().cast<float>());
-            bbox.max() = bbox.max().cwiseMax(p.rowwise().maxCoeff().cast<float>());
-            bbox.min().array() -= .1f;
-            bbox.max().array() += .1f;
             std::cout << "Updating curve" << std::endl;
             update_curve();
-            std::cout << "Updating bbox" << std::endl;
-            update_bbox();
             ui_mode = InterfaceMode::Browse;
         }
     }
 
-    void update_bbox() {
-        bbox_mesh.set_bbox(bbox);
-    }
+
     void draw() override;
     void gui() override;
     void update_edges();
@@ -163,10 +140,7 @@ class MeshViewer : public mtao::opengl::Window2 {
     mtao::opengl::objects::Mesh<2> curve_mesh;
     mtao::opengl::objects::Mesh<2> cutcell_mesh;
     mtao::opengl::objects::Mesh<2> cutcell_face_mesh;
-    mtao::opengl::objects::Grid<2> grid_mesh;
-    mtao::opengl::objects::BoundingBox<2> bbox_mesh;
-    mtao::opengl::Drawable<Magnum::Shaders::Flat2D> *bbox_drawable = nullptr;
-    mtao::opengl::Drawable<Magnum::Shaders::Flat2D> *grid_drawable = nullptr;
+    mandoline::construction::CutmeshGenerator2Gui constructor;
     mtao::opengl::Drawable<Magnum::Shaders::Flat2D> *curve_drawable = nullptr;
     mtao::opengl::Drawable<Magnum::Shaders::VertexColor2D> *cutcell_drawable = nullptr;
     mtao::opengl::Drawable<Magnum::Shaders::Flat2D> *cutcell_face_drawable = nullptr;
@@ -251,24 +225,12 @@ void MeshViewer::gui() {
     }
 
 
-    if (ImGui::InputInt2("N", N.data())) {
-        //update_bbox();
-    }
-
     if (ImGui::InputInt("Face index", &face_index)) {
         if (ccm) {
             int nf = ccm->num_faces();
             face_index = std::clamp<int>(face_index, 0, nf - 1);
         }
         update_face(face_index);
-    }
-    if (ImGui::SliderFloat2("min", bbox.min().data(), -20, 20)) {
-        bbox.min() = (bbox.min().array() < bbox.max().array()).select(bbox.min(), bbox.max());
-        update_bbox();
-    }
-    if (ImGui::SliderFloat2("max", bbox.max().data(), -20, 20)) {
-        bbox.max() = (bbox.min().array() > bbox.max().array()).select(bbox.min(), bbox.max());
-        update_bbox();
     }
 
     {
@@ -279,6 +241,7 @@ void MeshViewer::gui() {
         }
     }
     {
+        constructor.gui();
         if (ImGui::Button("Make CCM")) {
             update_ccm();
 
@@ -322,20 +285,17 @@ void MeshViewer::update_curve() {
             curve_mesh.setVertexBuffer(V);
             curve_drawable->activate_points();
         }
+    constructor.set_mesh(V.cast<double>(),E.cast<int>());
     }
 }
 
+//void MeshViewer::update_grid() {
+//    auto grid = mtao::geometry::grid::StaggeredGrid2d::from_bbox(bbox.cast<double>(), N);
+//    constructor.update_grid(grid);
+//
+//}
 void MeshViewer::update_ccm() {
-    auto E = curve.edges();
-    auto stlp = curve.stl_points();
-
-
-    auto grid = mtao::geometry::grid::StaggeredGrid2d::from_bbox(bbox.cast<double>(), N);
-    mandoline::construction::CutCellGenerator<2> ccg(stlp, grid);
-    ccg.add_boundary_elements(E.cast<int>());
-    ccg.bake();
-
-    ccm = ccg.generate();
+    ccm = constructor.emit();
 
 
     //set_colors(ccm.active_grid_cell_mask);
@@ -358,8 +318,6 @@ void MeshViewer::update_ccm() {
 
         spdlog::warn("Making gird draable");
         //ccm->faces();
-        grid_mesh.set(ccm->vertex_grid());
-        grid_drawable->activate_edges();
         auto r = ccm->regions();
         spdlog::warn("Writing regions");
         std::set<int> regions;
