@@ -20,6 +20,60 @@ namespace mandoline::construction {
         }
         return ret;
     }
+
+    template <int D>
+        bool CutCellEdgeGenerator<D>::valid() const {
+            bool ret = true;
+            ret &= valid_grid();
+            return ret;
+
+        }
+    template <int D>
+        bool CutCellEdgeGenerator<D>::valid_grid() const {
+
+            bool ret = true;
+            auto N = vertex_shape();
+            int min = *std::min_element(N.begin(),N.end());
+            if(min <= 2) {
+                if constexpr(D == 2) {
+                    spdlog::warn("Grid shape is too small ({} {}) (min must be >= 2)", N[0], N[1]);
+                } else if constexpr(D == 3) {
+                    spdlog::warn("Grid shape is too small ({} {} {}) (min must be >= 2)", N[0], N[1], N[2]);
+                } else {
+                    spdlog::warn("Grid shape is too small");
+
+                }
+
+                ret = false;
+            }
+            auto bbox = this->bbox();
+            if((bbox.sizes().minCoeff() <= 0)) {
+                if constexpr(D == 2) {
+                spdlog::warn("Empty or negative shaped grid (bbox of [{} {}] => [{} {}]; grid edges of [{} {}]",
+                        bbox.min().x(),
+                        bbox.min().y(),
+                        bbox.max().x(),
+                        bbox.max().y(),
+                        bbox.sizes().x(),
+                        bbox.sizes().y()
+                        );
+                } else if constexpr(D == 3) {
+                spdlog::warn("Empty or negative shaped grid (bbox of [{} {} {}] => [{} {} {}]; grid edges of [{} {} {}]",
+                        bbox.min().x(),
+                        bbox.min().y(),
+                        bbox.min().z(),
+                        bbox.max().x(),
+                        bbox.max().y(),
+                        bbox.max().z(),
+                        bbox.sizes().x(),
+                        bbox.sizes().y(),
+                        bbox.sizes().z());
+                } else {
+                spdlog::warn("Empty or negative shaped grid {}", bbox.sizes().minCoeff());
+                }
+            }
+            return true;
+        }
 template<int D>
 auto CutCellEdgeGenerator<D>::colvecs_to_vecvector(const ColVecs &V) -> VecVector {
     mtao::vector<mtao::Vector<double,D>> stlp(V.cols());

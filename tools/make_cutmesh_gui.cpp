@@ -21,7 +21,7 @@
 #include <mtao/geometry/grid/grid.h>
 #include <mtao/geometry/grid/staggered_grid.hpp>
 #include <mtao/geometry/prune_vertices.hpp>
-#include <mandoline/construction/construct_imgui.hpp>
+#include <mandoline/construction/construct_gui_widget.hpp>
 #include <mandoline/construction/remesh_self_intersections.hpp>
 #include <mandoline/construction/preprocess_mesh.hpp>
 #include <mandoline/mesh3.hpp>
@@ -62,11 +62,10 @@ class MeshViewer : public mtao::opengl::Window3 {
     std::map<std::array<int, 2>, std::vector<std::array<int, 2>>> mapped_edges;
     std::optional<std::array<int, 2>> edge_choice = {};
 
-    std::optional<mandoline::construction::CutmeshGenerator_Imgui> constructor;
     std::optional<mandoline::CutCellMesh<3>> ccm;
 
 
-    MeshViewer(const Arguments &args) : Window3(args), output_view(output_filename, mtao::types::container_size(output_filename)) {
+    MeshViewer(const Arguments &args) : Window3(args), output_view(output_filename, mtao::types::container_size(output_filename)), constructor(_flat_shader, drawables()) {
         Corrade::Utility::Arguments myargs;
         myargs.addArgument("filename").parse(args.argc, args.argv);
         std::string filename = myargs.value("filename");
@@ -87,53 +86,59 @@ class MeshViewer : public mtao::opengl::Window3 {
         std::tie(V, F) = mtao::geometry::prune(V, F, 0);
         std::tie(V, F) = mandoline::construction::preprocess_mesh(V, F);
 
-        constructor = mandoline::construction::CutmeshGenerator_Imgui::create(V, F);
+        {
+            auto bbox = mtao::geometry::bounding_box(V);
+            bbox = mtao::geometry::expand_bbox(bbox, 1.1);
+            auto s = bbox.sizes().eval();
 
+            for (int i = 0; i < 3; ++i) {
+                if (s(i) < 1e-5) {
+                    bbox.min()(i) -= 1e-2;
+                    bbox.max()(i) += 1e-2;
+                }
+            }
+            auto g = mtao::geometry::grid::StaggeredGrid3d::from_bbox(bbox, constructor.N);
+            constructor.set_mesh(V,F,{});
+            constructor.update_mesh_and_bbox(V,F,1.1);
 
-        mesh.translate(trans);
-        edge_mesh.translate(trans);
-        vertex_mesh.translate(trans);
-        grid.translate(trans);
+        }
+
         float s = 1. / bbox.sizes().maxCoeff();
         mesh.scale(Magnum::Math::Vector3<float>(s));
         edge_mesh.scale(Magnum::Math::Vector3<float>(s));
         vertex_mesh.scale(Magnum::Math::Vector3<float>(s));
-        grid.scale(Magnum::Math::Vector3<float>(s));
+        constructor.scale(Magnum::Math::Vector3<float>(s));
         mv_drawable = new mtao::opengl::Drawable<Magnum::Shaders::MeshVisualizer>{ mesh, _wireframe_shader, drawables() };
 
 
-        edge_drawable = new mtao::opengl::Drawable<Magnum::Shaders::Flat3D>{ grid, _flat_shader, drawables() };
-        edge_drawable->activate_triangles({});
-        edge_drawable->activate_edges();
+
+        point_drawable = new mtao::opengl::Drawable<Magnum::Shaders::Flat3D>{ vertex_mesh, _flat_shader, edge_drawables };
+        point_drawable->deactivate();
+        point_drawable->activate_points();
 
         edge_boundary_drawable = new mtao::opengl::Drawable<Magnum::Shaders::Flat3D>{ edge_mesh, _flat_shader, edge_drawables };
-        point_drawable = new mtao::opengl::Drawable<Magnum::Shaders::Flat3D>{ vertex_mesh, _flat_shader, edge_drawables };
+        edge_boundary_drawable->set_visibility(false);
         edge_boundary_drawable->activate_triangles({});
         edge_boundary_drawable->activate_edges();
 
         edge_boundary_drawable->data().color = Magnum::Color4(1, 0, 0, 1);
 
+        //center_point.translate(trans);
 
-        edge_mesh.setParent(&root());
         vertex_mesh.setVertexBuffer(mtao::Vec3f(1, 1, 1));
-        point_drawable->deactivate();
-        point_drawable->activate_points();
-        vertex_mesh.setParent(&root());
-        edge_boundary_drawable->set_visibility(false);
-        grid.setParent(&root());
 
-        mesh.setParent(&root());
+        center_point.setParent(&root());
+        edge_mesh.setParent(&center_point);
+        vertex_mesh.setParent(&center_point);
+        constructor.setParent(&center_point);
+
+        mesh.setParent(&center_point);
         update();
     }
     void update() {
-        if (constructor) {
-            //mtao::geometry::grid::Grid3f g(std::array<int,3>{{NI,NJ,NK}});
-            constructor->update_grid();
-            constructor->update_vertices(V);
-            auto sg = constructor->staggered_grid();
-            mtao::geometry::grid::Grid3d g = sg.vertex_grid();
-            grid.set(g);
-        }
+        //mtao::geometry::grid::Grid3f g(std::array<int,3>{{NI,NJ,NK}});
+        constructor.update_grid();
+        constructor.update_vertices(V);
     }
     void update_edges() {
         mtao::ColVecs3f VV = ccm->vertices().cast<float>();
@@ -170,7 +175,7 @@ class MeshViewer : public mtao::opengl::Window3 {
     }
 
     void make_ccm() {
-        ccm = constructor->generate();
+        ccm = constructor.generate();
         if (ccm) {
             spdlog::info("Made CCM!!");
             mandoline::tools::print_region_info(*ccm);
@@ -207,7 +212,6 @@ class MeshViewer : public mtao::opengl::Window3 {
         {
             auto g = ccm->Base::vertex_grid();
             auto s = g.shape();
-            std::cout << s[0] << ":" << s[1] << ":" << s[2] << std::endl;
         }
 
         std::vector<mtao::ColVecs3i> Fs;
@@ -248,9 +252,6 @@ class MeshViewer : public mtao::opengl::Window3 {
         if (mv_drawable) {
             mv_drawable->gui();
         }
-        if (edge_drawable) {
-            edge_drawable->gui();
-        }
         if (ImGui::InputFloat("Boundingbox Offset", &bbox_offset)) {
             mtao::Vec3f C = (orig_bbox.min() + orig_bbox.max()) / 2;
             mtao::Vec3f s = orig_bbox.sizes() / 2;
@@ -263,10 +264,8 @@ class MeshViewer : public mtao::opengl::Window3 {
             update();
         }
         if (ImGui::CollapsingHeader("Cutmesh Generation")) {
-            if (constructor) {
-                if (constructor->gui()) {
-                    update();
-                }
+            if (constructor.gui()) {
+                update();
             }
             if (ImGui::Button("Make CCM")) {
                 make_ccm();
@@ -314,13 +313,13 @@ class MeshViewer : public mtao::opengl::Window3 {
   private:
     Magnum::Shaders::MeshVisualizer _wireframe_shader{ supportsGeometryShader() ? Magnum::Shaders::MeshVisualizer::Flag::Wireframe : Magnum::Shaders::MeshVisualizer::Flag{} };
     Magnum::Shaders::Flat3D _flat_shader;
-    Magnum::SceneGraph::DrawableGroup3D edge_drawables;
+    Magnum::SceneGraph::DrawableGroup3D edge_drawables, dummy;
+    mtao::opengl::Object3D center_point;
+    mandoline::construction::CutmeshGeneratorGui constructor;
     mtao::opengl::objects::Mesh<3> mesh;
-    mtao::opengl::objects::Grid<3> grid;
     mtao::opengl::objects::Mesh<3> edge_mesh;
     mtao::opengl::objects::Mesh<3> vertex_mesh;
     mtao::opengl::Drawable<Magnum::Shaders::MeshVisualizer> *mv_drawable = nullptr;
-    mtao::opengl::Drawable<Magnum::Shaders::Flat3D> *edge_drawable = nullptr;
     mtao::opengl::Drawable<Magnum::Shaders::Flat3D> *edge_boundary_drawable = nullptr;
     mtao::opengl::Drawable<Magnum::Shaders::Flat3D> *point_drawable = nullptr;
 };

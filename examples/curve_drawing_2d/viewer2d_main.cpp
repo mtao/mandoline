@@ -17,6 +17,7 @@
 #include <Corrade/Utility/Arguments.h>
 #include "plcurve2.hpp"
 #include "mandoline/construction/generator2.hpp"
+#include "mandoline/construction/construct_imgui2.hpp"
 #include "mandoline/construction/face_collapser.hpp"
 #include <Magnum/GL/Renderer.h>
 #include <mtao/geometry/mesh/stack_meshes.hpp>
@@ -31,19 +32,18 @@ using namespace Magnum::Math::Literals;
 
 class MeshViewer : public mtao::opengl::Window2 {
   public:
+      using Base = CutmeshGenerator2_Imgui;
     std::optional<mandoline::CutCellMesh<2>> ccm;
+    std::optional<mandoline::construction::CutmeshGenerator2_Imgui> constructor;
     bool show_multi = false;
     int index = 0;
     PLCurve2 curve;
-    Eigen::AlignedBox<float, 2> bbox;
-    std::array<int, 2> N{ { 5, 5 } };
 
 
     mtao::opengl::Vector2 cursor;
 
     bool show_wireframes = false;
 
-    float scale = 1.1;
     float region_center_scale = 0.0;
     bool do_slice = false;
     mtao::ColVectors<double, 4> colors;
@@ -60,6 +60,7 @@ class MeshViewer : public mtao::opengl::Window2 {
     };
     enum InterfaceMode : char {
         CurveEdit,
+        BBoxResize,
         Browse
     };
 
@@ -75,8 +76,6 @@ class MeshViewer : public mtao::opengl::Window2 {
     MeshViewer(const Arguments &args) : Window2(args) {
         //mtao::logging::make_logger().set_level(mtao::logging::Level::Off);
         mtao::logging::make_logger("profiler").set_level(mtao::logging::Level::Off);
-        bbox.min().setConstant(-1);
-        bbox.max().setConstant(1);
         //Corrade::Utility::Arguments myargs;
         //myargs.addArgument("filename").parse(args.argc,args.argv);
         //std::string filename = myargs.value("filename");

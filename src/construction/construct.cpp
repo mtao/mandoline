@@ -32,7 +32,7 @@ CutCellMesh<3> from_grid_unnormalized(const mtao::ColVecs3d &V, const mtao::ColV
 }
 
 
-DeformingGeometryConstructor::DeformingGeometryConstructor(const mtao::ColVecs3d &V, const mtao::ColVecs3i &F, const mtao::geometry::grid::StaggeredGrid3d &grid, int adaptive_level, std::optional<double> threshold) : _ccg(new CutCellGenerator<3>(V, grid, threshold)) {
+DeformingGeometryConstructor::DeformingGeometryConstructor(const mtao::ColVecs3d &V, const mtao::ColVecs3i &F, const mtao::geometry::grid::StaggeredGrid3d &grid, int adaptive_level, std::optional<double> threshold) : _ccg(std::make_unique<CutCellGenerator<3>>(V, grid, threshold)) {
 
     _ccg->adaptive_level = adaptive_level;
     assert(F.size() > 0);
@@ -44,9 +44,8 @@ DeformingGeometryConstructor::DeformingGeometryConstructor(const mtao::ColVecs3d
         _dirty = false;
     }
 }
-DeformingGeometryConstructor::~DeformingGeometryConstructor() {
-    delete _ccg;
-}
+DeformingGeometryConstructor::DeformingGeometryConstructor(): _ccg{std::make_unique<CutCellGenerator<3>>(std::array<int,3>{{2,2,2}})} {}
+DeformingGeometryConstructor::~DeformingGeometryConstructor() {}
 void DeformingGeometryConstructor::set_adaptivity(int res) {
     _ccg->adaptive_level = res;
     _dirty = true;
@@ -57,6 +56,15 @@ void DeformingGeometryConstructor::update_vertices(const mtao::ColVecs3d &V, con
 }
 void DeformingGeometryConstructor::update_topology(const mtao::ColVecs3i &F) {
     _ccg->set_boundary_elements(F);
+}
+void DeformingGeometryConstructor::set_vertices(const mtao::ColVecs3d &V, const std::optional<double> &threshold) {
+    auto s = _ccg->vertex_shape();
+    _ccg = std::make_unique<CutCellGenerator<3>>(V, *_ccg, threshold);
+}
+void DeformingGeometryConstructor::set_mesh(const mtao::ColVecs3d &V, const mtao::ColVecs3i &F, const std::optional<double> &threshold) {
+    set_vertices(V, threshold);
+    update_topology(F);
+    _dirty = true;
 }
 void DeformingGeometryConstructor::update_mesh(const mtao::ColVecs3d &V, const mtao::ColVecs3i &F, const std::optional<double> &threshold) {
 
@@ -69,7 +77,7 @@ void DeformingGeometryConstructor::update_grid(const mtao::geometry::grid::Stagg
     _dirty = true;
 }
 void DeformingGeometryConstructor::bake() {
-    if (_dirty) {
+    if (_dirty && valid()) {
         _ccg->clear();
         _ccg->bake();
         _dirty = false;
@@ -96,12 +104,22 @@ CutCellMesh<3> DeformingGeometryConstructor::emit() const {
     return _ccg->generate();
 }
 
-DeformingGeometryConstructor::DeformingGeometryConstructor(DeformingGeometryConstructor &&o) : _ccg(o._ccg), _dirty(o._dirty) { o._ccg = nullptr; }
+DeformingGeometryConstructor::DeformingGeometryConstructor(DeformingGeometryConstructor &&o) : _ccg(std::move(o._ccg)), _dirty(o._dirty) {}
 DeformingGeometryConstructor &DeformingGeometryConstructor::operator=(DeformingGeometryConstructor &&o) {
-    _ccg = o._ccg;
-    o._ccg = nullptr;
-
+    _ccg = std::move(o._ccg);
     _dirty = o._dirty;
     return *this;
+}
+bool DeformingGeometryConstructor::valid() const {
+
+    if(!_ccg) {
+        spdlog::warn("No CCG object, constructor should have made it; ask a dev to fix this");
+        return false;
+    }
+    if(!_ccg->valid()) {
+        return false;
+    }
+    return true;
+
 }
 }// namespace mandoline::construction

@@ -147,6 +147,7 @@ SET(CONSTRUCTION_SRCS
     src/construction/subgrid_transformer.cpp
     src/construction/face_collapser.cpp
     src/construction/construct.cpp
+    src/construction/construct2.cpp
     src/construction/adaptive_grid_factory.cpp
     )
 
@@ -164,6 +165,7 @@ SET(CONSTRUCTION_HDRS
     include/mandoline/construction/facet_intersections_impl.hpp
     include/mandoline/construction/subgrid_transformer.hpp
     include/mandoline/construction/construct.hpp
+    include/mandoline/construction/construct2.hpp
     include/mandoline/construction/cell_collapser.hpp
     include/mandoline/construction/face_collapser.hpp
     include/mandoline/construction/adaptive_grid_factory.hpp
@@ -171,8 +173,10 @@ SET(CONSTRUCTION_HDRS
     )
 
 if(USE_OPENGL)
-    set(CONSTRUCTION_SRCS ${CONSTRUCTION_SRCS} src/construction/construct_imgui.cpp)
-    set(CONSTRUCTION_HDRS ${CONSTRUCTION_HDRS} src/construction/construct_imgui.cpp)
+    set(CONSTRUCTION_SRCS ${CONSTRUCTION_SRCS} src/construction/construct_gui_widget.cpp)
+    set(CONSTRUCTION_HDRS ${CONSTRUCTION_HDRS} include/mandoline/construction/construct_gui_widget.hpp)
+    set(CONSTRUCTION_SRCS ${CONSTRUCTION_SRCS} src/construction/construct2_gui_widget.cpp)
+    set(CONSTRUCTION_HDRS ${CONSTRUCTION_HDRS} include/mandoline/construction/construct2_gui_widget.hpp)
 endif()
 
 SET(MANDOLINE2_SRCS

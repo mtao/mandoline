@@ -8,9 +8,9 @@ std::map<int,int> exterior_grid_valences(const mandoline::CutCellMesh<3>& ccm) {
     for(auto&& f: ccm.cut_faces()) {
         if(f.external_boundary) {
             auto [exterior_cell, sgn] = *f.external_boundary;
-            int agindex = cell_grid.get(exterior_cell);
             if(exterior_cell < 0) continue;
             //fmt::print("Stencil boundary ({1}({0}) {2})\n", exterior_cell, agindex, sgn);
+            int agindex = cell_grid.get(exterior_cell);
             if(valences.find(agindex) != valences.end()) {
                 valences[agindex]++;
             } else {

@@ -199,6 +199,8 @@ class CutCellEdgeGenerator : public mtao::geometry::grid::StaggeredGrid<double, 
     ColVecs all_GV() const;// all vertices in index/grid space
     VecVector stl_V() const;
 
+    bool valid() const;
+    bool valid_grid() const;
 
     std::vector<Vertex<D>> all_vertices() const;
     size_t Vsize() const { return newV().size(); }

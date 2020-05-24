@@ -1,5 +1,6 @@
 #pragma once
 #include "mandoline/mesh3.hpp"
+#include <memory>
 
 
 namespace mandoline::construction {
@@ -12,12 +13,17 @@ class CutCellGenerator;
 class DeformingGeometryConstructor {
   public:
     DeformingGeometryConstructor(const mtao::ColVecs3d &V, const mtao::ColVecs3i &F, const mtao::geometry::grid::StaggeredGrid3d &grid, int adaptive_level = 0, std::optional<double> threshold = -1);
+    DeformingGeometryConstructor();
     DeformingGeometryConstructor(DeformingGeometryConstructor &&o);
     DeformingGeometryConstructor &operator=(DeformingGeometryConstructor &&o);
 
     ~DeformingGeometryConstructor();
     void update_vertices(const mtao::ColVecs3d &V, const std::optional<double> &threshold = -1);
     void update_topology(const mtao::ColVecs3i &F);
+    // updates the mesh and whatnot without topology restrictions
+    void set_mesh(const mtao::ColVecs3d &V, const mtao::ColVecs3i &F, const std::optional<double> &threshold = -1);
+    // updates the mesh and whatnot without topology restrictions
+    void set_vertices(const mtao::ColVecs3d &V, const std::optional<double> &threshold = -1);
     void update_mesh(const mtao::ColVecs3d &V, const mtao::ColVecs3i &F, const std::optional<double> &threshold = -1);
     void update_mesh(const mtao::ColVecs3i &F);
     void update_grid(const mtao::geometry::grid::StaggeredGrid3d &g);
@@ -25,8 +31,11 @@ class DeformingGeometryConstructor {
     void bake();
     CutCellMesh<3> emit() const;
 
+    // checks whether the ccg is set up in a valid way
+    bool valid() const;
+
   private:
-    CutCellGenerator<3> *_ccg = nullptr;
+    std::unique_ptr<CutCellGenerator<3>> _ccg;
     bool _dirty = true;
 };
 }// namespace mandoline::construction
