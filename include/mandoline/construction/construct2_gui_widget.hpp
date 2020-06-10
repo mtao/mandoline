@@ -32,6 +32,7 @@ struct CutmeshGenerator2Gui : public DeformingGeometryConstructor2, public mtao:
     std::optional<double> threshold = -1;
 
 
+    // If dirty is emitted the user MUST pass vertices back in
     bool gui();
     void draw();
     void initialize_visualization();

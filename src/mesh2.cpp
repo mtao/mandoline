@@ -32,21 +32,42 @@ int CutCellMesh<2>::num_edges() const {
 }
 
 auto CutCellMesh<2>::centroids() const -> ColVecs {
-    ColVecs C(2,num_cells());
+    ColVecs C(2, num_cells());
 
     auto V = vertices();
-    for(auto&& [idx, face]: mtao::iterator::enumerate(cut_faces())) {
+    for (auto &&[idx, face] : mtao::iterator::enumerate(cut_faces())) {
         C.col(idx) = face.brep_centroid(V);
     }
 
     auto EC = C.rightCols(exterior_grid.num_cells());
-    for(auto&& [idx,c]: mtao::iterator::enumerate(exterior_grid.cell_coords())) {
+    for (auto &&[idx, c] : mtao::iterator::enumerate(exterior_grid.cell_coords())) {
         EC.col(idx) = exterior_grid.cell_grid().vertex(c);
     }
     return C;
-
 }
 
+mtao::ColVectors<int, 2> CutCellMesh<2>::edges() const {
+    mtao::ColVectors<int, 2> eg_edges(2, exterior_grid.num_boundary_facets());
+
+    for (auto &&[edge_index, dual_edge, axis] : mtao::iterator::enumerate(exterior_grid.boundary_facet_pairs(), exterior_grid.boundary_facet_axes())) {
+        auto [lower, higher] = dual_edge;
+        coord_type lower_vcoord;
+        if (higher >= 0) {
+            lower_vcoord = exterior_grid.cell_coord(higher);
+        } else {
+            lower_vcoord = exterior_grid.cell_coord(lower);
+            lower_vcoord[axis]++;
+        }
+        coord_type upper_vcoord = lower_vcoord;
+        // move up in teh upper axis
+        upper_vcoord[1 - axis]++;
+        auto e = eg_edges.col(edge_index);
+        e(0) = vertex_grid().index(lower_vcoord);
+        e(1) = vertex_grid().index(upper_vcoord);
+    }
+
+    return mtao::eigen::hstack(cut_edges_eigen(), eg_edges);
+}
 mtao::ColVectors<int, 3> CutCellMesh<2>::faces() const {
     std::vector<std::vector<int>> mycells;
     for (int i = 0; i < num_cells(); ++i) {
@@ -58,16 +79,14 @@ mtao::ColVectors<int, 3> CutCellMesh<2>::faces() const {
 }
 
 
-
 mtao::VecXi CutCellMesh<2>::regions() const {
     mtao::VecXi R(num_cells());
-    for(auto&& [cid,c]: mtao::iterator::enumerate(cut_faces())) {
+    for (auto &&[cid, c] : mtao::iterator::enumerate(cut_faces())) {
         R(cid) = c.region;
     }
 
     R.tail(exterior_grid.num_cells()) = mtao::eigen::stl2eigen(exterior_grid.regions());
     return R;
-    
 }
 
 auto CutCellMesh<2>::volumes() const -> VecX {
@@ -116,11 +135,11 @@ bool CutCellMesh<2>::in_cell(const VecCRef &p, int idx) const {
     return in_cell(V, p, idx);
 }
 bool CutCellMesh<2>::in_cell(const ColVecs &V, const VecCRef &p, int idx) const {
-    if(idx < m_faces.size()) {
-        return m_faces.at(idx).is_inside(V,p);
+    if (idx < m_faces.size()) {
+        return m_faces.at(idx).is_inside(V, p);
     } else {
         int c = exterior_grid.cell_index(p);
-        if(c >= 0) {
+        if (c >= 0) {
             return true;
         }
     }
@@ -135,7 +154,7 @@ int CutCellMesh<2>::cell_index(const VecCRef &p) const {
 
     auto V = vertices();
     int exterior_cell_index = exterior_grid.cell_index(c);
-    if(exterior_cell_index == -1) {
+    if (exterior_cell_index == -1) {
         int grid_cell = grid_cell_index(c);
 
         if (auto it = cell_grid_ownership.find(grid_cell); it != cell_grid_ownership.end()) {
@@ -232,8 +251,6 @@ int CutCellMesh<2>::nearest_edge_index(const VecCRef &p) const {
 }
 
 Eigen::SparseMatrix<double> CutCellMesh<2>::boundary(bool include_domain_boundary_faces) const {
-    return operators::boundary(*this,include_domain_boundary_faces);
-
-
+    return operators::boundary(*this, include_domain_boundary_faces);
 }
 }// namespace mandoline

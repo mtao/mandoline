@@ -101,10 +101,6 @@ auto CutCellMeshBase<D, Derived>::grid_edge(int idx) const -> Edge {
 }
 
 template<int D, typename Derived>
-auto CutCellMeshBase<D, Derived>::edges() const -> Edges {
-    return mtao::eigen::hstack(mtao::geometry::grid::GridTriangulator<GridType>(vertex_grid()).edges(), cut_edges_eigen());
-}
-template<int D, typename Derived>
 auto CutCellMeshBase<D, Derived>::cut_edges_eigen() const -> Edges {
     Edges E(2, m_cut_edges.size());
     for (auto &&[i, e] : mtao::iterator::enumerate(m_cut_edges)) {

@@ -89,8 +89,6 @@ struct CutCellMeshBase : public mtao::geometry::grid::StaggeredGrid<double, D> {
     Edge grid_edge(int idx) const;
     int grid_edge_type(int idx) const;
     Edge grid_edge(coord_type edge_coord, int type) const;
-    mtao::ColVecs2i dual_edges() const;
-    Edges edges() const;
 
     auto cut_edge(int idx) const { return m_cut_edges.at(idx); }
     int cut_edge_size() const { return m_cut_edges.size(); }

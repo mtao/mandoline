@@ -18,28 +18,29 @@ TEST_CASE("2D", "[boundary,exterior_grid]") {
         ccg.add_boundary_elements(E);
         ccg.bake();
         auto ccm = ccg.generate();
-    std::cout << "Faces: " << std::endl;
-    for(auto&& [i,f]: mtao::iterator::enumerate(ccm.m_faces)) {
-        std::cout << i << " ";
-        for(auto&& c: f.indices) {
-            std::copy(c.begin(),c.end(),std::ostream_iterator<int>(std::cout,","));
-            std::cout << " ";
+        std::cout << "Faces: " << std::endl;
+        for (auto &&[i, f] : mtao::iterator::enumerate(ccm.m_faces)) {
+            std::cout << i << " ";
+            for (auto &&c : f.indices) {
+                std::copy(c.begin(), c.end(), std::ostream_iterator<int>(std::cout, ","));
+                std::cout << " ";
+            }
+            std::cout << std::endl;
         }
-        std::cout << std::endl;
-        
-    }
-    std::cout << "Edges: " << std::endl;
-    for(auto&& [i,e]: mtao::iterator::enumerate(ccm.cut_edges())) {
-        std::cout << i << " ";
-        std::copy(e.indices.begin(),e.indices.end(),std::ostream_iterator<int>(std::cout,","));
-        if(e.external_boundary) {
-            auto [bc,s] = *e.external_boundary;
-            std::cout << "[" << bc << "(" << s << ")]";
+        std::cout << "Edges: " << std::endl;
+        for (auto &&[i, e] : mtao::iterator::enumerate(ccm.cut_edges())) {
+            std::cout << i << " ";
+            std::copy(e.indices.begin(), e.indices.end(), std::ostream_iterator<int>(std::cout, ","));
+            if (e.external_boundary) {
+                auto [bc, s] = *e.external_boundary;
+                std::cout << "[" << bc << "(" << s << ")]";
+            }
+
+            std::cout << std::endl;
         }
-        
-        std::cout << std::endl;
-        
-    }
+        std::cout << "Making edges" << std::endl;
+        auto E = ccm.edges();
+        std::cout << "Made edges" << std::endl;
 
 
         {
@@ -64,6 +65,39 @@ TEST_CASE("2D", "[boundary,exterior_grid]") {
                 REQUIRE((!(b == 0) || (a == 1)));
             }
             REQUIRE(Bd * mtao::VecXd::Ones(Bd.cols()) == mtao::VecXd::Zero(Bd.rows()));
+
+            for (int o = 0; o < B.outerSize(); ++o) {
+
+                for (Eigen::SparseMatrix<double>::InnerIterator it(B, o); it; ++it) {
+
+                    int edge = it.row();
+                    int face = it.col();
+                    auto e = E.col(edge);
+                    if (ccm.is_cutface_index(face)) {
+                        for (auto &&loop : ccm.cut_faces().at(face).indices) {
+                            std::set<int> lset(loop.begin(), loop.end());
+                            CHECK(lset.find(e(0)) != lset.end());
+                            CHECK(lset.find(e(1)) != lset.end());
+                        }
+                    } else {
+                        int eface = face - ccm.num_cutfaces();
+                        auto cell = ccm.exterior_grid.cell_coord(eface);
+                        std::array<int, 2> v00 = cell, v01 = cell, v10 = cell, v11 = cell;
+                        v01[1]++;
+                        v10[0]++;
+                        v11[0]++;
+                        v11[1]++;
+
+                        std::set<int> indices;
+                        indices.emplace(ccm.vertex_grid().index(v00));
+                        indices.emplace(ccm.vertex_grid().index(v01));
+                        indices.emplace(ccm.vertex_grid().index(v11));
+                        indices.emplace(ccm.vertex_grid().index(v10));
+                        CHECK(indices.find(e(0)) != indices.end());
+                        CHECK(indices.find(e(1)) != indices.end());
+                    }
+                }
+            }
         }
     };
 

@@ -663,6 +663,10 @@ int CutCellMesh<3>::get_cell_index(const VecCRef &p) const {
 }
 
 auto CutCellMesh<3>::edges() const -> Edges {
-    return Base::edges();
+    //TODO: this is not a real set of edges. Gotta figure out what i really want to do here
+
+    return mtao::eigen::hstack(mtao::geometry::grid::GridTriangulator<GridType>(vertex_grid()).edges(),
+    cut_edges_eigen());
+    //return Base::edges();
 }
 }// namespace mandoline

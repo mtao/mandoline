@@ -33,8 +33,8 @@ class ExteriorGrid : public mtao::geometry::grid::StaggeredGrid<double, D>
 
     ExteriorGrid() = default;
     // takes in a cell that indicates true for cells inside the stencil
-    ExteriorGrid(const Base& sg, const GridDatab &cell_mask);
-    ExteriorGrid(const Base& sg);
+    ExteriorGrid(const Base &sg, const GridDatab &cell_mask);
+    ExteriorGrid(const Base &sg);
     ExteriorGrid(const ExteriorGrid &) = default;
     ExteriorGrid(ExteriorGrid &&) = default;
     ExteriorGrid &operator=(const ExteriorGrid &) = default;
@@ -44,11 +44,10 @@ class ExteriorGrid : public mtao::geometry::grid::StaggeredGrid<double, D>
     const coord_type &cell_shape() const { return m_cell_indices.shape(); }
 
 
-
     const GridDatai &cell_indices() const { return m_cell_indices; }
-    int cell_index(const coord_type& c) const;
-    template <typename Derived>
-    int cell_index(const Eigen::MatrixBase<Derived>&p) const;
+    int cell_index(const coord_type &c) const;
+    template<typename Derived>
+    int cell_index(const Eigen::MatrixBase<Derived> &p) const;
 
     const std::vector<int> &boundary_facet_axes() const { return m_boundary_facet_axes; }
     int boundary_facet_axis(size_t idx) const { return m_boundary_facet_axes.at(idx); }
@@ -58,14 +57,15 @@ class ExteriorGrid : public mtao::geometry::grid::StaggeredGrid<double, D>
     int get_face_axis(int face_index) const;
     std::vector<Eigen::Triplet<double>> boundary_facet_to_staggered_grid(int offset = 0) const;
     mtao::VecXd boundary_facet_volumes(bool make_boundary = true) const;
-    const std::vector<int>& regions() const { return m_regions; }
+    const std::vector<int> &regions() const { return m_regions; }
     int region(size_t idx) const { return m_regions.at(idx); }
+
 
   private:
     GridDatai m_cell_indices;// acts as a hash map for cell indexing based off a grid
     std::vector<coord_type> m_cell_coords;// reporst the cell found in each index (inverts m_cell_indices)
     std::vector<int> m_boundary_facet_axes;// parallel with DomainBoundary::boundary_facet_pairs
-    std::vector<int> m_regions;// the separate regions of space 
+    std::vector<int> m_regions;// the separate regions of space
 };
 
 
