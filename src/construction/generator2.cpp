@@ -180,6 +180,7 @@ CutCellMesh<2> CutCellEdgeGenerator<2>::generate_faces() const {
             }
         }
         */
+    mtao::logging::debug() << "Making exterior grid";
 
     ret.m_active_grid_cell_mask = m_active_grid_cell_mask;
     ret.exterior_grid = ExteriorGrid<2>(*this, m_active_grid_cell_mask);
@@ -257,6 +258,9 @@ CutCellMesh<2> CutCellEdgeGenerator<2>::generate_faces() const {
         assert(c.size() == 1);
         int grid_cell = StaggeredGrid::cell_index(*c.begin());
         ret.cell_grid_ownership[grid_cell].insert(idx);
+    }
+    for(auto&& [local_idx, cell_coord]: mtao::iterator::enumerate(ret.exterior_grid.cell_coords())) {
+        ret.cell_grid_ownership[cell_grid().index(cell_coord)].insert(local_idx + ret.num_cutcells());
     }
 
     auto make_boundary_pair = [&](auto &&boundary_facet) -> std::optional<std::tuple<int, bool>> {
