@@ -226,7 +226,7 @@ CutFace<3> CutFace<3>::from_proto(const protobuf::CutFace &face) {
     CutFace<3> ret;
     ret.N = protobuf::deserialize(face.normal());
     if (face.id_case() == protobuf::CutFace::IdCase::kFaceId) {
-        ret.id = face.face_id();
+        ret.id = static_cast<int>(face.face_id());
     } else {
         auto &&pid = face.plane_id();
         ret.id = std::array<int, 2>{ { int(pid.axis()), int(pid.value()) } };
