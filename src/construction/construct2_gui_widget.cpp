@@ -3,15 +3,15 @@
 #include <mtao/geometry/bounding_box.hpp>
 namespace mandoline::construction {
 
-CutmeshGenerator2Gui::CutmeshGenerator2Gui(Magnum::Shaders::Flat2D &shader, Magnum::SceneGraph::DrawableGroup2D &group) : mtao::opengl::objects::Grid<2>{std::array<int,2>{{2,2}}}, mtao::opengl::Drawable<Magnum::Shaders::Flat2D>{ *this, shader, group } {
-    mtao::opengl::Drawable<Magnum::Shaders::Flat2D>::deactivate();
-    mtao::opengl::Drawable<Magnum::Shaders::Flat2D>::activate_edges();
+CutmeshGenerator2Gui::CutmeshGenerator2Gui(Magnum::Shaders::Flat2D &shader, Magnum::SceneGraph::DrawableGroup2D &group) : mtao::opengl::objects::Grid<2>{std::array<int,2>{{2,2}}}, mtao::opengl::MeshDrawable<Magnum::Shaders::Flat2D>{ *this, shader, group } {
+    mtao::opengl::MeshDrawable<Magnum::Shaders::Flat2D>::deactivate();
+    mtao::opengl::MeshDrawable<Magnum::Shaders::Flat2D>::activate_edges();
     update_grid();
 }
 CutmeshGenerator2Gui::CutmeshGenerator2Gui(Magnum::Shaders::Flat2D &shader, Magnum::SceneGraph::DrawableGroup2D &group, const mtao::ColVecs2d &V, const mtao::ColVecs2i &F, const mtao::geometry::grid::StaggeredGrid2d &grid, std::optional<double> threshold)
-  : DeformingGeometryConstructor2(V, F, grid, threshold), mtao::opengl::objects::Grid<2>{ grid.vertex_grid() }, mtao::opengl::Drawable<Magnum::Shaders::Flat2D>{ *this, shader, group }, bbox(grid.bbox()), N(grid.vertex_shape()), use_cube(false), threshold(threshold) {
-    mtao::opengl::Drawable<Magnum::Shaders::Flat2D>::deactivate();
-    mtao::opengl::Drawable<Magnum::Shaders::Flat2D>::activate_edges();
+  : DeformingGeometryConstructor2(V, F, grid, threshold), mtao::opengl::objects::Grid<2>{ grid.vertex_grid() }, mtao::opengl::MeshDrawable<Magnum::Shaders::Flat2D>{ *this, shader, group }, bbox(grid.bbox()), N(grid.vertex_shape()), use_cube(false), threshold(threshold) {
+    mtao::opengl::MeshDrawable<Magnum::Shaders::Flat2D>::deactivate();
+    mtao::opengl::MeshDrawable<Magnum::Shaders::Flat2D>::activate_edges();
     update_grid();
 }
 

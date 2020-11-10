@@ -11,7 +11,7 @@ namespace mandoline::construction {
 
 
 //Imgui wrapper around DeformingGeometryConstructor
-struct CutmeshGenerator2Gui : public DeformingGeometryConstructor2, public mtao::opengl::objects::Grid<2>, public mtao::opengl::Drawable<Magnum::Shaders::Flat2D> {
+struct CutmeshGenerator2Gui : public DeformingGeometryConstructor2, public mtao::opengl::objects::Grid<2>, public mtao::opengl::MeshDrawable<Magnum::Shaders::Flat2D> {
     CutmeshGenerator2Gui(Magnum::Shaders::Flat2D& shader, Magnum::SceneGraph::DrawableGroup2D& group);
     CutmeshGenerator2Gui(Magnum::Shaders::Flat2D& shader, Magnum::SceneGraph::DrawableGroup2D& group,const mtao::ColVecs2d &V, const mtao::ColVecs2i &F, const mtao::geometry::grid::StaggeredGrid2d &grid, std::optional<double> threshold = {});
     static CutmeshGenerator2Gui create(Magnum::Shaders::Flat2D& shader, Magnum::SceneGraph::DrawableGroup2D& group,const mtao::ColVecs2d &V, const mtao::ColVecs2i &F, double bbox_scale = 1.1, const std::array<int, 2> &N = std::array<int, 2>{ { 5, 5 } }, std::optional<double> threshold = {});

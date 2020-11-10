@@ -3,15 +3,15 @@
 #include <spdlog/spdlog.h>
 namespace mandoline::construction {
 
-CutmeshGeneratorGui::CutmeshGeneratorGui(Magnum::Shaders::Flat3D &shader, Magnum::SceneGraph::DrawableGroup3D &group) : mtao::opengl::objects::Grid<3>{}, mtao::opengl::Drawable<Magnum::Shaders::Flat3D>{ *this, shader, group } {
-    mtao::opengl::Drawable<Magnum::Shaders::Flat3D>::deactivate();
-    mtao::opengl::Drawable<Magnum::Shaders::Flat3D>::activate_edges();
+CutmeshGeneratorGui::CutmeshGeneratorGui(Magnum::Shaders::Flat3D &shader, Magnum::SceneGraph::DrawableGroup3D &group) : mtao::opengl::objects::Grid<3>{}, mtao::opengl::MeshDrawable<Magnum::Shaders::Flat3D>{ *this, shader, group } {
+    mtao::opengl::MeshDrawable<Magnum::Shaders::Flat3D>::deactivate();
+    mtao::opengl::MeshDrawable<Magnum::Shaders::Flat3D>::activate_edges();
 }
 
 CutmeshGeneratorGui::CutmeshGeneratorGui(Magnum::Shaders::Flat3D &shader, Magnum::SceneGraph::DrawableGroup3D &group, const mtao::ColVecs3d &V, const mtao::ColVecs3i &F, const mtao::geometry::grid::StaggeredGrid3d &grid, int adaptive_level, std::optional<double> threshold)
-  : DeformingGeometryConstructor(V, F, grid, adaptive_level, threshold), mtao::opengl::objects::Grid<3>{ grid.vertex_grid() }, mtao::opengl::Drawable<Magnum::Shaders::Flat3D>{ *this, shader, group }, bbox(grid.bbox()), N(grid.vertex_shape()), use_cube(false), adaptive_level(adaptive_level), threshold(threshold) {
-    mtao::opengl::Drawable<Magnum::Shaders::Flat3D>::deactivate();
-    mtao::opengl::Drawable<Magnum::Shaders::Flat3D>::activate_edges();
+  : DeformingGeometryConstructor(V, F, grid, adaptive_level, threshold), mtao::opengl::objects::Grid<3>{ grid.vertex_grid() }, mtao::opengl::MeshDrawable<Magnum::Shaders::Flat3D>{ *this, shader, group }, bbox(grid.bbox()), N(grid.vertex_shape()), use_cube(false), adaptive_level(adaptive_level), threshold(threshold) {
+    mtao::opengl::MeshDrawable<Magnum::Shaders::Flat3D>::deactivate();
+    mtao::opengl::MeshDrawable<Magnum::Shaders::Flat3D>::activate_edges();
 }
 CutmeshGeneratorGui CutmeshGeneratorGui::create(Magnum::Shaders::Flat3D &shader, Magnum::SceneGraph::DrawableGroup3D &group, const mtao::ColVecs3d &V, const mtao::ColVecs3i &F, double bbox_scale, const std::array<int, 3> &N, int adaptive_level, std::optional<double> threshold) {
     auto bbox = mtao::geometry::bounding_box(V);
