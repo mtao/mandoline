@@ -283,6 +283,19 @@ protobuf::libprotobuf
     mandoline_headers
     )
 
+ADD_LIBRARY(mandoline_cutmesh2
+    $<TARGET_OBJECTS:cutmesh_proto>
+    $<TARGET_OBJECTS:cutmesh2_obj>
+    $<TARGET_OBJECTS:tools_obj>
+    )
+TARGET_LINK_LIBRARIES(mandoline_cutmesh2
+    mtao::geometry OpenMP::OpenMP_CXX
+    ${MANDOLINE_SELF_INTERSECTION_LIBS}
+    igl::core
+    protobuf::libprotobuf
+    mandoline_headers
+    )
+
 ADD_LIBRARY(mandoline_cutmesh3
     $<TARGET_OBJECTS:cutmesh_proto>
     $<TARGET_OBJECTS:cutmesh3_obj>
