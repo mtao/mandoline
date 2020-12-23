@@ -294,7 +294,7 @@ class CutCellEdgeGenerator : public mtao::geometry::grid::StaggeredGrid<double, 
     std::vector<CoordMaskedEdge<D>> m_grid_edges;
     std::vector<CutMeshEdge<D>> m_cut_edges;
     std::vector<CutMeshFace<D>> m_cut_faces;
-    std::conditional_t<D == 2, mtao::geometry::mesh::HalfEdgeMesh, std::nullopt_t> m_hem;
+    std::conditional_t<D == 2, mtao::geometry::mesh::HalfEdgeMesh, mtao::types::empty_t> m_hem;
 
     GridDatab m_active_grid_cell_mask;
 };
