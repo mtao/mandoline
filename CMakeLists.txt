@@ -13,13 +13,13 @@ LIST(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 SET(MTAO_PATH "" CACHE STRING "location of mtao core libs" )
 SET(LIBIGL_PATH "" CACHE STRING "location of libigl libs" )
 
-OPTION(USE_OPENGL "Build opengl stuff" ON)
+OPTION(MANDOLINE_USE_OPENGL "Build opengl stuff" ON)
 IF(APPLE)
-    SET(USE_OPENMP_PRE OFF)
+    SET(MANDOLINE_USE_OPENMP_PRE OFF)
 ELSE(APPLE)
-    SET(USE_OPENMP_PRE ON)
+    SET(MANDOLINE_USE_OPENMP_PRE ON)
 ENDIF(APPLE)
-OPTION(USE_OPENMP "Use OpenMP stuff" ${USE_OPENMP_PRE})
+OPTION(MANDOLINE_USE_OPENMP "Use OpenMP stuff" ${MANDOLINE_USE_OPENMP_PRE})
 OPTION(HANDLE_SELF_INTERSECTIONS "Handle Self-Intersections" ON)
 SET(MANDOLINE_BUILD_TESTING ${BUILD_TESTING})
 
@@ -172,7 +172,7 @@ SET(CONSTRUCTION_HDRS
     include/mandoline/construction/remesh_self_intersections.hpp
     )
 
-if(USE_OPENGL)
+if(MANDOLINE_USE_OPENGL)
     set(CONSTRUCTION_SRCS ${CONSTRUCTION_SRCS} src/construction/construct_gui_widget.cpp)
     set(CONSTRUCTION_HDRS ${CONSTRUCTION_HDRS} include/mandoline/construction/construct_gui_widget.hpp)
     set(CONSTRUCTION_SRCS ${CONSTRUCTION_SRCS} src/construction/construct2_gui_widget.cpp)
@@ -315,7 +315,7 @@ TARGET_INCLUDE_DIRECTORIES(mandoline2 PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 TARGET_INCLUDE_DIRECTORIES(mandoline3 PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 TARGET_INCLUDE_DIRECTORIES(mandoline_cutmesh3 PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 
-if(USE_OPENGL)
+if(MANDOLINE_USE_OPENGL)
     TARGET_LINK_LIBRARIES(construction_obj PUBLIC ImGui::ImGui MagnumIntegration::ImGui)
 endif()
 

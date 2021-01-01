@@ -32,7 +32,7 @@ endfunction()
 
 OPTION(MTAO_USE_ELTOPO "Should we build the el topo submodule" OFF)
 OPTION(MTAO_USE_LOSTOPOS "Should we build the LOS Topos submodule" OFF)
-OPTION(MTAO_USE_OPENGL "Build opengl stuff" ${USE_OPENGL})
+OPTION(MTAO_USE_OPENGL "Build opengl stuff" ${MANDOLINE_USE_OPENGL})
 OPTION(MTAO_USE_PNGPP "Use PNG++ for screenshots" OFF)
 
 if(MTAO_PATH)
@@ -49,9 +49,9 @@ endif()
 
 
 
-IF(USE_OPENMP)
+IF(MANDOLINE_USE_OPENMP)
     FIND_PACKAGE(OpenMP REQUIRED)
-ENDIF(USE_OPENMP)
+ENDIF(MANDOLINE_USE_OPENMP)
 
 MESSAGE(STATUS "MODULE PATH:${CMAKE_MODULE_PATH}")
 #FIND_PACKAGE(libigl REQUIRED)
@@ -77,7 +77,7 @@ else()
     fetch_dep(libigl https://github.com/libigl/libigl.git ${LIBIGL_COMMIT} ON)
 endif()
 
-if(USE_OPENGL)
+if(MANDOLINE_USE_OPENGL)
     find_package(ImGui REQUIRED)
     #find_package(MagnumIntegration COMPONENTS ImGui)
 endif()
