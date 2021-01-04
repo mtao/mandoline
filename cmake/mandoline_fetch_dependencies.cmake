@@ -2,7 +2,7 @@ include(FetchContent REQUIRED)
 
 
 set(MTAO_COMMIT 
-    8bb2af9f1b2c6554387a30220c3be21314e6f355
+    8d2b79ba6837a31eeab0db9fa31c00377fdc5d64
     )
 set(PROTOBUF_COMMIT v3.11.3)
 set(LIBIGL_COMMIT v2.1.0)
@@ -33,7 +33,8 @@ endfunction()
 OPTION(MTAO_USE_ELTOPO "Should we build the el topo submodule" OFF)
 OPTION(MTAO_USE_LOSTOPOS "Should we build the LOS Topos submodule" OFF)
 OPTION(MTAO_USE_OPENGL "Build opengl stuff" ${MANDOLINE_USE_OPENGL})
-OPTION(MTAO_USE_PNGPP "Use PNG++ for screenshots" OFF)
+OPTION(MTAO_USE_JSON "Build opengl stuff" ${MANDOLINE_USE_JSON})
+OPTION(MTAO_USE_PNGPP "Use PNG++ for screenshots" ON)
 
 if(MTAO_PATH)
     ADD_SUBDIRECTORY("${MTAO_PATH}" ${CMAKE_BINARY_DIR}/mtao EXCLUDE_FROM_ALL)

@@ -32,13 +32,13 @@ IF(HANDLE_SELF_INTERSECTIONS)
         ../src/construction/remesh_self_intersections.cpp
         )
     TARGET_LINK_LIBRARIES(remove_self_intersections ${MANDOLINE_SELF_INTERSECTION_LIBS}
+        mandoline_headers
         mtao::common igl::core)
     TARGET_COMPILE_DEFINITIONS(remove_self_intersections
         PUBLIC -DMANDOLINE_HANDLE_SELF_INTERSECTIONS)
 
 
     ADD_LIBRARY(cutmesh_validation
-        validation/cutmesh_validation.cpp 
         validation/faces_fully_utilized.cpp validation/paired_boundary.cpp validation/pcwn_count.cpp validation/possible_cells.cpp
         validation/grid_cells.cpp
         validation/region_volumes.cpp
@@ -51,9 +51,11 @@ IF(HANDLE_SELF_INTERSECTIONS)
         validate_cutmesh.cpp
         )
 
-    TARGET_LINK_LIBRARIES(validate_cutmesh mandoline cutmesh_validation)
+    TARGET_LINK_LIBRARIES(validate_cutmesh mandoline cutmesh_validation
+        Corrade::Utility
+        nlohmann_json::nlohmann_json)
 ENDIF(HANDLE_SELF_INTERSECTIONS)
-IF(${USE_OPENGL})
+if(${MANDOLINE_USE_OPENGL})
     ADD_EXECUTABLE(make_cutmesh_gui make_cutmesh_gui.cpp)
     TARGET_LINK_LIBRARIES(make_cutmesh_gui mandoline OpenMP::OpenMP_CXX mtao::common mtao::visualization)
     if(HANDLE_SELF_INTERSECTIONS) 
@@ -62,5 +64,5 @@ IF(${USE_OPENGL})
     TARGET_LINK_LIBRARIES(make_cutmesh_gui cutmesh_validation)
     endif()
 
+endif()
 
-ENDIF(${USE_OPENGL})

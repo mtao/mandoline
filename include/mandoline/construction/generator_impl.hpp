@@ -162,7 +162,7 @@ void CutCellEdgeGenerator<D>::bake() {
 
 
     {
-        m_data.bake(vertex_grid());
+        m_data.bake(vertex_grid(), true, toss_external_facets);
     }
     {
         //auto t = mtao::logging::timer("generator bake vertices");

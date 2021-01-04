@@ -82,7 +82,9 @@ auto CutData<D, Indexer>::edge_index_ownership() const -> std::map<Edge, int> {
 
 
 template<int D, typename Indexer>
-void CutData<D, Indexer>::bake(const std::optional<SGType> &grid, bool fuse) {
+void CutData<D, Indexer>::bake(const std::optional<SGType> &grid, bool fuse, bool filter_external) {
+
+    const bool can_expect_all_vertices_in_indexer = !filter_external;
     auto t = mtao::logging::profiler("mesh bake", false, "profiler");
     {
         auto t = mtao::logging::profiler("mesh vertex bake", false, "profiler");
@@ -109,7 +111,7 @@ void CutData<D, Indexer>::bake(const std::optional<SGType> &grid, bool fuse) {
         {
             //auto t = mtao::logging::timer("Baking crossings");
             auto t = mtao::logging::profiler("mesh vertex unification", false, "profiler");
-            m_crossings = compute_crossings();
+            m_crossings = compute_crossings(fuse, filter_external);
             m_vertex_indexer = gv_index_map(m_crossings);
         }
     }
@@ -124,8 +126,6 @@ void CutData<D, Indexer>::bake(const std::optional<SGType> &grid, bool fuse) {
         auto add_edge = [&](const coord_mask<D> &m, const std::array<int, 2> &E, int eidx) {
             std::scoped_lock lock(edge_mutex);
             m_cut_edges.emplace_back(m, E, eidx);
-        };
-        auto add_from_eis = [&](const EdgeIntersections<D>& EI) {
         };
 
         // loop over every edge and find potential edges
@@ -152,7 +152,7 @@ void CutData<D, Indexer>::bake(const std::optional<SGType> &grid, bool fuse) {
 
             } else {// can't just put subsequent logic in here because edge can set trivial
                 //
-                auto Es = EI.edges(m_vertex_indexer);
+                auto Es = EI.edges(m_vertex_indexer,can_expect_all_vertices_in_indexer);
                 assert(Es.size() != 0);
                 for (auto &&E : Es) {
                     add_edge(ei_mask, E, EI.edge_index);
@@ -259,7 +259,7 @@ void CutData<D, Indexer>::bake(const std::optional<SGType> &grid, bool fuse) {
             }
             if (!trivial) {
                 //
-                auto Fs = FI.faces(m_vertex_indexer);
+                auto Fs = FI.faces(m_vertex_indexer, can_expect_all_vertices_in_indexer);
                 assert(Fs.size() != 0);
                 for (auto &&F : Fs) {
                     add_face(fi_mask, F, FI.triangle_index);
@@ -455,7 +455,7 @@ template<int D, typename Indexer>
 auto CutData<D, Indexer>::crossings() const -> const std::vector<Crossing<D>> & { return m_crossings; }
 
 template<int D, typename Indexer>
-auto CutData<D, Indexer>::compute_crossings(bool fuse) const -> std::vector<Crossing<D>> {
+auto CutData<D, Indexer>::compute_crossings(bool fuse, bool filter_external) const -> std::vector<Crossing<D>> {
 
     auto t2 = mtao::logging::timer("creating crossings");
     auto V = vertex_crossings();
@@ -465,10 +465,10 @@ auto CutData<D, Indexer>::compute_crossings(bool fuse) const -> std::vector<Cros
     ret.resize(V.size() + E.size() + F.size());
 
     std::map<VType, int> index_map;
-    std::vector<VType> gvs;
 
     int eoff = V.size();
     int foff = V.size() + E.size();
+    
 
 
     {
@@ -476,6 +476,13 @@ auto CutData<D, Indexer>::compute_crossings(bool fuse) const -> std::vector<Cros
         std::copy(V.begin(), V.end(), ret.begin());
         std::copy(E.begin(), E.end(), ret.begin() + eoff);
         std::copy(F.begin(), F.end(), ret.begin() + foff);
+    }
+    if(filter_external) {
+        auto t = mtao::logging::timer("filtering external crossings");
+        ret.erase(std::remove_if(ret.begin(),ret.end(), [&](const Crossing<D>& v) {
+                    return v.vertex().is_in_grid(*this);
+                    }), ret.end());
+
     }
 
 

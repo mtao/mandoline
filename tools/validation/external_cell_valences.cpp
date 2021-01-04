@@ -9,8 +9,8 @@ std::map<int,int> exterior_grid_valences(const mandoline::CutCellMesh<3>& ccm) {
         if(f.external_boundary) {
             auto [exterior_cell, sgn] = *f.external_boundary;
             if(exterior_cell < 0) continue;
-            //fmt::print("Stencil boundary ({1}({0}) {2})\n", exterior_cell, agindex, sgn);
             int agindex = cell_grid.get(exterior_cell);
+            //fmt::print("Stencil boundary ({1}({0}) {2})\n", exterior_cell, agindex, sgn);
             if(valences.find(agindex) != valences.end()) {
                 valences[agindex]++;
             } else {
@@ -24,18 +24,20 @@ std::map<int,int> exterior_grid_valences(const mandoline::CutCellMesh<3>& ccm) {
         //fmt::print("dual edge ({} {})\n", n, p);
         if(n >= 0) {
             
-            if(valences.find(cell_grid.get(n)) != valences.end()) {
-                valences[cell_grid.get(n)]++;
+            if(valences.find(n) != valences.end()) {
+                //valences[cell_grid.get(n)]++;
+                valences[n]++;
             } else {
-                valences[cell_grid.get(n)] = 1;
+                //valences[cell_grid.get(n)] = 1;
+                valences[n] = 1;
             }
         }
         if(p >= 0) {
             
-            if(valences.find(cell_grid.get(p)) != valences.end()) {
-                valences[cell_grid.get(p)]++;
+            if(valences.find(p) != valences.end()) {
+                valences[p]++;
             } else {
-                valences[cell_grid.get(p)] = 1;
+                valences[p] = 1;
             }
         }
     }

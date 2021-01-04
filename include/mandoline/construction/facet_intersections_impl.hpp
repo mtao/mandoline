@@ -454,7 +454,7 @@ std::vector<Crossing<D>> TriangleIntersections<D>::boundary_vptr_loop() const {
 }
 
 template<int D>
-auto TriangleIntersections<D>::vptr_faces() const -> std::set<std::vector<const VType *>> {
+auto TriangleIntersections<D>::vptr_faces(const std::map<const VType*,int>* other_vptr_indexer) const -> std::set<std::vector<const VType *>> {
     std::set<std::vector<const VType *>> ret;
     /*
                                ret.emplace(std::vector<const VType*>(vptr_tri.begin(),vptr_tri.end()));
@@ -464,6 +464,12 @@ auto TriangleIntersections<D>::vptr_faces() const -> std::set<std::vector<const 
     populate_crossing_indices<D>(V);
 
     auto VM = crossing_indexer<D>(V);
+    if(other_vptr_indexer != nullptr) {
+        const auto& o = *other_vptr_indexer;
+        std::erase_if(VM, [&](const auto& item) {
+            return o.find(item.first) != o.end();
+                });
+    }
 
     auto IVM = inverse_crossing_indexer<D>(V);
     auto BC = barycentric_coords();
@@ -474,7 +480,8 @@ auto TriangleIntersections<D>::vptr_faces() const -> std::set<std::vector<const 
     //for(auto&& v: V) { std::cout << std::string(v) << " ";}
     //std::cout << std::endl;
     //std::cout << B << std::endl;
-    auto Es = this->nobdry_edges(VM);
+    // TODO: If 
+    auto Es = this->nobdry_edges(VM, false);
     //for(auto&& e: Es) {
     //    std::cout << e[0] << ":" << e[1] << " ";
     //}
@@ -504,8 +511,8 @@ auto TriangleIntersections<D>::vptr_faces() const -> std::set<std::vector<const 
 }
 
 template<int D>
-std::set<std::vector<int>> TriangleIntersections<D>::faces(const std::map<const VType *, int> &indexer) const {
-    auto ptrf = vptr_faces();
+std::set<std::vector<int>> TriangleIntersections<D>::faces(const std::map<const VType *, int> &indexer, bool expect_all_vertices_in_indexer) const {
+    auto ptrf = vptr_faces(expect_all_vertices_in_indexer?nullptr:&indexer);
     std::set<std::vector<int>> ret;
     std::transform(ptrf.begin(), ptrf.end(), std::inserter(ret, ret.end()), [&](auto &&ptrvec) {
         std::vector<int> vec(ptrvec.size());

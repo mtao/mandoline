@@ -159,7 +159,7 @@ std::tuple<mtao::ColVecs2d, mtao::ColVecs3i> CutFace<2>::triangulate_triangle(co
     }
     //std::cout << std::endl;
     if (points_added && !do_add_vertices) {
-        std::cout << "points were added when they shouldnt have!" << std::endl;
+        std::cerr << "points were added when they shouldnt have!" << std::endl;
         return {};
     } else {
         mtao::ColVecs2d newV3;
@@ -170,7 +170,7 @@ std::tuple<mtao::ColVecs2d, mtao::ColVecs3i> CutFace<2>::triangulate_triangle(co
         newV3.row((axis + 2) % 3) = newV2.row(1);
         newV3.row(axis).setConstant(double(coord));
 
-        std::cout << "Triangulation with vertex added: " << newV3.cols() << " / " << FF.maxCoeff() << std::endl;
+        std::cerr << "Triangulation with vertex added: " << newV3.cols() << " / " << FF.maxCoeff() << std::endl;
         return { newV3, FF };
     }
 }

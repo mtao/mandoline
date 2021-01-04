@@ -81,14 +81,14 @@ class MeshViewer : public mtao::opengl::Window2 {
         constructor.setParent(&root());
 
 
-        curve_drawable = new mtao::opengl::Drawable<Magnum::Shaders::Flat2D>{ curve_mesh, _flat_shader, curve_drawgroup };
+        curve_drawable = new mtao::opengl::MeshDrawable<Magnum::Shaders::Flat2D>{ curve_mesh, _flat_shader, curve_drawgroup };
         curve_mesh.setParent(&root());
         curve_drawable->deactivate();
-        cutcell_drawable = new mtao::opengl::Drawable<Magnum::Shaders::VertexColor2D>{ cutcell_mesh, vcolor_shader, background_drawgroup };
+        cutcell_drawable = new mtao::opengl::MeshDrawable<Magnum::Shaders::VertexColor2D>{ cutcell_mesh, vcolor_shader, background_drawgroup };
         cutcell_mesh.setParent(&root());
         cutcell_drawable->deactivate();
 
-        cutcell_face_drawable = new mtao::opengl::Drawable<Magnum::Shaders::Flat2D>{ cutcell_face_mesh, _flat_shader, curve_drawgroup };
+        cutcell_face_drawable = new mtao::opengl::MeshDrawable<Magnum::Shaders::Flat2D>{ cutcell_face_mesh, _flat_shader, curve_drawgroup };
         cutcell_face_mesh.setParent(&root());
         cutcell_face_drawable->deactivate();
 
@@ -141,9 +141,9 @@ class MeshViewer : public mtao::opengl::Window2 {
     mtao::opengl::objects::Mesh<2> cutcell_mesh;
     mtao::opengl::objects::Mesh<2> cutcell_face_mesh;
     mandoline::construction::CutmeshGenerator2Gui constructor;
-    mtao::opengl::Drawable<Magnum::Shaders::Flat2D> *curve_drawable = nullptr;
-    mtao::opengl::Drawable<Magnum::Shaders::VertexColor2D> *cutcell_drawable = nullptr;
-    mtao::opengl::Drawable<Magnum::Shaders::Flat2D> *cutcell_face_drawable = nullptr;
+    mtao::opengl::MeshDrawable<Magnum::Shaders::Flat2D> *curve_drawable = nullptr;
+    mtao::opengl::MeshDrawable<Magnum::Shaders::VertexColor2D> *cutcell_drawable = nullptr;
+    mtao::opengl::MeshDrawable<Magnum::Shaders::Flat2D> *cutcell_face_drawable = nullptr;
 };
 void MeshViewer::draw() {
     Magnum::GL::Renderer::disable(Magnum::GL::Renderer::Feature::DepthTest);

@@ -146,6 +146,28 @@ Vertex<D>::operator std::string() const {
 }
 
 
+template <int D>
+template <typename IndexerType>
+bool Vertex<D>::is_in_grid(const IndexerType& g) const {
+
+    const auto& vertex_shape = g.shape();
+    for(int j = 0; j < D; ++j) {
+        auto&& c = coord[j];
+        auto&& vs = vertex_shape[j];
+        if(c >= 0 && c < vs) {
+            // its on the interior of this axis, move on
+            continue;
+        } else if(c == vs && clamped_indices[j]) {
+            // it's on the boundary of this axis, move on
+            continue;
+        } else {
+            return false;
+        }
+    }
+    return true;
+
+}
+
 template<int D>
 bool Vertex<D>::clamped(int index) const {
     return clamped_indices[index];

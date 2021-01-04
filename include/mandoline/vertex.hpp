@@ -67,6 +67,9 @@ struct Vertex {
     size_t clamped_count() const;
     bool is_grid_vertex() const;
     bool is_in_cell(const coord_type &c) const;//closed cell concept
+    // takes in a structure for the vertices of the input grid
+    template <typename IndexerType>
+    bool is_in_grid(const IndexerType& g) const;
     std::set<coord_type> possible_cells() const;
     //std::set<coord_type> possible_faces() const;
 

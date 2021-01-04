@@ -1,11 +1,11 @@
 #include "mandoline/operators/interpolation3.hpp"
 
+#include <spdlog/spdlog.h>
 
 namespace mandoline::operators {
 using coord_type = CutCellMesh<3>::coord_type;
 
-
-//mesh vertex -> cut vertex
+// mesh vertex -> cut vertex
 Eigen::SparseMatrix<double> barycentric_matrix(const CutCellMesh<3> &ccm) {
     Eigen::SparseMatrix<double> A(ccm.vertex_size(), ccm.origV().cols());
     std::vector<Eigen::Triplet<double>> trips;
@@ -26,10 +26,11 @@ Eigen::SparseMatrix<double> barycentric_matrix(const CutCellMesh<3> &ccm) {
     return A;
 }
 
-//mesh face -> cut face
-Eigen::SparseMatrix<double> face_barycentric_volume_matrix(const CutCellMesh<3> &ccm) {
+// mesh face -> cut face
+Eigen::SparseMatrix<double> face_barycentric_volume_matrix(
+    const CutCellMesh<3> &ccm) {
     int face_size = 0;
-    //artifact from before i passed in m_origF
+    // artifact from before i passed in m_origF
     if (ccm.origF().size() == 0) {
         for (auto &&f : ccm.cut_faces()) {
             if (f.is_mesh_face()) {
@@ -43,22 +44,25 @@ Eigen::SparseMatrix<double> face_barycentric_volume_matrix(const CutCellMesh<3> 
     Eigen::SparseMatrix<double> A(ccm.face_size(), face_size);
     std::vector<Eigen::Triplet<double>> trips;
     for (auto &&[fid, btf] : ccm.mesh_cut_faces()) {
-        double vol = btf.volume() * 2;//proportion of 2 is required because barycentric coordinates live in a unit triangle
+        double vol =
+            btf.volume() * 2;  // proportion of 2 is required because
+                               // barycentric coordinates live in a unit triangle
         trips.emplace_back(fid, btf.parent_fid, vol);
     }
     A.setFromTriplets(trips.begin(), trips.end());
-    //for(int i = 0; i < A.cols(); ++i) {
+    // for(int i = 0; i < A.cols(); ++i) {
     //    A.col(i) /= A.col(i).sum();
     //}
     return A;
 }
-//grid vertex -> cut vertex
+// grid vertex -> cut vertex
 Eigen::SparseMatrix<double> trilinear_matrix(const CutCellMesh<3> &ccm) {
-    Eigen::SparseMatrix<double> A(ccm.vertex_size(), ccm.StaggeredGrid::vertex_size());
+    Eigen::SparseMatrix<double> A(ccm.vertex_size(),
+                                  ccm.StaggeredGrid::vertex_size());
     std::vector<Eigen::Triplet<double>> trips;
     trips.reserve(ccm.StaggeredGrid::vertex_size() + 8 * ccm.cut_vertex_size());
 
-    //emplace the identity map for grid vertices
+    // emplace the identity map for grid vertices
     for (int i = 0; i < ccm.StaggeredGrid::vertex_size(); ++i) {
         trips.emplace_back(i, i, 1);
     }
@@ -84,9 +88,11 @@ Eigen::SparseMatrix<double> trilinear_matrix(const CutCellMesh<3> &ccm) {
     A.setFromTriplets(trips.begin(), trips.end());
     return A;
 }
-//grid face -> cut face
-Eigen::SparseMatrix<double> face_grid_volume_matrix(const CutCellMesh<3> &ccm, bool include_mesh_cutfaces) {
-    auto trips = ccm.exterior_grid().grid_face_projection(ccm.cut_faces().size());
+// grid face -> cut face
+Eigen::SparseMatrix<double> face_grid_volume_matrix(
+    const CutCellMesh<3> &ccm, bool include_mesh_cutfaces) {
+    auto trips =
+        ccm.exterior_grid().grid_face_projection(ccm.cut_faces().size());
     auto FV = ccm.face_volumes();
     auto &dx = ccm.dx();
     mtao::Vec3d gfv;
@@ -99,13 +105,16 @@ Eigen::SparseMatrix<double> face_grid_volume_matrix(const CutCellMesh<3> &ccm, b
         const int col = t.col();
     }
     for (auto &&[i, face] : mtao::iterator::enumerate(ccm.cut_faces())) {
+        // std::cout << std::string(face) << std::endl;
         // we can't assume is_axial_face() returns something reasoanble because
         // some triangles may lie on a cut-face
-        bool included = include_mesh_cutfaces?(face.count() == 1) : face.is_axial_face();
+        // face.count() says that there's one axis that is bound (so its axial)
+        bool included =
+            include_mesh_cutfaces ? (face.count() == 1) : face.is_axial_face();
         if (included) {
             int axis = face.bound_axis();
             constexpr static int maxval = std::numeric_limits<int>::max();
-            coord_type c{ { maxval, maxval, maxval } };
+            coord_type c{{maxval, maxval, maxval}};
             for (auto &&ind : face.indices) {
                 for (auto &&i : ind) {
                     auto v = ccm.masked_vertex(i).coord;
@@ -114,16 +123,19 @@ Eigen::SparseMatrix<double> face_grid_volume_matrix(const CutCellMesh<3> &ccm, b
                     }
                 }
             }
+            // spdlog::info("Included! axis{} cell{}", axis, fmt::join(c,","));
             const int row = i;
             const int col = ccm.staggered_index<2>(c, axis);
-            double value = FV(i) / gfv(axis) * face.N(axis);//face.N(axis) should be a unit vector either facing up or down....
+            double value = FV(i) / gfv(axis) *
+                           face.N(axis);  // face.N(axis) should be a unit
+                                          // vector either facing up or down....
             trips.emplace_back(row, col, value);
         }
     }
     A.setFromTriplets(trips.begin(), trips.end());
-    //mtao::VecXd sums = A * mtao::VecXd::Zero(A.cols());
-    //sums = (sums.array().abs() > 1e-10).select(1.0 / sums.array(), 0);
-    //A = sums.asDiagonal() * A;
+    // mtao::VecXd sums = A * mtao::VecXd::Zero(A.cols());
+    // sums = (sums.array().abs() > 1e-10).select(1.0 / sums.array(), 0);
+    // A = sums.asDiagonal() * A;
     return A;
 }
-}// namespace mandoline::operators
+}  // namespace mandoline::operators

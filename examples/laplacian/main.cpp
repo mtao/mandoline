@@ -170,12 +170,12 @@ class MeshViewer: public mtao::opengl::Window3 {
 
             exploded_meshes = decltype(exploded_meshes)(regions.size());
             for(auto&& [i,r]: mtao::iterator::enumerate(regions)) {
-                exploded_vcolors.push_back(new mtao::opengl::Drawable<Magnum::Shaders::VertexColor3D>{exploded_meshes[i],vcolor_shader, drawables()});
+                exploded_vcolors.push_back(new mtao::opengl::MeshDrawable<Magnum::Shaders::VertexColor3D>{exploded_meshes[i],vcolor_shader, drawables()});
                 exploded_meshes[i].setParent(&root());
                 auto [VV,FF] = exploder.mesh(scale, std::set<int>{r});
                 slicers[r] = mandoline::tools::SliceGenerator(VV,FF);
             }
-            input_phong = new mtao::opengl::Drawable<Magnum::Shaders::Phong>{input_mesh,phong_shader, drawables()};
+            input_phong = new mtao::opengl::MeshDrawable<Magnum::Shaders::Phong>{input_mesh,phong_shader, drawables()};
 
             direction(2) = -1;
             origin(2) = -.1;
@@ -358,8 +358,8 @@ class MeshViewer: public mtao::opengl::Window3 {
         Magnum::Shaders::VertexColor3D vcolor_shader;
         mtao::opengl::objects::Mesh<3> input_mesh;
         std::vector<mtao::opengl::objects::Mesh<3>> exploded_meshes;
-        mtao::opengl::Drawable<Magnum::Shaders::Phong>* input_phong = nullptr;
-        std::vector<mtao::opengl::Drawable<Magnum::Shaders::VertexColor3D>*> exploded_vcolors;
+        mtao::opengl::MeshDrawable<Magnum::Shaders::Phong>* input_phong = nullptr;
+        std::vector<mtao::opengl::MeshDrawable<Magnum::Shaders::VertexColor3D>*> exploded_vcolors;
 
 };
 

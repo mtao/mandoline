@@ -66,16 +66,16 @@ class MeshViewer: public mtao::opengl::Window3 {
             input_mesh.setTriangleBuffer((ccm.origV()).cast<float>(), ccm.origF().cast<unsigned int>());
 
 
-            input_phong = new mtao::opengl::Drawable<Magnum::Shaders::Phong>{input_mesh,phong_shader, drawables()};
+            input_phong = new mtao::opengl::MeshDrawable<Magnum::Shaders::Phong>{input_mesh,phong_shader, drawables()};
             input_mesh.setParent(&root());
 
 
             update_cell();
-            cell_phong = new mtao::opengl::Drawable<Magnum::Shaders::Phong>{cell_mesh,phong_shader, drawables()};
+            cell_phong = new mtao::opengl::MeshDrawable<Magnum::Shaders::Phong>{cell_mesh,phong_shader, drawables()};
             cell_mesh.setParent(&root());
 
 
-            //point_phong = new mtao::opengl::Drawable<Magnum::Shaders::Phong>{point_mesh,phong_shader, drawables()};
+            //point_phong = new mtao::opengl::MeshDrawable<Magnum::Shaders::Phong>{point_mesh,phong_shader, drawables()};
             //point_mesh.setParent(&root());
 
         }
@@ -127,9 +127,9 @@ class MeshViewer: public mtao::opengl::Window3 {
         mtao::opengl::objects::Mesh<3> input_mesh;
         mtao::opengl::objects::Mesh<3> cell_mesh;
         mtao::opengl::objects::Mesh<3> point_mesh;
-        mtao::opengl::Drawable<Magnum::Shaders::Phong>* input_phong = nullptr;
-        mtao::opengl::Drawable<Magnum::Shaders::Phong>* cell_phong = nullptr;
-        mtao::opengl::Drawable<Magnum::Shaders::Phong>* point_phong = nullptr;
+        mtao::opengl::MeshDrawable<Magnum::Shaders::Phong>* input_phong = nullptr;
+        mtao::opengl::MeshDrawable<Magnum::Shaders::Phong>* cell_phong = nullptr;
+        mtao::opengl::MeshDrawable<Magnum::Shaders::Phong>* point_phong = nullptr;
 
 
 };

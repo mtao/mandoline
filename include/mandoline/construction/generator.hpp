@@ -64,6 +64,10 @@ class CutCellEdgeGenerator : public mtao::geometry::grid::StaggeredGrid<double, 
     using GridDatab = mtao::geometry::grid::GridDataD<bool, D>;
 
 
+
+    // GLOBAL OPTIONS THAT CAN BE SET BETWEEN SETTING AND BAKING!
+    bool toss_external_facets = false;
+
     //returns a new mesh and a set of boundary vertices
     std::tuple<mtao::geometry::mesh::HalfEdgeMesh, std::set<Edge>> compute_planar_hem(const std::vector<VType> &GV, const ColVecs &V, const Edges &E, const GridDatab &interior_cell_mask) const;
     // auxilliary call for if we haven't created t
@@ -282,6 +286,7 @@ class CutCellEdgeGenerator : public mtao::geometry::grid::StaggeredGrid<double, 
     bool is_active_cell(const coord_type &c) const;
 
   protected:
+
     CutData<D> m_data;
     mtao::map<Edge, int> m_origEMap;
     VecVector m_origV;

@@ -45,7 +45,7 @@ struct CutData : public Indexer_ {
     void set_topology(const Edges &E, const Faces &F = {}, const Faces &FEA = {});
     void update_topology_masks();
 
-    void bake(const std::optional<SGType> &grid = {}, bool fuse = true);
+    void bake(const std::optional<SGType> &grid = {}, bool fuse = true, bool filter_external = false);
     void clear();// clear intersections, useful if vertices changed position
     void reset();// reset internal data
     void reset_topology();// reset internal data
@@ -117,7 +117,9 @@ struct CutData : public Indexer_ {
   private:
     std::vector<const EdgeIntersection<D> *> flat_edge_intersections() const;
     std::vector<const TriangleIntersection<D> *> flat_triangle_intersections() const;
-    std::vector<Crossing<D>> compute_crossings(bool fuse = true) const;
+    /// fuse: identifies crossings that are actually grid vertices and fuses them
+    // this should pretty much always be run, but some inputs can be really bad FP-wise anyway
+    std::vector<Crossing<D>> compute_crossings(bool fuse = true, bool filter_external = false) const;
     std::vector<Crossing<D>> vertex_crossings() const;
     std::vector<Crossing<D>> edge_crossings() const;
     std::vector<Crossing<D>> face_crossings() const;

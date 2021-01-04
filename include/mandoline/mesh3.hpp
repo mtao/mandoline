@@ -80,7 +80,7 @@ struct CutCellMesh<3> : public CutCellMeshBase<3, CutCellMesh<3>> {
     std::vector<bool> boundary_faces() const;
 
     // grid cell mask / gneeration info
-    GridDatab active_cell_mask() const;
+    const GridDatab &active_cell_mask() const;
     std::set<coord_type> active_cells() const;
     size_t active_cell_count() const;
     // grid cell index from a local coordinate (grid is on integer coordinates)
@@ -186,6 +186,7 @@ struct CutCellMesh<3> : public CutCellMeshBase<3, CutCellMesh<3>> {
     std::set<int> m_folded_faces;
 
    private:
+    void recompute_active_cell_mask();
     void write_obj(const std::string &prefix, const std::set<int> &indices,
                    const std::optional<int> &region = {},
                    bool show_indices = false, bool show_base = true,

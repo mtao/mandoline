@@ -99,14 +99,14 @@ class MeshViewer: public mtao::opengl::Window3 {
             
 
 
-            input_phong = new mtao::opengl::Drawable<Magnum::Shaders::Phong>{input_mesh,phong_shader, drawables()};
+            input_phong = new mtao::opengl::MeshDrawable<Magnum::Shaders::Phong>{input_mesh,phong_shader, drawables()};
             input_mesh.setParent(&root());
 
 
-            //bbox_drawable = new mtao::opengl::Drawable<Magnum::Shaders::Flat3D>{slice_object,flat_shader, drawables()};
-            slice_vcolor = new mtao::opengl::Drawable<Magnum::Shaders::VertexColor3D>{slice_mesh,vcolor_shader, drawables()};
-            //slice_phong = new mtao::opengl::Drawable<Magnum::Shaders::Phong>{slice_mesh,phong_shader, drawables()};
-            slice_wireframe = new mtao::opengl::Drawable<Magnum::Shaders::MeshVisualizer>{slice_mesh,wireframe_shader, wireframe_drawables};
+            //bbox_drawable = new mtao::opengl::MeshDrawable<Magnum::Shaders::Flat3D>{slice_object,flat_shader, drawables()};
+            slice_vcolor = new mtao::opengl::MeshDrawable<Magnum::Shaders::VertexColor3D>{slice_mesh,vcolor_shader, drawables()};
+            //slice_phong = new mtao::opengl::MeshDrawable<Magnum::Shaders::Phong>{slice_mesh,phong_shader, drawables()};
+            slice_wireframe = new mtao::opengl::MeshDrawable<Magnum::Shaders::MeshVisualizer>{slice_mesh,wireframe_shader, wireframe_drawables};
             slice_mesh.setParent(&root());
 
 
@@ -161,11 +161,11 @@ class MeshViewer: public mtao::opengl::Window3 {
         mtao::opengl::objects::Mesh<3> input_mesh;
         mtao::opengl::objects::Mesh<3> slice_mesh;
         mtao::opengl::objects::Mesh<3> cube_mesh;
-        mtao::opengl::Drawable<Magnum::Shaders::Flat3D>* bbox_drawable = nullptr;
-        mtao::opengl::Drawable<Magnum::Shaders::Phong>* input_phong = nullptr;
-        mtao::opengl::Drawable<Magnum::Shaders::Phong>* slice_phong = nullptr;
-        mtao::opengl::Drawable<Magnum::Shaders::MeshVisualizer>* slice_wireframe = nullptr;
-        mtao::opengl::Drawable<Magnum::Shaders::VertexColor3D>* slice_vcolor = nullptr;
+        mtao::opengl::MeshDrawable<Magnum::Shaders::Flat3D>* bbox_drawable = nullptr;
+        mtao::opengl::MeshDrawable<Magnum::Shaders::Phong>* input_phong = nullptr;
+        mtao::opengl::MeshDrawable<Magnum::Shaders::Phong>* slice_phong = nullptr;
+        mtao::opengl::MeshDrawable<Magnum::Shaders::MeshVisualizer>* slice_wireframe = nullptr;
+        mtao::opengl::MeshDrawable<Magnum::Shaders::VertexColor3D>* slice_vcolor = nullptr;
 
 
 };

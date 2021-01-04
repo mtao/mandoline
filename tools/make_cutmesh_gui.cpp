@@ -108,15 +108,15 @@ class MeshViewer : public mtao::opengl::Window3 {
         edge_mesh.scale(Magnum::Math::Vector3<float>(s));
         vertex_mesh.scale(Magnum::Math::Vector3<float>(s));
         constructor.scale(Magnum::Math::Vector3<float>(s));
-        mv_drawable = new mtao::opengl::Drawable<Magnum::Shaders::MeshVisualizer>{ mesh, _wireframe_shader, drawables() };
+        mv_drawable = new mtao::opengl::MeshDrawable<Magnum::Shaders::MeshVisualizer3D>{ mesh, _wireframe_shader, drawables() };
 
 
 
-        point_drawable = new mtao::opengl::Drawable<Magnum::Shaders::Flat3D>{ vertex_mesh, _flat_shader, edge_drawables };
+        point_drawable = new mtao::opengl::MeshDrawable<Magnum::Shaders::Flat3D>{ vertex_mesh, _flat_shader, edge_drawables };
         point_drawable->deactivate();
         point_drawable->activate_points();
 
-        edge_boundary_drawable = new mtao::opengl::Drawable<Magnum::Shaders::Flat3D>{ edge_mesh, _flat_shader, edge_drawables };
+        edge_boundary_drawable = new mtao::opengl::MeshDrawable<Magnum::Shaders::Flat3D>{ edge_mesh, _flat_shader, edge_drawables };
         edge_boundary_drawable->set_visibility(false);
         edge_boundary_drawable->activate_triangles({});
         edge_boundary_drawable->activate_edges();
@@ -311,7 +311,7 @@ class MeshViewer : public mtao::opengl::Window3 {
     }
 
   private:
-    Magnum::Shaders::MeshVisualizer _wireframe_shader{ supportsGeometryShader() ? Magnum::Shaders::MeshVisualizer::Flag::Wireframe : Magnum::Shaders::MeshVisualizer::Flag{} };
+    Magnum::Shaders::MeshVisualizer3D _wireframe_shader{ supportsGeometryShader() ? Magnum::Shaders::MeshVisualizer3D::Flag::Wireframe : Magnum::Shaders::MeshVisualizer3D::Flag{} };
     Magnum::Shaders::Flat3D _flat_shader;
     Magnum::SceneGraph::DrawableGroup3D edge_drawables, dummy;
     mtao::opengl::Object3D center_point;
@@ -319,9 +319,9 @@ class MeshViewer : public mtao::opengl::Window3 {
     mtao::opengl::objects::Mesh<3> mesh;
     mtao::opengl::objects::Mesh<3> edge_mesh;
     mtao::opengl::objects::Mesh<3> vertex_mesh;
-    mtao::opengl::Drawable<Magnum::Shaders::MeshVisualizer> *mv_drawable = nullptr;
-    mtao::opengl::Drawable<Magnum::Shaders::Flat3D> *edge_boundary_drawable = nullptr;
-    mtao::opengl::Drawable<Magnum::Shaders::Flat3D> *point_drawable = nullptr;
+    mtao::opengl::MeshDrawable<Magnum::Shaders::MeshVisualizer3D> *mv_drawable = nullptr;
+    mtao::opengl::MeshDrawable<Magnum::Shaders::Flat3D> *edge_boundary_drawable = nullptr;
+    mtao::opengl::MeshDrawable<Magnum::Shaders::Flat3D> *point_drawable = nullptr;
 };
 
 
