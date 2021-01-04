@@ -13,6 +13,9 @@ class Crossing;
 
 template<int D, typename CrossingContainer>
 std::map<const Vertex<D> *, int> crossing_indexer(const CrossingContainer &C);
+template <int D>
+std::map<int, const Vertex<D> *> inverse_crossing_indexer_from_indexer(const std::map<const Vertex<D> *, int>  &C);
+
 template<int D, typename CrossingContainer>
 std::map<int, const Vertex<D> *> inverse_crossing_indexer(const CrossingContainer &C);
 template<int D, typename CrossingContainer>

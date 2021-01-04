@@ -40,7 +40,7 @@ struct IntersectionsBase : public coord_mask<D> {
     // pruning vertices (such as to constrain ourselves to elements in the grid)
     // we can encounter un-indexed vertices. This is considered a hint that
     std::set<Edge> edges(const std::map<const VType *, int> &indexer,
-                         bool expect_all_vertices_in_indexer ) const {
+                         bool expect_all_vertices_in_indexer) const {
         auto vedges = vptr_edges();
         std::set<Edge> ret;
         for (auto &&[a, b] : vedges) {
@@ -48,7 +48,9 @@ struct IntersectionsBase : public coord_mask<D> {
                 (indexer.find(a) != indexer.end() &&
                  indexer.find(b) != indexer.end())) {
                 Edge e{{indexer.at(a), indexer.at(b)}};
-                if (e[0] == e[1]) {continue;}
+                if (e[0] == e[1]) {
+                    continue;
+                }
                 std::sort(e.begin(), e.end());
                 ret.emplace(e);
             }
@@ -291,7 +293,9 @@ struct TriangleIntersections
         }
         for (auto &&eisptr : edge_isects) {
             auto &&e = eisptr->intersections;
-            ret.insert(ret.end(), e.begin(), e.end());
+            if (e.size() > 0) {
+                ret.insert(ret.end(), e.begin(), e.end());
+            }
         }
 
         return ret;
@@ -451,12 +455,14 @@ struct TriangleIntersections
         auto B = edge_barys(indices);
         return (1 - t) * B.col(0) + t * B.col(1);
     }
-    
 
-    // the other_vptr_indexer can be used to indicate vertex pointers that will not be used in the higher level interface
-    std::set<std::vector<const VType *>> vptr_faces(const std::map<const VType*,int>* other_vptr_indexer = nullptr) const;
+    // the other_vptr_indexer can be used to indicate vertex pointers that will
+    // not be used in the higher level interface
+    std::set<std::vector<const VType *>> vptr_faces(
+        const std::map<const VType *, int> *other_vptr_indexer = nullptr) const;
     std::set<std::vector<int>> faces(
-        const std::map<const VType *, int> &indexer, bool expect_all_vertices_in_indexer) const;
+        const std::map<const VType *, int> &indexer,
+        bool expect_all_vertices_in_indexer) const;
 
     TriIsect from_coord(const Vec &B) const {
         VType gv =

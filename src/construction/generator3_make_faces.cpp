@@ -83,7 +83,9 @@ void CutCellGenerator<3>::bake_faces() {
         std::array<int, 2> shape{ { s[n0], s[n1] } };
         mtao::Vec2d dx(g.dx()(n0), g.dx()(n1));
         mtao::Vec2d origin(g.origin()(n0), g.origin()(n1));
-        return CutCellEdgeGenerator<2>(shape);
+        CutCellEdgeGenerator<2> ccg(shape);
+        ccg.toss_external_facets = this->toss_external_facets;
+        return ccg;
     };
     std::array<CutCellEdgeGenerator<2>, D> grids{ { subgrid(*this, 0), subgrid(*this, 1), subgrid(*this, 2) } };
 

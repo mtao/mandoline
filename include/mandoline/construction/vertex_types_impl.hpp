@@ -23,6 +23,14 @@ std::map<const Vertex<D> *, int> crossing_indexer(const CrossingContainer &C) {
         }
     }
 }
+template<int D>
+std::map<int, const Vertex<D> *> inverse_crossing_indexer_from_indexer(const std::map<const Vertex<D> *, int>  &C) {
+    std::map<int, const Vertex<D> *> M;
+    for(auto&& [a,b]: C) {
+        M.emplace(b,a);
+    }
+    return M;
+}
 template<int D, typename CrossingContainer>
 std::map<int, const Vertex<D> *> inverse_crossing_indexer(const CrossingContainer &C) {
     std::map<int, const Vertex<D> *> M;
