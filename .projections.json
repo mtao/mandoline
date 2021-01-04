@@ -1,0 +1,11 @@
+{
+    "src/*.cpp": {
+        "alternate": "include/mandoline/{}.hpp"
+    },
+    "include/mandoline/*.hpp": {
+        "alternate": "src/{}.cpp"
+    },
+    "include/mandoline/*.h": {
+        "alternate": "src/{}.cpp"
+    }
+}
