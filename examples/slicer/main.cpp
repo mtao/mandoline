@@ -106,7 +106,7 @@ class MeshViewer: public mtao::opengl::Window3 {
             //bbox_drawable = new mtao::opengl::MeshDrawable<Magnum::Shaders::Flat3D>{slice_object,flat_shader, drawables()};
             slice_vcolor = new mtao::opengl::MeshDrawable<Magnum::Shaders::VertexColor3D>{slice_mesh,vcolor_shader, drawables()};
             //slice_phong = new mtao::opengl::MeshDrawable<Magnum::Shaders::Phong>{slice_mesh,phong_shader, drawables()};
-            slice_wireframe = new mtao::opengl::MeshDrawable<Magnum::Shaders::MeshVisualizer>{slice_mesh,wireframe_shader, wireframe_drawables};
+            slice_wireframe = new mtao::opengl::MeshDrawable<Magnum::Shaders::MeshVisualizer3D>{slice_mesh,wireframe_shader, wireframe_drawables};
             slice_mesh.setParent(&root());
 
 
@@ -154,7 +154,7 @@ class MeshViewer: public mtao::opengl::Window3 {
         Magnum::SceneGraph::DrawableGroup3D wireframe_drawables;
         Magnum::Shaders::Phong phong_shader;
         Magnum::Shaders::Flat3D flat_shader;
-        Magnum::Shaders::MeshVisualizer wireframe_shader{supportsGeometryShader()?Magnum::Shaders::MeshVisualizer::Flag::Wireframe:Magnum::Shaders::MeshVisualizer::Flag{}};
+        Magnum::Shaders::MeshVisualizer3D wireframe_shader{supportsGeometryShader()?Magnum::Shaders::MeshVisualizer3D::Flag::Wireframe:Magnum::Shaders::MeshVisualizer3D::Flag{}};
         Magnum::Shaders::VertexColor3D vcolor_shader;
 
         //mtao::opengl::objects::BoundingBox<3> slice_object;
@@ -164,7 +164,7 @@ class MeshViewer: public mtao::opengl::Window3 {
         mtao::opengl::MeshDrawable<Magnum::Shaders::Flat3D>* bbox_drawable = nullptr;
         mtao::opengl::MeshDrawable<Magnum::Shaders::Phong>* input_phong = nullptr;
         mtao::opengl::MeshDrawable<Magnum::Shaders::Phong>* slice_phong = nullptr;
-        mtao::opengl::MeshDrawable<Magnum::Shaders::MeshVisualizer>* slice_wireframe = nullptr;
+        mtao::opengl::MeshDrawable<Magnum::Shaders::MeshVisualizer3D>* slice_wireframe = nullptr;
         mtao::opengl::MeshDrawable<Magnum::Shaders::VertexColor3D>* slice_vcolor = nullptr;
 
 

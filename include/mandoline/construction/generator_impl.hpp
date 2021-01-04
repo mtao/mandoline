@@ -795,15 +795,15 @@ void CutCellEdgeGenerator<D>::bake_edges() {
         m_cut_edges = data().cut_edges();
     }
 
-    spdlog::info("Bad edges from data directly");
+    //spdlog::info("Bad edges from data directly");
     for (auto &&[idx, e] : mtao::iterator::enumerate(m_cut_edges)) {
         if (e.indices[0] >= total_vertex_size() ||
             e.indices[1] >= total_vertex_size()) {
-            std::cout << idx << ": " << std::string(e.mask()) << " ";
-            std::cout << e.indices[0] << ":" << e.indices[1] << std::endl;
+            //std::cout << idx << ": " << std::string(e.mask()) << " ";
+            //std::cout << e.indices[0] << ":" << e.indices[1] << std::endl;
         }
     }
-    spdlog::info("====================directly");
+    //spdlog::info("====================directly");
 
     auto get_grid_edge = [&](coord_type c, int type) -> Edge {
         int fidx = StaggeredGrid::vertex_index(c);
@@ -883,7 +883,7 @@ CutCellMesh<D> CutCellEdgeGenerator<D>::generate_vertices() const {
             if (idx >= 0 && idx < size) {
                 V[idx] = c.vertex();
             } else {
-                std::cout << "Fail" << std::endl;
+                spdlog::error("More non-grid cut-vertices than there should be ({} / {})", idx, size);
             }
         }
     }
@@ -916,6 +916,8 @@ CutCellMesh<D> CutCellEdgeGenerator<D>::generate_edges() const {
                   std::back_inserter(ret.m_cut_edges));
 
     } else {
+        // make sure that hybrid cut_edges havea nonempty masks (because they must have some mask).
+        // something. It could be a grid-cut-edge and TODO lets make sure that it's identified properly if it is
         std::transform(m_cut_edges.begin(), m_cut_edges.end(),
                        std::back_inserter(ret.m_cut_edges),
                        [](const CutMeshEdge<D> &E) -> CutEdge<D> {
@@ -928,11 +930,10 @@ CutCellMesh<D> CutCellEdgeGenerator<D>::generate_edges() const {
                                            std::array<int, 2>{{j, *m[j]}});
                                    }
                                }
-                           } else {
-                               return E;
-                           }
+                               // we can only get here if an edge without a parent eid does ont belong in a grid plane, which would be teh result of some very weird numerical artifact.
                            assert(false);
-                           return {};
+                               }
+                               return E;
                        });
         std::copy(m_grid_edges.begin(), m_grid_edges.end(),
                   std::back_inserter(ret.m_cut_edges));
