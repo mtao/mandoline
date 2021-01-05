@@ -180,7 +180,7 @@ void CutData<D, Indexer>::bake(const std::optional<SGType> &grid, bool fuse,
                     }
                 }
                 for (auto &&[i, v] : mtao::iterator::enumerate(e)) {
-                    std::cout << ei(i) << " ==> " << std::string(m_crossings[ei(i)]) << std::endl;
+                    //std::cout << ei(i) << " ==> " << std::string(m_crossings[ei(i)]) << std::endl;
                     v = m_crossings[ei(i)].index;
                 }
 
@@ -622,7 +622,7 @@ auto CutData<D, Indexer>::compute_crossings(bool fuse,
         int i;
         for (i = 0; i < ret.size(); ++i) {
             auto &p = ret[i];
-            p.index = i;
+            p.index = i + count;
         }
     }
     return ret;

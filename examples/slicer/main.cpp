@@ -110,13 +110,13 @@ class MeshViewer: public mtao::opengl::Window3 {
             slice_mesh.setParent(&root());
 
 
-            //slice_object.setParent(&root());
+            slice_object.setParent(&root());
             update_slice();
         }
         void gui() override {
             if(input_phong) {input_phong->gui("Input Phong");}
             if(slice_phong) {slice_phong->gui("Cell Phong");}
-            //if(slice_vcolor) {slice_vcolor->gui("Cell Vertex Color");}
+            if(slice_vcolor) {slice_vcolor->gui("Cell Vertex Color");}
             if(slice_wireframe) {slice_wireframe->gui("Cell Wireframe");}
 
             auto&& io = ImGui::GetIO();
@@ -157,7 +157,7 @@ class MeshViewer: public mtao::opengl::Window3 {
         Magnum::Shaders::MeshVisualizer3D wireframe_shader{supportsGeometryShader()?Magnum::Shaders::MeshVisualizer3D::Flag::Wireframe:Magnum::Shaders::MeshVisualizer3D::Flag{}};
         Magnum::Shaders::VertexColor3D vcolor_shader;
 
-        //mtao::opengl::objects::BoundingBox<3> slice_object;
+        mtao::opengl::objects::BoundingBox<3> slice_object;
         mtao::opengl::objects::Mesh<3> input_mesh;
         mtao::opengl::objects::Mesh<3> slice_mesh;
         mtao::opengl::objects::Mesh<3> cube_mesh;

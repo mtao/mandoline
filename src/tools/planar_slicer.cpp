@@ -166,9 +166,7 @@ std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> SliceGenerator::slice(const Eigen::
     auto T = transform.inverse();
     auto newVT = mtao::eigen::hstack_iter(VV.begin(), VV.end());
     auto newVV = mtao::eigen::hstack(newV, newVT);
-    for (int i = 0; i < newV.cols(); ++i) {
-        newVV.col(i) = T * newVV.col(i);
-    }
+    newVV = T * newVV;
     auto newF = mtao::eigen::hstack_iter(FF.begin(), FF.end());
 
     return mtao::geometry::mesh::compactify(newVV, newF);
