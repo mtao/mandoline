@@ -73,7 +73,7 @@ class MeshViewer : public mtao::opengl::Window2 {
 
     MeshViewer(const Arguments &args) : Window2(args), constructor(_flat_shader, drawables()) {
         //mtao::logging::make_logger().set_level(mtao::logging::Level::Off);
-        mtao::logging::make_logger("profiler").set_level(mtao::logging::Level::Off);
+        //mtao::logging::make_logger("profiler").set_level(mtao::logging::Level::Off);
         //Corrade::Utility::Arguments myargs;
         //myargs.addArgument("filename").parse(args.argc,args.argv);
         //std::string filename = myargs.value("filename");
