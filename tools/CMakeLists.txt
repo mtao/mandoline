@@ -18,6 +18,15 @@ TARGET_LINK_LIBRARIES(cutmesh_info mandoline_cutmesh3)
 ADD_EXECUTABLE(boundary_curves_to_cutmesh2 boundary_curves_to_cutmesh2.cpp)
 TARGET_LINK_LIBRARIES(boundary_curves_to_cutmesh2 mandoline OpenMP::OpenMP_CXX mtao::common cxxopts)
 
+
+
+
+add_library(mandoline_tool_utils utils/json_to_cutmesh.cpp)
+target_link_libraries(mandoline_tool_utils PUBLIC cutmesh_maker mandoline
+    OpenMP::OpenMP_CXX mtao::common)
+
+ADD_EXECUTABLE(json_to_cutmesh json_to_cutmesh.cpp)
+TARGET_LINK_LIBRARIES(json_to_cutmesh mandoline_tool_utils)
 IF(Corrade_FOUND)
     ADD_EXECUTABLE(cfg_to_cutmesh cfg_to_cutmesh.cpp)
     TARGET_LINK_LIBRARIES(cfg_to_cutmesh cutmesh_maker mandoline OpenMP::OpenMP_CXX mtao::common  Corrade::Utility)
@@ -36,20 +45,20 @@ IF(HANDLE_SELF_INTERSECTIONS)
         PUBLIC -DMANDOLINE_HANDLE_SELF_INTERSECTIONS)
 
 
-    ADD_LIBRARY(cutmesh_validation
+    ADD_LIBRARY(cutmesh_validation_tools
         validation/faces_fully_utilized.cpp validation/paired_boundary.cpp validation/pcwn_count.cpp validation/possible_cells.cpp
         validation/grid_cells.cpp
         validation/region_volumes.cpp
         validation/external_cell_valences.cpp
         )
-    TARGET_LINK_LIBRARIES(cutmesh_validation gmp CGAL mpfr  fmt
+    TARGET_LINK_LIBRARIES(cutmesh_validation_tools gmp CGAL mpfr  fmt
         mandoline)
 
-    ADD_EXECUTABLE(validate_cutmesh
-        validate_cutmesh.cpp
+    ADD_EXECUTABLE(cutmesh_validator
+        cutmesh_validator.cpp
         )
 
-    TARGET_LINK_LIBRARIES(validate_cutmesh mandoline cutmesh_validation
+    TARGET_LINK_LIBRARIES(cutmesh_validator mandoline cutmesh_validation_tools
         Corrade::Utility
         nlohmann_json::nlohmann_json)
 ENDIF(HANDLE_SELF_INTERSECTIONS)

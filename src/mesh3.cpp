@@ -134,16 +134,10 @@ std::set<int> CutCellMesh<3>::cell_faces(int index) const {
     return ret;
 }
 
-void CutCellMesh<3>::write(const std::string &prefix) const {
+void CutCellMesh<3>::write(const std::string &filename) const {
     GOOGLE_PROTOBUF_VERIFY_VERSION;
     std::stringstream ss;
-    auto CS = StaggeredGrid::cell_shape();
-    {
-        ss << prefix << "." << CS[0] << "_" << CS[1] << "_" << CS[2];
-        ss << ".cutmesh";
-    }
-    // std::cout << "Output filename: " << ss.str() << std::endl;
-    std::ofstream ofs(ss.str(), std::ios::binary);
+    std::ofstream ofs(filename, std::ios::binary);
     protobuf::CutMeshProto cmp;
     serialize(cmp);
     cmp.SerializeToOstream(&ofs);

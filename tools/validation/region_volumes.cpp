@@ -25,10 +25,14 @@ std::array<int, 2> region_counts(const mandoline::CutCellMesh<3> &ccm,
     auto ccm_regions = ccm.regions();
     // igl's C will give us regions, including the infinite region.
     //|regions - {infinite}| = maxCoeff because of an implicit "-1" for region 0
+    std::set<int> IR;
+    for(auto&& c: mtao::eigen::iterable(C)) {
+        IR.emplace(c);
+    }
     std::set<int> cr;
     std::copy(ccm_regions.begin(), ccm_regions.end(),
               std::inserter(cr, cr.end()));
-    return {{int(cr.size()), C.maxCoeff()}};
+    return {{int(cr.size()), int(IR.size())}};
 }
 
 Eigen::VectorXd brep_region_volumes(const mtao::ColVecs3d &V,
@@ -119,7 +123,7 @@ bool volume_check(const mandoline::CutCellMesh<3> &ccm) {
     mtao::VecXd IMV = brep_region_volumes(ccm.origV(), ccm.origF(), IMR);
     double external_boundary = ccm.bbox().sizes().prod();
 
-    double total_vol = IMV.sum();
+    double total_vol = external_boundary;
 
     // TODO: guess which cell uses the external boundary. on the first failure
     // we see we'll guess that's the one that should include the grid boudnary,
@@ -135,15 +139,19 @@ bool volume_check(const mandoline::CutCellMesh<3> &ccm) {
                 "CCM had more regions than input mesh, so volume check fails");
             return false;
         }
-        bool near = std::abs((IMV(ridx) - vol) / total_vol) > 1e-3;
+        double rel_vol_diff = std::abs((IMV(ridx) - vol) / total_vol);
+        bool near = rel_vol_diff > 1e-3;
         if (!near && !external_boundary_used) {
             IMV(ridx) += total_vol;
             external_boundary_used = true;
-            near = std::abs((IMV(ridx) - vol) / total_vol) > 1e-3;
+            rel_vol_diff = std::abs((IMV(ridx) - vol) / total_vol);
+            near = rel_vol_diff > 1e-3;
         }
         if (!near) {
-            spdlog::error("Region {} had volume {} in input but {} in cutmesh",
-                          ridx, IMV(ridx), vol);
+            spdlog::error(
+                "Region {} had volume {} in input but {} in cutmesh, relative "
+                "difference of {}",
+                ridx, IMV(ridx), vol, rel_vol_diff);
             return false;
         }
     }
