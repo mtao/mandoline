@@ -128,8 +128,8 @@ class MeshViewer: public mtao::opengl::Window3 {
 
 
         MeshViewer(const Arguments& args): Window3(args) {
-            mtao::logging::make_logger().set_level(mtao::logging::Level::Off);
-            mtao::logging::make_logger("profiler").set_level(mtao::logging::Level::Off);
+            //mtao::logging::make_logger().set_level(mtao::logging::Level::Off);
+            //mtao::logging::make_logger("profiler").set_level(mtao::logging::Level::Off);
             Corrade::Utility::Arguments myargs;
             myargs.addArgument("filename").parse(args.argc,args.argv);
             std::string filename = myargs.value("filename");

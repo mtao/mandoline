@@ -1,6 +1,6 @@
-IF(USE_OPENGL)
+IF(MANDOLINE_USE_OPENGL)
 ADD_EXECUTABLE(laplacian main.cpp setup.cpp)
 TARGET_LINK_LIBRARIES(laplacian mandoline mtao::visualization)
-ENDIF(USE_OPENGL)
+ENDIF(MANDOLINE_USE_OPENGL)
 ADD_EXECUTABLE(laplacian_nogl main_nogl.cpp setup.cpp)
 TARGET_LINK_LIBRARIES(laplacian_nogl mandoline)
