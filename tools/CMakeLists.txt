@@ -68,7 +68,7 @@ if(${MANDOLINE_USE_OPENGL})
     if(HANDLE_SELF_INTERSECTIONS) 
         TARGET_COMPILE_DEFINITIONS(remove_self_intersections
             PUBLIC -DMANDOLINE_HANDLE_SELF_INTERSECTIONS)
-    TARGET_LINK_LIBRARIES(make_cutmesh_gui cutmesh_validation)
+    TARGET_LINK_LIBRARIES(make_cutmesh_gui cutmesh_validation_tools)
     endif()
 
 endif()
