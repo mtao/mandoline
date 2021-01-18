@@ -963,9 +963,9 @@ CutCellMesh<D> CutCellEdgeGenerator<D>::generate_edges() const {
                 if (vi < grid_vertex_size()) {
                     t = data().get_edge_coord(ce.parent_eid, grid_vertex(vi));
                 } else {
-                    spdlog::info("Looking into crossing {} of {}", vi,
-                                 total_vertex_size());
-                    std::cout << std::string(crossing(vi)) << std::endl;
+                    //spdlog::info("Looking into crossing {} of {}", vi,
+                    //             total_vertex_size());
+                    //std::cout << std::string(crossing(vi)) << std::endl;
                     t = data().get_edge_coord(ce.parent_eid, crossing(vi));
                 }
             }
