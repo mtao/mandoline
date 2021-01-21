@@ -63,9 +63,9 @@ CutCell::operator std::string() const {
 void CutCell::serialize(protobuf::CutCell &cell) const {
     cell.set_id(index);
     cell.set_region(region);
-    std::cout << "cell grid cell: " ;
-    std::copy(grid_cell.begin(),grid_cell.end(),std::ostream_iterator<int>(std::cout,","));
-    std::cout << std::endl;
+    //std::cout << "cell grid cell: " ;
+    //std::copy(grid_cell.begin(),grid_cell.end(),std::ostream_iterator<int>(std::cout,","));
+    //std::cout << std::endl;
     protobuf::serialize(grid_cell, *cell.mutable_grid_cell());
     auto &&pmap = *cell.mutable_entries();
     for (auto &&[a, b] : *this) {

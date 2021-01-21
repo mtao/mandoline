@@ -312,6 +312,7 @@ void CutCellGenerator<3>::bake_cells() {
         auto adaptive_grid_factory = AdaptiveGridFactory(m_active_grid_cell_mask);
         adaptive_grid_factory.make_cells(adaptive_level);
         adaptive_grid = adaptive_grid_factory.create();
+        adaptive_grid->Base::operator=(*this);
 #else
         exterior_grid = ExteriorGrid<3>(*this, m_active_grid_cell_mask);
 #endif
