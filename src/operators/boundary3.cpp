@@ -1,11 +1,13 @@
 #include "mandoline/operators/boundary3.hpp"
-#include "mandoline/operators/boundary.hpp"
 
+#include "mandoline/operators/boundary.hpp"
 
 namespace mandoline::operators {
 
-Eigen::SparseMatrix<double> boundary(const CutCellMesh<3> &ccm, bool include_domain_boundary) {
-    auto trips = boundary_triplets(ccm.exterior_grid(), ccm.faces().size(), include_domain_boundary);
+Eigen::SparseMatrix<double> boundary(const CutCellMesh<3> &ccm,
+                                     bool include_domain_boundary) {
+    auto trips = boundary_triplets(ccm.exterior_grid(), ccm.faces().size(),
+                                   include_domain_boundary);
     Eigen::SparseMatrix<double> B(ccm.face_size(), ccm.cell_size());
 
     auto g = ccm.exterior_grid().cell_ownership_grid();
@@ -14,7 +16,9 @@ Eigen::SparseMatrix<double> boundary(const CutCellMesh<3> &ccm, bool include_dom
         int region = c.region;
         for (auto &&[fidx, s] : c) {
             auto &f = ccm.faces()[fidx];
-            if(include_domain_boundary || !(f.external_boundary && std::get<0>(*f.external_boundary) == -2)) {
+            if (include_domain_boundary ||
+                !(f.external_boundary &&
+                  std::get<0>(*f.external_boundary) == -2)) {
                 trips.emplace_back(fidx, c.index, s ? -1 : 1);
             }
         }
@@ -28,11 +32,10 @@ Eigen::SparseMatrix<double> boundary(const CutCellMesh<3> &ccm, bool include_dom
         }
     }
 
-
     B.setFromTriplets(trips.begin(), trips.end());
     return B;
 }
-//for removing mesh faces
+// for removing mesh faces
 std::set<int> grid_boundary_faces(const CutCellMesh<3> &ccm) {
     std::set<int> ret;
     for (auto &&[fidx, f] : mtao::iterator::enumerate(ccm.faces())) {
@@ -50,11 +53,11 @@ std::set<int> grid_boundary_faces(const CutCellMesh<3> &ccm) {
     }
     // adaptive grid part
     int fidx_offset = ccm.cut_face_size();
-    auto adret = grid_boundary_faces(ccm.exterior_grid(),fidx_offset);
+    auto adret = grid_boundary_faces(ccm.exterior_grid(), fidx_offset);
     ret.merge(adret);
     return ret;
 }
-std::set<int> grid_boundary_faces(const AdaptiveGrid& db, int offset) {
+std::set<int> grid_boundary_faces(const AdaptiveGrid &db, int offset) {
     std::set<int> ret;
     for (auto &&[fidx_, f] : mtao::iterator::enumerate(db.faces())) {
         int fidx = fidx_ + offset;
@@ -69,11 +72,13 @@ std::set<int> grid_boundary_faces(const AdaptiveGrid& db, int offset) {
     return ret;
 }
 
-std::vector<Eigen::Triplet<double>> boundary_triplets(const AdaptiveGrid& ag, int offset, bool domain_boundary ) {
+std::vector<Eigen::Triplet<double>> boundary_triplets(const AdaptiveGrid &ag,
+                                                      int offset,
+                                                      bool domain_boundary) {
     std::vector<Eigen::Triplet<double>> trips;
     for (auto &&[i, face] : mtao::iterator::enumerate(ag.faces())) {
         auto &e = face.dual_edge;
-        if(!domain_boundary || ag.is_boundary_face(e)) {
+        if (!domain_boundary || ag.is_boundary_face(e)) {
             auto [l, h] = face.dual_edge;
             if (l >= 0) {
                 trips.emplace_back(offset + i, l, -1);

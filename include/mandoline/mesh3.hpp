@@ -70,6 +70,8 @@ struct CutCellMesh<3> : public CutCellMeshBase<3, CutCellMesh<3>> {
     std::set<int> cells_in_grid_cell(const coord_type &c) const;
     int get_cell_index(const VecCRef &p) const;
 
+    bool is_in_cell(const VecCRef &p, size_t index) const;
+
     // info on faces
     size_t face_size() const;
     size_t cut_face_size() const;
@@ -92,8 +94,6 @@ struct CutCellMesh<3> : public CutCellMeshBase<3, CutCellMesh<3>> {
     // cell -> face boundary operator
     Eigen::SparseMatrix<double> boundary(
         bool include_domain_boundary_faces = false) const;
-    // face -> edge boundary operator
-    Eigen::SparseMatrix<double> face_boundary() const;
     mtao::ColVecs3d face_centroids() const;
     mtao::ColVecs3d cell_centroids() const;
     ColVecs dual_vertices() const;  // alias for centroids

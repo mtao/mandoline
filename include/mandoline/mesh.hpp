@@ -6,6 +6,7 @@
 #pragma GCC diagnostic pop
 #include <mtao/geometry/mesh/halfedge.hpp>
 #include <array>
+#include <optional>
 #include <map>
 #include <vector>
 #include "cutmesh.pb.h"
@@ -65,6 +66,9 @@ struct CutCellMeshBase : public mtao::geometry::grid::StaggeredGrid<double, D> {
 
     bool empty() const;// return if the grid is an empty grid!
 
+
+    const std::optional<ColVecs>& cached_vertices() const;
+    void cache_vertices();
     ColVecs vertices() const;
     ColVecs grid_space_vertices() const;
     ColVecs dual_vertices() const;
@@ -90,7 +94,7 @@ struct CutCellMeshBase : public mtao::geometry::grid::StaggeredGrid<double, D> {
     int grid_edge_type(int idx) const;
     Edge grid_edge(coord_type edge_coord, int type) const;
 
-    auto cut_edge(int idx) const { return m_cut_edges.at(idx); }
+    const auto& cut_edge(int idx) const { return m_cut_edges.at(idx); }
     int cut_edge_size() const { return m_cut_edges.size(); }
 
     auto grid_vertices() const { return StaggeredGrid::vertices(); }
@@ -126,6 +130,7 @@ struct CutCellMeshBase : public mtao::geometry::grid::StaggeredGrid<double, D> {
     GridDatab m_active_grid_cell_mask;
     std::vector<CutEdge<D>> m_cut_edges;
     std::map<int, InterpolatedEdge> m_mesh_cut_edges;
+    std::optional<ColVecs> m_cached_vertices;
 };
 template<int D>
 struct CutCellMesh;

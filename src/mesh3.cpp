@@ -483,40 +483,6 @@ Eigen::SparseMatrix<double> CutCellMesh<3>::boundary(
     bool include_grid_boundary_faces) const {
     return operators::boundary(*this, include_grid_boundary_faces);
 }
-Eigen::SparseMatrix<double> CutCellMesh<3>::face_boundary() const {
-    Eigen::SparseMatrix<double> B(edge_size(), face_size());
-
-    /*
-        auto trips = m_exterior_grid.face_boundary_triplets(m_edges.size());
-        auto g = exterior_grid().grid();
-
-        for(auto&& c: cells()) {
-            int region = c.region;
-            for(auto&& [fidx,s]: c) {
-                auto& f = faces()[fidx];
-                if(f.is_axial_face()) {
-                    int a = cell_shape()[f.as_axial_axis()];
-                    int v = f.as_axial_coord();
-                    if(v > 0 && v < a) {
-                        trips.emplace_back(fidx,c.index, s?1:-1);
-                    }
-                } else {
-                    trips.emplace_back(fidx,c.index, s?1:-1);
-                }
-            }
-        }
-        for(auto&& [fidx,f]: mtao::iterator::enumerate(faces())) {
-            if(f.external_boundary) {
-                auto [c,s] = *f.external_boundary;
-                trips.emplace_back(fidx,g.get(c), s?-1:1);
-            }
-        }
-
-
-        B.setFromTriplets(trips.begin(),trips.end());
-        */
-    return B;
-}
 auto CutCellMesh<3>::active_cell_mask() const -> const GridDatab & {
     return active_grid_cell_mask();
 }
@@ -648,10 +614,15 @@ int CutCellMesh<3>::get_cell_index(const VecCRef &p) const {
     } else {
         auto [c, q] = vertex_grid().coord(p);
         auto cell_indices = cells_in_grid_cell(c);
-        auto V = vertices();
+        ColVecs V;
+        const auto& CV = cached_vertices();
+        const ColVecs* VP = CV?&*CV: &V;
+        if(!CV) {
+            V = vertices();
+        }
         for (auto &&ci : cell_indices) {
             auto &&cell = cells().at(ci);
-            if (cell.contains(V, faces(), p)) {
+            if (cell.contains(*VP, faces(), p)) {
                 return ci;
             }
         }
@@ -663,6 +634,33 @@ int CutCellMesh<3>::get_cell_index(const VecCRef &p) const {
             << c[0] << " " << c[1] << " " << c[2];
     }
     return -1;
+}
+
+bool CutCellMesh<3>::is_in_cell(const VecCRef &p, size_t index) const {
+    auto v = vertex_grid().local_coord(p);
+    // check if its  in an adaptive grid cell, tehn we can just use that cell
+    // if the grid returns -2 we pass that through
+    if (int ret = m_exterior_grid.get_cell_index(v); ret != -1) {
+        if (ret == -2) {
+            mtao::logging::warn() << "Point lies outside the grid";
+        }
+        return ret == index;
+    } else {
+        auto &&cell = cells().at(index);
+        ColVecs V;
+        const auto& CV = cached_vertices();
+        const ColVecs* VP = CV?&*CV: &V;
+        if(!CV) {
+            V = vertices();
+        }
+        if (cell.contains(*VP, faces(), p)) {
+            return true;
+        }
+    }
+    // TODO
+    // if I haven't returned yet then either this ccm is bad
+    // or i'm too close to an edge. lets not assume that for now
+    return false;
 }
 
 auto CutCellMesh<3>::edges() const -> Edges {

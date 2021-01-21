@@ -107,7 +107,27 @@ auto CutCellMesh<2>::dual_edge_volumes() const -> VecX {
 
     return V;
 }
+/*
+void CutCellMesh<2>::decouple_mesh_edges() const {
+    std::set<int> edges_to_decouple;
+    std::map<int,int> vertices_to_decouple;
+    for(auto&& [edge_index, ie]: m_mesh_cut_edges) {
+        edges_to_decouple.emplace(edge_index);
+        for(auto&& v: cut_edge(edge_index).indices) {
+            vertices_to_decouple[v]++;
+        }
+    }
+    // dont decouple the endpoints
+    for(auto it = vertices_to_decouple.begin(); it != vertices_to_decouple.end();) {
+        if(it->second == 1) {
+            it = vertices_to_decouple.erase(it);
+        } else {
+            ++it;
+        }
+    }
 
+
+}*/
 
 //auto CutCellMesh<2>::dual_vertices() const -> ColVecs {
 //    ColVecs V = ColVecs::Zero(D, num_cells());

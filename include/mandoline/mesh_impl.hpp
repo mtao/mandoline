@@ -59,6 +59,15 @@ int CutCellMeshBase<D, Derived>::grid_edge_type(int idx) const {
 }
 
 template<int D, typename Derived>
+auto CutCellMeshBase<D, Derived>::cached_vertices() const -> const std::optional<ColVecs>& {
+    return m_cached_vertices;
+}
+template<int D, typename Derived>
+void CutCellMeshBase<D, Derived>::cache_vertices() {
+    m_cached_vertices = vertices();
+}
+
+template<int D, typename Derived>
 auto CutCellMeshBase<D, Derived>::vertices() const -> ColVecs {
     return mtao::eigen::hstack(StaggeredGrid::vertices(), cut_vertices_colvecs());
 }
