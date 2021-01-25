@@ -176,7 +176,7 @@ std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> CutFace<3>::triangulate_triangle(co
     }
     //std::cout << std::endl;
     if (points_added && !do_add_vertices) {
-        std::cout << "points were added when they shouldnt have!" << std::endl;
+        std::cerr << "points were added when they shouldnt have!" << std::endl;
         return {};
     } else {
         mtao::ColVecs3d newV3;
@@ -187,7 +187,7 @@ std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> CutFace<3>::triangulate_triangle(co
         newV3.row((axis + 2) % 3) = newV2.row(1);
         newV3.row(axis).setConstant(double(coord));
 
-        std::cout << "Triangulation with vertex added: " << newV3.cols() << " / " << FF.maxCoeff() << std::endl;
+        std::cerr << "Triangulation with vertex added: " << newV3.cols() << " / " << FF.maxCoeff() << std::endl;
         return { newV3, FF };
     }
 }
@@ -226,7 +226,7 @@ CutFace<3> CutFace<3>::from_proto(const protobuf::CutFace &face) {
     CutFace<3> ret;
     ret.N = protobuf::deserialize(face.normal());
     if (face.id_case() == protobuf::CutFace::IdCase::kFaceId) {
-        ret.id = face.face_id();
+        ret.id = static_cast<int>(face.face_id());
     } else {
         auto &&pid = face.plane_id();
         ret.id = std::array<int, 2>{ { int(pid.axis()), int(pid.value()) } };
