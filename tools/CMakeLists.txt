@@ -9,6 +9,7 @@ ADD_DEFINITIONS(-g)
 
 ADD_EXECUTABLE(cutmesh_to_obj cutmesh_to_obj.cpp)
 TARGET_LINK_LIBRARIES(cutmesh_to_obj cutmesh_maker mandoline OpenMP::OpenMP_CXX mtao::common fmt)
+
 ADD_EXECUTABLE(obj_to_cutmesh obj_to_cutmesh.cpp)
 TARGET_LINK_LIBRARIES(obj_to_cutmesh cutmesh_maker mandoline OpenMP::OpenMP_CXX mtao::common)
 

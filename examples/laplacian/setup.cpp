@@ -136,7 +136,7 @@ mtao::VecXd divergence(const mandoline::CutCellMesh<3>& ccm,
     //    if(i < ccm.cells().size() && ccm.cells()[i].region == 0) {
     //        H3(i) = 1;
     //        break;
-    //    } else if(ccm.adaptive_grid_regions().at(i) == 0) {
+    //    } else if(ccm.exterior_grid_regions().at(i) == 0) {
     //        H3(i) = 1;
     //        break;
     //    }
@@ -145,7 +145,7 @@ mtao::VecXd divergence(const mandoline::CutCellMesh<3>& ccm,
     //    if(j < ccm.cells().size() &&ccm.cells()[j].region == 0) {
     //        H3(j) = -1;
     //        break;
-    //    } else if(ccm.adaptive_grid_regions().at(j) == 0) {
+    //    } else if(ccm.exterior_grid_regions().at(j) == 0) {
     //        H3(j) = -1;
     //        break;
     //    }
@@ -164,9 +164,14 @@ mtao::VecXd divergence(const mandoline::CutCellMesh<3>& ccm,
     R.setConstant(0);
     int coeff;
     direction.maxCoeff(&coeff);
+<<<<<<< HEAD
     std::cout << "Direction: " << direction.transpose() << " => " << coeff
               << std::endl;
     for (auto&& [idx, cell] : ccm.exterior_grid().cells()) {
+=======
+    std::cout << "Direction: " << direction.transpose() << " => " << coeff << std::endl;
+    for(auto&& [idx,cell]: ccm.exterior_grid().cells()) {
+>>>>>>> master
         int cidx = cell.corner()[coeff];
         if (cidx == 0) {
             R(idx) = 1;
@@ -186,10 +191,17 @@ mtao::VecXd divergence(const mandoline::CutCellMesh<3>& ccm,
     std::cout << "Hitting dx: " << idx << std::endl;
     R(idx) = 1;
 
+<<<<<<< HEAD
     for (auto&& face : ccm.exterior_grid().faces()) {
         if (face.axis() == 1) {
             auto [a, b] = face.dual_edge;
             if (a == -1) {
+=======
+    for(auto&& face: ccm.exterior_grid().faces()) {
+        if(face.axis() == 1) {
+            auto [a,b] = face.dual_edge;
+            if(a == -1) {
+>>>>>>> master
                 R(b) = 1;
             } else if (b == -1) {
                 R(a) = -1;
