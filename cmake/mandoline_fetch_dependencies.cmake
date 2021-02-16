@@ -2,7 +2,7 @@ include(FetchContent REQUIRED)
 
 
 set(MTAO_COMMIT 
-    38af823b93062456a5526f88c5d81bd71f13ee98
+    eafd81d6e2c3f949deaf631cda30a62053006504
     )
 set(PROTOBUF_COMMIT v3.11.3)
 set(LIBIGL_COMMIT v2.2.0)
