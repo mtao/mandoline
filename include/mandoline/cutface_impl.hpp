@@ -1,47 +1,49 @@
 #pragma once
+
 #include "mandoline/cutface.hpp"
 
 namespace mandoline {
 
-template<int D>
+template <int D>
 bool CutFaceBase<D>::is_mesh_face() const {
     return std::holds_alternative<int>(id);
 }
-template<int D>
+template <int D>
 bool CutFaceBase<D>::is_axial_face() const {
     return std::holds_alternative<std::array<int, 2>>(id);
 }
-template<int D>
+template <int D>
 int CutFaceBase<D>::as_face_id() const {
     return std::get<int>(id);
 }
-template<int D>
+template <int D>
 const std::array<int, 2> &CutFaceBase<D>::as_axial_id() const {
     return std::get<std::array<int, 2>>(id);
 }
-template<int D>
+template <int D>
 int CutFaceBase<D>::as_axial_axis() const {
     return std::get<std::array<int, 2>>(id)[0];
 }
-template<int D>
+template <int D>
 int CutFaceBase<D>::as_axial_coord() const {
     return std::get<std::array<int, 2>>(id)[1];
 }
-template<int D>
+template <int D>
 CutFaceBase<D>::operator std::string() const {
     std::stringstream ss;
     ss << "{";
 
-    std::visit([&](auto &&f) {
-        using T = std::decay_t<decltype(f)>;
-        if constexpr (std::is_same_v<T, int>) {
-            ss << "(" << f << ")";
-        } else {
-            auto [a, b] = f;
-            ss << "(" << a << ":" << b << ")";
-        }
-    },
-               id);
+    std::visit(
+        [&](auto &&f) {
+            using T = std::decay_t<decltype(f)>;
+            if constexpr (std::is_same_v<T, int>) {
+                ss << "(" << f << ")";
+            } else {
+                auto [a, b] = f;
+                ss << "(" << a << ":" << b << ")";
+            }
+        },
+        id);
     for (auto &&f : indices) {
         ss << "[";
         std::copy(f.begin(), f.end(), std::ostream_iterator<int>(ss, ","));
@@ -60,9 +62,11 @@ CutFaceBase<D>::operator std::string() const {
 
     return ss.str();
 }
-template<int D>
-template<typename Derived>
-void CutFaceBase<D>::update_mask(const std::vector<Vertex<D>> &V, const mtao::geometry::grid::indexing::IndexerBase<D, Derived> &indexer) {
+template <int D>
+template <typename Derived>
+void CutFaceBase<D>::update_mask(
+    const std::vector<Vertex<D>> &V,
+    const mtao::geometry::grid::indexing::IndexerBase<D, Derived> &indexer) {
     int offset = indexer.size();
     auto get_mask = [&](int idx) -> coord_mask<D> {
         if (idx >= offset) {
@@ -81,13 +85,14 @@ void CutFaceBase<D>::update_mask(const std::vector<Vertex<D>> &V, const mtao::ge
     }
 }
 
-template<typename Derived>
-mtao::Vec2d CutFace<2>::brep_centroid(const Eigen::MatrixBase<Derived> &V) const {
+template <typename Derived>
+mtao::Vec2d CutFace<2>::brep_centroid(
+    const Eigen::MatrixBase<Derived> &V) const {
     mtao::Vec2d ret = mtao::Vec2d::Zero();
     double tot_vol = 0;
     for (auto &&i : indices) {
-        mtao::Vec2d cent = mtao::geometry::curve_centroid(V,i);
-        double vol = mtao::geometry::curve_volume(V,i);
+        mtao::Vec2d cent = mtao::geometry::curve_centroid(V, i);
+        double vol = mtao::geometry::curve_volume(V, i);
         ret += cent * vol;
         tot_vol += vol;
     }
@@ -96,8 +101,9 @@ mtao::Vec2d CutFace<2>::brep_centroid(const Eigen::MatrixBase<Derived> &V) const
     return ret;
 }
 
-template<typename Derived>
-mtao::Vec3d CutFace<3>::brep_centroid(const Eigen::MatrixBase<Derived> &V, bool use_triangulation) const {
+template <typename Derived>
+mtao::Vec3d CutFace<3>::brep_centroid(const Eigen::MatrixBase<Derived> &V,
+                                      bool use_triangulation) const {
     mtao::Vec3d ret = mtao::Vec3d::Zero();
     double tot_vol = 0;
     int count = 0;
@@ -122,10 +128,9 @@ mtao::Vec3d CutFace<3>::brep_centroid(const Eigen::MatrixBase<Derived> &V, bool 
     return ret;
 }
 
-
-template<typename Derived>
-double CutFace<3>::brep_volume(const Eigen::MatrixBase<Derived> &V, bool use_triangulation) const {
-
+template <typename Derived>
+double CutFace<3>::brep_volume(const Eigen::MatrixBase<Derived> &V,
+                               bool use_triangulation) const {
     if (use_triangulation) {
         return mtao::geometry::brep_volume(V, *triangulation);
     }
@@ -143,7 +148,7 @@ double CutFace<3>::brep_volume(const Eigen::MatrixBase<Derived> &V, bool use_tri
             vol += mtao::geometry::volume_signed(S);
         }
         return vol;
-        //return mtao::geometry::volume_signed(S);
+        // return mtao::geometry::volume_signed(S);
     };
     for (auto &&loop : indices) {
         vol += loop_volume(loop);
@@ -151,18 +156,18 @@ double CutFace<3>::brep_volume(const Eigen::MatrixBase<Derived> &V, bool use_tri
     return vol;
 }
 
-template<typename Derived, typename PDerived>
-double CutFace<2>::winding_number(const Eigen::MatrixBase<Derived> &V, const Eigen::MatrixBase<PDerived>& p) const {
-
+template <typename Derived, typename PDerived>
+double CutFace<2>::winding_number(const Eigen::MatrixBase<Derived> &V,
+                                  const Eigen::MatrixBase<PDerived> &p) const {
     double wn = 0;
-        for (auto &&f : indices) {
-            wn += mtao::geometry::winding_number(V, f, p);
-        }
-        return wn;
+    for (auto &&f : indices) {
+        wn += mtao::geometry::winding_number(V, f, p);
+    }
+    return wn;
 }
-template<typename Derived, typename PDerived>
-bool CutFace<2>::is_inside(const Eigen::MatrixBase<Derived> &V, const Eigen::MatrixBase<PDerived>& p) const {
-
-    return winding_number(V,p)  > .5;
+template <typename Derived, typename PDerived>
+bool CutFace<2>::is_inside(const Eigen::MatrixBase<Derived> &V,
+                           const Eigen::MatrixBase<PDerived> &p) const {
+    return winding_number(V, p) > .5;
 }
-}// namespace mandoline
+}  // namespace mandoline

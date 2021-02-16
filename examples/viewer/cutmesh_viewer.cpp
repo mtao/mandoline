@@ -145,10 +145,12 @@ class MeshViewer : public mtao::opengl::Window3 {
         }
 
         if (cell_flat) {
-            cell_flat->gui("Cell Flat");
+            cell_flat->gui("Cell Centroid Flat");
+            ImGui::InputFloat("Cell centroid point size", &cell_flat->point_size);
         }
         if (face_flat) {
-            face_flat->gui("Face Flat");
+            face_flat->gui("Face Centroid Flat");
+            ImGui::InputFloat("Face centroid point size", &face_flat->point_size);
         }
         auto&& io = ImGui::GetIO();
 
@@ -173,7 +175,6 @@ class MeshViewer : public mtao::opengl::Window3 {
         Magnum::GL::Renderer::enable(
             Magnum::GL::Renderer::Feature::PolygonOffsetFill);
         Magnum::GL::Renderer::setPolygonOffset(2.f, 1.f);
-        Magnum::GL::Renderer::setPointSize(10.);
         Window3::draw();
 
         Magnum::GL::Renderer::setPolygonOffset(0, 0);

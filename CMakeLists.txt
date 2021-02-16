@@ -97,6 +97,7 @@ SET(CUTMESH3_SRCS
     src/operators/interpolation3.cpp
     src/operators/masks.cpp
     src/operators/volume3.cpp
+    src/operators/centroids3.cpp
     )
 
 

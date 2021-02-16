@@ -60,6 +60,10 @@ struct CutCellMesh<3> : public CutCellMeshBase<3, CutCellMesh<3>> {
     size_t num_cells() const;
     size_t cut_cell_size() const;
     size_t num_cut_cells() const;
+
+    // all accesses to exterior grids need to be offset
+    size_t exterior_grid_face_offset() const { return cut_face_size(); }
+
     bool is_cut_cell(int index) const;
     bool is_exterior_cell(int index) const;
     std::vector<int> regions(bool boundary_sign_regions = false) const;

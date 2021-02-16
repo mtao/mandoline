@@ -164,14 +164,9 @@ mtao::VecXd divergence(const mandoline::CutCellMesh<3>& ccm,
     R.setConstant(0);
     int coeff;
     direction.maxCoeff(&coeff);
-<<<<<<< HEAD
     std::cout << "Direction: " << direction.transpose() << " => " << coeff
               << std::endl;
     for (auto&& [idx, cell] : ccm.exterior_grid().cells()) {
-=======
-    std::cout << "Direction: " << direction.transpose() << " => " << coeff << std::endl;
-    for(auto&& [idx,cell]: ccm.exterior_grid().cells()) {
->>>>>>> master
         int cidx = cell.corner()[coeff];
         if (cidx == 0) {
             R(idx) = 1;
@@ -191,17 +186,10 @@ mtao::VecXd divergence(const mandoline::CutCellMesh<3>& ccm,
     std::cout << "Hitting dx: " << idx << std::endl;
     R(idx) = 1;
 
-<<<<<<< HEAD
     for (auto&& face : ccm.exterior_grid().faces()) {
         if (face.axis() == 1) {
             auto [a, b] = face.dual_edge;
             if (a == -1) {
-=======
-    for(auto&& face: ccm.exterior_grid().faces()) {
-        if(face.axis() == 1) {
-            auto [a,b] = face.dual_edge;
-            if(a == -1) {
->>>>>>> master
                 R(b) = 1;
             } else if (b == -1) {
                 R(a) = -1;

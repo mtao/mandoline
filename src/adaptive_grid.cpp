@@ -174,9 +174,9 @@ mtao::ColVecs3i AdaptiveGrid::triangulated(const Cell &c) const {
     return F.unaryExpr([&](int idx) -> int { return v[idx]; });
 }
 
-mtao::ColVecs3i AdaptiveGrid::triangulated_face(size_t index,
+mtao::ColVecs3i AdaptiveGrid::triangulated_face(size_t index, size_t offset,
                                                 bool invert) const {
-    return triangulated_face(face(index), invert);
+    return triangulated_face(face(index - offset), invert);
 }
 mtao::ColVecs3i AdaptiveGrid::triangulated_face(const Face &f,
                                                 bool invert) const {
@@ -385,34 +385,23 @@ int AdaptiveGrid::num_cells() const { return cells().size(); }
 
 mtao::ColVecs3d AdaptiveGrid::boundary_centroids() const {
     mtao::ColVecs3d C(3, num_faces());
+    auto g = cell_ownership_grid();
     for (auto &&[index, f] : mtao::iterator::enumerate(m_faces)) {
-        auto &&e = f.dual_edge;
+        // const auto &e = f.dual_edge;
+        // if (!is_valid_edge(e)) continue;
         auto cent = C.col(index);
-        cent.setZero();
-        if (!is_valid_edge(e)) continue;
-        auto [a, b] = e;
-        int k = 0;
-
-        auto &ca = cell(a);
-        auto &cb = cell(b);
-        mtao::Vec3d cd = ca.center() - cb.center();
-        int minwidth = std::min(ca.width(), cb.width());
-        cd.cwiseAbs().maxCoeff(&k);
-        coord_type corner = ca.width() < cb.width() ? ca.corner() : cb.corner();
-
-        if (cd(k) > 0) {
-            corner[k] += ca.width();
-        }
-        {
-            const double w = minwidth;
-            const coord_type c = corner;
-            const int u = (k + 1) % 3;
-            const int v = (k + 2) % 3;
-            cent = mtao::eigen::stl2eigen(c).cast<double>();
-            cent(u) += w / 2.0;
-            cent(v) += w / 2.0;
-            cent = vertex_grid().world_coord(cent);
-        }
+        const int k = f.axis();
+        const int u = (k + 1) % 3;
+        const int v = (k + 2) % 3;
+        const double w = f.width();
+        cent = mtao::eigen::stl2eigen(f.corner()).cast<double>();
+        // std::cout << "Corner positions: " << cent.transpose() << std::endl;
+        cent(u) += w / 2.0;
+        cent(v) += w / 2.0;
+        // std::cout << "World space positions: " << cent.transpose() <<
+        // std::endl;
+        cent = vertex_grid().world_coord(cent);
+        // std::cout << "Final positions: " << cent.transpose() << std::endl;
     }
     return C;
 }

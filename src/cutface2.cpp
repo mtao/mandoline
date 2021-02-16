@@ -97,7 +97,7 @@ std::tuple<mtao::ColVecs2d, mtao::ColVecs3i> CutFace<2>::triangulate_triangle(co
     if (do_add_vertices) {
         //static const std::string str ="zPa.01qepcDQ";
         static const std::string str = "pcePzQYY";
-        std::cerr << "I bet im about to crash" << std::endl;
+        //std::cerr << "I bet im about to crash" << std::endl;
         auto nm = mtao::geometry::mesh::triangle::triangle_wrapper(m, std::string_view(str));
         std::cerr << "I lost a bet" << std::endl;
         if (nm.V.cols() > newV.cols()) {
@@ -170,7 +170,7 @@ std::tuple<mtao::ColVecs2d, mtao::ColVecs3i> CutFace<2>::triangulate_triangle(co
         newV3.row((axis + 2) % 3) = newV2.row(1);
         newV3.row(axis).setConstant(double(coord));
 
-        std::cerr << "Triangulation with vertex added: " << newV3.cols() << " / " << FF.maxCoeff() << std::endl;
+        //std::cerr << "Triangulation with vertex added: " << newV3.cols() << " / " << FF.maxCoeff() << std::endl;
         return { newV3, FF };
     }
 }
