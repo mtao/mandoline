@@ -89,7 +89,6 @@ std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> CutCell::get_mesh(const Eigen::Matr
 
 template<typename Derived, typename VecType>
 bool CutCell::contains(const Eigen::MatrixBase<Derived> &V, const mtao::vector<CutFace<3>> &Fs, const Eigen::MatrixBase<VecType> &v) const {
-    //> 4 * M_PI, but with some slack
     return solid_angle(V, Fs, v) > .5;
 }
 template<typename Derived, typename VecType>

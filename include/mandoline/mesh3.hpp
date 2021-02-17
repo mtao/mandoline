@@ -71,8 +71,14 @@ struct CutCellMesh<3> : public CutCellMeshBase<3, CutCellMesh<3>> {
     std::vector<std::array<std::set<int>, 2>> orig_face_regions() const;
     mtao::ColVecs3d region_centroids() const;
     std::map<coord_type, std::set<int>> cells_by_grid_cell() const;
-    std::set<int> cells_in_grid_cell(const coord_type &c) const;
+    std::set<int> cut_cells_in_grid_cell(const coord_type &c) const;
+    mtao::geometry::grid::GridDataD<std::set<int>, 3> cells_per_grid_cell()
+        const;
+    std::map<coord_type, std::set<int>> cut_cells_per_grid_cell() const;
     int get_cell_index(const VecCRef &p) const;
+    // this should be much faster than getting a single cell index for large
+    // sets of points
+    mtao::VecXi get_cell_indices(Eigen::Ref<const ColVecs> p) const;
 
     bool is_in_cell(const VecCRef &p, size_t index) const;
 

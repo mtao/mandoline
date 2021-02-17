@@ -21,6 +21,7 @@
 #include "mandoline/operators/volume3.hpp"
 #include "mandoline/proto_util.hpp"
 #if defined(MTAO_TBB_ENABLED)
+#include <tbb/parallel_for.h>
 #include <tbb/parallel_for_each.h>
 #endif
 
@@ -583,12 +584,37 @@ auto CutCellMesh<3>::cells_by_grid_cell() const
     }
     return R;
 }
-std::set<int> CutCellMesh<3>::cells_in_grid_cell(const coord_type &c) const {
+std::set<int> CutCellMesh<3>::cut_cells_in_grid_cell(
+    const coord_type &c) const {
     std::set<int> R;
     for (auto &&[i, cell] : mtao::iterator::enumerate(cells())) {
         if (cell.grid_cell == c) {
             R.insert(i);
         }
+    }
+    return R;
+}
+mtao::geometry::grid::GridDataD<std::set<int>, 3>
+CutCellMesh<3>::cells_per_grid_cell() const {
+    mtao::geometry::grid::GridDataD<std::set<int>, 3> sets(cell_grid().shape());
+    for (auto &&[i, cell] : mtao::iterator::enumerate(cells())) {
+        sets(cell.grid_cell).emplace(i);
+    }
+    auto c = exterior_grid().cell_ownership_grid();
+    // each cell is only visited once so no accidental double writes!
+    c.loop_parallel([&](const coord_type &cell, const int &index) {
+        if (index >= 0) {
+            sets(cell).emplace(index);
+        }
+    });
+
+    return sets;
+}
+auto CutCellMesh<3>::cut_cells_per_grid_cell() const
+    -> std::map<coord_type, std::set<int>> {
+    std::map<coord_type, std::set<int>> R;
+    for (auto &&[i, cell] : mtao::iterator::enumerate(cells())) {
+        R[cell.grid_cell].emplace(i);
     }
     return R;
 }
@@ -603,7 +629,7 @@ int CutCellMesh<3>::get_cell_index(const VecCRef &p) const {
         return ret;
     } else {
         auto [c, q] = vertex_grid().coord(p);
-        auto cell_indices = cells_in_grid_cell(c);
+        auto cell_indices = cut_cells_in_grid_cell(c);
         ColVecs V;
         const auto &CV = cached_vertices();
         const ColVecs *VP = CV ? &*CV : &V;
@@ -616,20 +642,141 @@ int CutCellMesh<3>::get_cell_index(const VecCRef &p) const {
                 return ci;
             }
         }
-        // TODO
         // if I haven't returned yet then either this ccm is bad
         // or i'm too close to an edge. lets not assume that for now
-        mtao::logging::warn()
-            << "There are CCM in this grid cell but I failed to find it!"
-            << c[0] << " " << c[1] << " " << c[2];
+        spdlog::warn(
+            "There are {} cells in grid cell ({}) but Mandoline "
+            "failed to find point ({}) in it. Falling back to max "
+            "solid angles",
+            cell_indices.size(), fmt::join(c, ","), fmt::join(p, ","));
+        int max_cell = -1;
+        double max_solid_angle = std::numeric_limits<double>::min();
+        for (auto &&ci : cell_indices) {
+            const auto &cell = cells().at(ci);
+            double solid_angle = cell.solid_angle(*VP, faces(), p);
+            bool contains = cell.contains(*VP, faces(), p);
+            if (solid_angle > max_solid_angle) {
+                max_cell = ci;
+                max_solid_angle = solid_angle;
+            }
+            spdlog::info(
+                "Cell not found debug: got a solid angle of {} "
+                "from "
+                "cell "
+                "{} with contains = {}",
+                solid_angle, ci, contains);
+        }
+        return max_cell;
     }
     return -1;
 }
 
+mtao::VecXi CutCellMesh<3>::get_cell_indices(
+    Eigen::Ref<const ColVecs> P) const {
+    mtao::VecXi I = mtao::VecXi::Constant(P.cols(), -1);
+
+    const auto g = exterior_grid().cell_ownership_grid();
+    const auto grid_to_cells = cut_cells_per_grid_cell();
+    ColVecs V;
+    const auto &CV = cached_vertices();
+    const ColVecs *VP = CV ? &*CV : &V;
+    if (!CV) {
+        V = vertices();
+    }
+//#undef MTAO_TBB_ENABLED
+#if defined(MTAO_TBB_ENABLED)
+    tbb::parallel_for<int>(0, I.size(), [&](const int j) {
+#else
+    for (int j = 0; j < I.size(); ++j) {
+#endif
+        int &r = I(j);
+        auto p = P.col(j);
+        auto [grid_cell, quotient] = vertex_grid().coord(p);
+        if (!g.valid_index(grid_cell)) {
+#if defined(MTAO_TBB_ENABLED)
+            return;
+#else
+            continue;
+#endif
+            // check if its  in an adaptive grid cell, tehn we can just use
+            // that cell if the grid returns -2 we pass that through
+        }
+        if (r = g(grid_cell); r >= 0) {
+#if defined(MTAO_TBB_ENABLED)
+            return;
+#else
+            continue;
+#endif
+        }
+        if (r != -1) {
+            spdlog::error("Grid cell ({}) has unknown negative index {}",
+                          fmt::join(grid_cell, ","), r);
+#if defined(MTAO_TBB_ENABLED)
+            return;
+#else
+            continue;
+#endif
+        } else if (const auto it = grid_to_cells.find(grid_cell);
+                   it == grid_to_cells.end()) {
+            spdlog::error("Grid cell ({}) should have cut-cells but has none",
+                          fmt::join(grid_cell, ","));
+#if defined(MTAO_TBB_ENABLED)
+            return;
+#else
+            continue;
+#endif
+        } else {
+            const auto &cell_indices = it->second;
+            for (auto &&ci : cell_indices) {
+                const auto &cell = cells().at(ci);
+                bool contains = cell.contains(*VP, faces(), p);
+                // double solid_angle = cell.solid_angle(*VP, faces(), p);
+                if (contains) {
+                    r = ci;
+                }
+            }
+            if (r < 0) {
+                // TODO
+                // if I haven't returned yet then either this ccm is bad
+                // or i'm too close to an edge. lets not assume that for now
+                spdlog::warn(
+                    "There are {} cells in grid cell ({}) but Mandoline "
+                    "failed to find point ({}) in it. Falling back to max "
+                    "solid angles",
+                    cell_indices.size(), fmt::join(grid_cell, ","),
+                    fmt::join(p, ","));
+                int max_cell = -1;
+                double max_solid_angle = std::numeric_limits<double>::min();
+                for (auto &&ci : cell_indices) {
+                    const auto &cell = cells().at(ci);
+                    double solid_angle = cell.solid_angle(*VP, faces(), p);
+                    bool contains = cell.contains(*VP, faces(), p);
+                    if (solid_angle > max_solid_angle) {
+                        max_cell = ci;
+                        max_solid_angle = solid_angle;
+                    }
+                    spdlog::info(
+                        "Cell not found debug: got a solid angle of {} "
+                        "from "
+                        "cell "
+                        "{} with contains = {}",
+                        solid_angle, ci, contains);
+                }
+                r = max_cell;
+            }
+        }
+#if defined(MTAO_TBB_ENABLED)
+    });
+#else
+    }
+#endif
+    return I;
+}
+
 bool CutCellMesh<3>::is_in_cell(const VecCRef &p, size_t index) const {
     auto v = vertex_grid().local_coord(p);
-    // check if its  in an adaptive grid cell, tehn we can just use that cell
-    // if the grid returns -2 we pass that through
+    // check if its  in an adaptive grid cell, tehn we can just use that
+    // cell if the grid returns -2 we pass that through
     if (int ret = m_exterior_grid.get_cell_index(v); ret != -1) {
         if (ret == -2) {
             mtao::logging::warn() << "Point lies outside the grid";

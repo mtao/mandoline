@@ -31,6 +31,7 @@ ADD_CATCHTEST(interp
 ADD_CATCHTEST(3D
     simple_cutmesh3_tests.cpp
     cell_collapser_test.cpp
+    cell_identification_test.cpp
     )
 ADD_CATCHTEST(facet
     facet_test.cpp

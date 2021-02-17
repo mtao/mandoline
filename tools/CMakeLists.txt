@@ -51,6 +51,7 @@ IF(HANDLE_SELF_INTERSECTIONS)
         validation/grid_cells.cpp
         validation/region_volumes.cpp
         validation/external_cell_valences.cpp
+        validation/cutmesh_validation.cpp
         )
     TARGET_LINK_LIBRARIES(cutmesh_validation_tools gmp CGAL mpfr  fmt
         mandoline)
