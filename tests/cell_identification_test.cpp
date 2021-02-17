@@ -54,18 +54,22 @@ TEST_CASE("Sphere cell access", "[cell_access]") {
     }
     spdlog::info("Computing cells");
     auto I = ccm.get_cell_indices(pts);
+    auto I2 = ccm.get_nearest_cell_indices(pts);
     spdlog::info("Running checks");
     for (int j = 0; j < pts.cols(); ++j) {
         auto p = pts.col(j);
         int cell_index = I(j);
+        int cell_index2 = I2(j);
         CHECK(ccm.get_cell_index(p) == cell_index);
         if (!bb.contains(p)) {
             CHECK(cell_index == -2);
+            CHECK(cell_index2 >= 0);
             continue;
         }
         CHECK(cell_index >= 0);
         CHECK(cell_index < ccm.cell_size());
         CHECK(ccm.is_in_cell(p, cell_index));
+        CHECK(cell_index2 == cell_index);
 
         int region = regions[cell_index];
         double w = igl::winding_number(VV, FF, p);

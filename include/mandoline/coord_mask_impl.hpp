@@ -3,38 +3,39 @@
 
 namespace mandoline {
 
-    // bind only a single coordinate (represents a plane)
-   template <int D, typename T>
-    coord_mask<D,T>::coord_mask(int idx, int coord) {
-        reset(idx,coord);
-    }
+// bind only a single coordinate (represents a plane)
+template <int D, typename T>
+coord_mask<D, T>::coord_mask(int idx, int coord) {
+    reset(idx, coord);
+}
 
-    // bind everything (this is for grid vertices)
-   template <int D, typename T>
-    coord_mask<D,T>::coord_mask(const coord_type &o) {
-        reset(o);
-    }
+// bind everything (this is for grid vertices)
+template <int D, typename T>
+coord_mask<D, T>::coord_mask(const coord_type &o) {
+    reset(o);
+}
 
-
-template<int D, typename T>
-void coord_mask<D, T>::reset() { *this = {}; }
-template<int D, typename T>
+template <int D, typename T>
+void coord_mask<D, T>::reset() {
+    *this = {};
+}
+template <int D, typename T>
 void coord_mask<D, T>::reset(int idx, int coord) {
     reset();
     (*this)[idx] = coord;
 }
-template<int D, typename T>
+template <int D, typename T>
 void coord_mask<D, T>::reset(const coord_type &o) {
     std::copy(o.begin(), o.end(), this->begin());
 }
 
-template<int D, typename T>
+template <int D, typename T>
 bool coord_mask<D, T>::is_bound(size_t idx) const {
     assert(idx < D);
     return bool((*this)[idx]);
 }
 
-template<int D, typename T>
+template <int D, typename T>
 int coord_mask<D, T>::unbound_axis() const {
     assert(count() == D - 1);
     for (size_t i = 0; i < D; ++i) {
@@ -45,8 +46,7 @@ int coord_mask<D, T>::unbound_axis() const {
     return -1;
 }
 
-
-template<int D, typename T>
+template <int D, typename T>
 int coord_mask<D, T>::bound_axis() const {
     assert(count() == 1);
     for (size_t i = 0; i < D; ++i) {
@@ -56,29 +56,34 @@ int coord_mask<D, T>::bound_axis() const {
     }
     return -1;
 }
-template<int D, typename T>
+template <int D, typename T>
 auto coord_mask<D, T>::as_array() const -> coord_type {
     assert(count() == D);
     coord_type m;
-    std::transform(this->begin(), this->end(), m.begin(), [](auto &&a) {
-        return *a;
-    });
+    std::transform(this->begin(), this->end(), m.begin(),
+                   [](auto &&a) { return *a; });
     return m;
 }
-template<int D, typename T>
+template <int D, typename T>
 size_t coord_mask<D, T>::count() const {
-    return std::count_if(this->begin(), this->end(), [](const std::optional<T> &v) -> bool { return bool(v); });
+    return std::count_if(
+        this->begin(), this->end(),
+        [](const std::optional<T> &v) -> bool { return bool(v); });
 }
 
-template<int D, typename T>
+template <int D, typename T>
 bool coord_mask<D, T>::all() const {
-    return std::all_of(this->begin(), this->end(), [](const std::optional<T> &v) -> bool { return bool(v); });
+    return std::all_of(
+        this->begin(), this->end(),
+        [](const std::optional<T> &v) -> bool { return bool(v); });
 }
-template<int D, typename T>
+template <int D, typename T>
 bool coord_mask<D, T>::active() const {
-    return std::any_of(this->begin(), this->end(), [](const std::optional<T> &v) -> bool { return bool(v); });
+    return std::any_of(
+        this->begin(), this->end(),
+        [](const std::optional<T> &v) -> bool { return bool(v); });
 }
-template<int D, typename T>
+template <int D, typename T>
 auto coord_mask<D, T>::operator&=(const coord_mask &o) -> coord_mask & {
     for (auto &&[a, b] : mtao::iterator::zip(*this, o)) {
         if (a && b && (*a == *b)) {
@@ -89,13 +94,13 @@ auto coord_mask<D, T>::operator&=(const coord_mask &o) -> coord_mask & {
     return *this;
 }
 
-template<int D, typename T>
+template <int D, typename T>
 auto coord_mask<D, T>::operator&(const coord_mask &o) const -> coord_mask {
     coord_mask ret = *this;
     ret &= o;
     return ret;
 }
-template<int D, typename T>
+template <int D, typename T>
 auto coord_mask<D, T>::operator|=(const coord_mask &o) -> coord_mask & {
     for (auto &&[a, b] : mtao::iterator::zip(*this, o)) {
         if (a && b && (*a == *b)) {
@@ -106,13 +111,13 @@ auto coord_mask<D, T>::operator|=(const coord_mask &o) -> coord_mask & {
     return *this;
 }
 
-template<int D, typename T>
+template <int D, typename T>
 auto coord_mask<D, T>::operator|(const coord_mask &o) const -> coord_mask {
     coord_mask ret = *this;
     ret |= o;
     return ret;
 }
-template<int D, typename T>
+template <int D, typename T>
 auto coord_mask<D, T>::operator-=(const coord_mask &o) -> coord_mask & {
     for (auto &&[a, b] : mtao::iterator::zip(*this, o)) {
         if (b) {
@@ -121,16 +126,17 @@ auto coord_mask<D, T>::operator-=(const coord_mask &o) -> coord_mask & {
     }
     return *this;
 }
-template<int D, typename T>
+template <int D, typename T>
 auto coord_mask<D, T>::operator-(const coord_mask &o) const -> coord_mask {
     coord_mask ret = *this;
     ret -= o;
     return ret;
 }
 
-//integer lattice partial ordering
-template<int D, typename T>
-auto coord_mask<D, T>::partial_ordering(const coord_mask &other) const -> PartialOrdering {
+// integer lattice partial ordering
+template <int D, typename T>
+auto coord_mask<D, T>::partial_ordering(const coord_mask &other) const
+    -> PartialOrdering {
     //*this > other
     PartialOrdering po = PartialOrdering::Equal;
     for (auto &&[a, b] : mtao::iterator::zip(*this, other)) {
@@ -138,46 +144,46 @@ auto coord_mask<D, T>::partial_ordering(const coord_mask &other) const -> Partia
             if (*a != *b) {
                 return PartialOrdering::Unknown;
             }
-        } else if (a) {//but ont b  i.e (a > b)
+        } else if (a) {  // but ont b  i.e (a > b)
             switch (po) {
-            case PartialOrdering::Greater:
-                continue;
-            case PartialOrdering::Less:
-                return PartialOrdering::Unknown;
-            case PartialOrdering::Equal:
-                po = PartialOrdering::Greater;
-                continue;
-            case PartialOrdering::Unknown:
-                return PartialOrdering::Unknown;
+                case PartialOrdering::Greater:
+                    continue;
+                case PartialOrdering::Less:
+                    return PartialOrdering::Unknown;
+                case PartialOrdering::Equal:
+                    po = PartialOrdering::Greater;
+                    continue;
+                case PartialOrdering::Unknown:
+                    return PartialOrdering::Unknown;
             }
-        } else if (b) {//but ont b  i.e (a < b)
+        } else if (b) {  // but ont b  i.e (a < b)
             switch (po) {
-            case PartialOrdering::Less:
-                continue;
-            case PartialOrdering::Greater:
-                return PartialOrdering::Unknown;
-            case PartialOrdering::Equal:
-                po = PartialOrdering::Less;
-                continue;
-            case PartialOrdering::Unknown:
-                return PartialOrdering::Unknown;
+                case PartialOrdering::Less:
+                    continue;
+                case PartialOrdering::Greater:
+                    return PartialOrdering::Unknown;
+                case PartialOrdering::Equal:
+                    po = PartialOrdering::Less;
+                    continue;
+                case PartialOrdering::Unknown:
+                    return PartialOrdering::Unknown;
             }
         }
     }
     return po;
 }
-template<int D, typename T>
+template <int D, typename T>
 bool coord_mask<D, T>::subsumes(const coord_mask &other) const {
     PartialOrdering po = partial_ordering(other);
     return po == PartialOrdering::Greater || po == PartialOrdering::Equal;
 }
-template<int D, typename T>
+template <int D, typename T>
 bool coord_mask<D, T>::strict_subsumes(const coord_mask &other) const {
     PartialOrdering po = partial_ordering(other);
     return po == PartialOrdering::Greater;
 }
 
-template<int D, typename T>
+template <int D, typename T>
 coord_mask<D, T>::operator std::string() const {
     std::stringstream ss;
     ss << "(";
@@ -196,7 +202,7 @@ coord_mask<D, T>::operator std::string() const {
     ss << ")";
     return ss.str();
 }
-template<int D, typename T>
+template <int D, typename T>
 void coord_mask<D, T>::clamp(coord_type &vec) const {
     for (auto &&[v, t] : mtao::iterator::zip(vec, *this)) {
         if (t) {
@@ -204,10 +210,10 @@ void coord_mask<D, T>::clamp(coord_type &vec) const {
         }
     }
 }
-template<int D, typename T>
+template <int D, typename T>
 void coord_mask<D, T>::clamp(Vertex<D> &vec) const {
-    for (auto &&[v, q, t] :
-         mtao::iterator::zip(vec.coord, mtao::eigen::iterable(vec.quot), *this)) {
+    for (auto &&[v, q, t] : mtao::iterator::zip(
+             vec.coord, mtao::eigen::iterable(vec.quot), *this)) {
         if (t) {
             v = *t;
             q = 0;
@@ -215,7 +221,7 @@ void coord_mask<D, T>::clamp(Vertex<D> &vec) const {
     }
     vec.clamped_indices |= as_bitset();
 }
-template<int D, typename T>
+template <int D, typename T>
 std::bitset<D> coord_mask<D, T>::as_bitset() const {
     std::bitset<D> bs;
     for (auto &&[i, t] : mtao::iterator::enumerate(*this)) {
@@ -224,8 +230,9 @@ std::bitset<D> coord_mask<D, T>::as_bitset() const {
     return bs;
 }
 
-template<int D, typename T>
-auto coord_mask<D, T>::possible_cells(const coord_type &coord) const -> std::set<coord_type> {
+template <int D, typename T>
+auto coord_mask<D, T>::possible_cells(const coord_type &coord) const
+    -> std::set<coord_type> {
     std::bitset<D> clamped_indices = as_bitset();
 #if defined(_DEBUG)
     for (int i = 0; i < D; ++i) {
@@ -238,7 +245,6 @@ auto coord_mask<D, T>::possible_cells(const coord_type &coord) const -> std::set
     for (int i = 0; i < (2 << D); ++i) {
         std::bitset<D> bs(i);
         if ((bs & clamped_indices) == bs) {
-
             coord_type cc = coord;
             for (int j = 0; j < D; ++j) {
                 cc[j] -= bs[j] ? 1 : 0;
@@ -248,4 +254,4 @@ auto coord_mask<D, T>::possible_cells(const coord_type &coord) const -> std::set
     }
     return ret;
 }
-}// namespace mandoline
+}  // namespace mandoline

@@ -75,10 +75,14 @@ struct CutCellMesh<3> : public CutCellMeshBase<3, CutCellMesh<3>> {
     mtao::geometry::grid::GridDataD<std::set<int>, 3> cells_per_grid_cell()
         const;
     std::map<coord_type, std::set<int>> cut_cells_per_grid_cell() const;
-    int get_cell_index(const VecCRef &p) const;
+    int get_cell_index(const VecCRef &p, bool quiet_failures = false) const;
     // this should be much faster than getting a single cell index for large
     // sets of points
-    mtao::VecXi get_cell_indices(Eigen::Ref<const ColVecs> p) const;
+    mtao::VecXi get_cell_indices(Eigen::Ref<const ColVecs> p,
+                                 bool quiet_failures = false) const;
+
+    int get_nearest_cell_index(const VecCRef &p) const;
+    mtao::VecXi get_nearest_cell_indices(Eigen::Ref<const ColVecs> p) const;
 
     bool is_in_cell(const VecCRef &p, size_t index) const;
 

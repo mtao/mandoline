@@ -618,7 +618,8 @@ auto CutCellMesh<3>::cut_cells_per_grid_cell() const
     }
     return R;
 }
-int CutCellMesh<3>::get_cell_index(const VecCRef &p) const {
+int CutCellMesh<3>::get_cell_index(const VecCRef &p,
+                                   bool quiet_failures) const {
     auto v = vertex_grid().local_coord(p);
     // check if its  in an adaptive grid cell, tehn we can just use that cell
     // if the grid returns -2 we pass that through
@@ -644,35 +645,37 @@ int CutCellMesh<3>::get_cell_index(const VecCRef &p) const {
         }
         // if I haven't returned yet then either this ccm is bad
         // or i'm too close to an edge. lets not assume that for now
-        spdlog::warn(
-            "There are {} cells in grid cell ({}) but Mandoline "
-            "failed to find point ({}) in it. Falling back to max "
-            "solid angles",
-            cell_indices.size(), fmt::join(c, ","), fmt::join(p, ","));
-        int max_cell = -1;
-        double max_solid_angle = std::numeric_limits<double>::min();
-        for (auto &&ci : cell_indices) {
-            const auto &cell = cells().at(ci);
-            double solid_angle = cell.solid_angle(*VP, faces(), p);
-            bool contains = cell.contains(*VP, faces(), p);
-            if (solid_angle > max_solid_angle) {
-                max_cell = ci;
-                max_solid_angle = solid_angle;
+        if (!quiet_failures) {
+            spdlog::warn(
+                "There are {} cells in grid cell ({}) but Mandoline "
+                "failed to find point ({}) in it. Falling back to max "
+                "solid angles",
+                cell_indices.size(), fmt::join(c, ","), fmt::join(p, ","));
+            int max_cell = -1;
+            double max_solid_angle = std::numeric_limits<double>::min();
+            for (auto &&ci : cell_indices) {
+                const auto &cell = cells().at(ci);
+                double solid_angle = cell.solid_angle(*VP, faces(), p);
+                bool contains = cell.contains(*VP, faces(), p);
+                if (solid_angle > max_solid_angle) {
+                    max_cell = ci;
+                    max_solid_angle = solid_angle;
+                }
+                spdlog::info(
+                    "Cell not found debug: got a solid angle of {} "
+                    "from "
+                    "cell "
+                    "{} with contains = {}",
+                    solid_angle, ci, contains);
             }
-            spdlog::info(
-                "Cell not found debug: got a solid angle of {} "
-                "from "
-                "cell "
-                "{} with contains = {}",
-                solid_angle, ci, contains);
+            return max_cell;
         }
-        return max_cell;
     }
     return -1;
 }
 
-mtao::VecXi CutCellMesh<3>::get_cell_indices(
-    Eigen::Ref<const ColVecs> P) const {
+mtao::VecXi CutCellMesh<3>::get_cell_indices(Eigen::Ref<const ColVecs> P,
+                                             bool quiet_failures) const {
     mtao::VecXi I = mtao::VecXi::Constant(P.cols(), -1);
 
     const auto g = exterior_grid().cell_ownership_grid();
@@ -735,10 +738,11 @@ mtao::VecXi CutCellMesh<3>::get_cell_indices(
                     r = ci;
                 }
             }
-            if (r < 0) {
+            if (!quiet_failures && r < 0) {
                 // TODO
                 // if I haven't returned yet then either this ccm is bad
                 // or i'm too close to an edge. lets not assume that for now
+
                 spdlog::warn(
                     "There are {} cells in grid cell ({}) but Mandoline "
                     "failed to find point ({}) in it. Falling back to max "
@@ -762,7 +766,9 @@ mtao::VecXi CutCellMesh<3>::get_cell_indices(
                         "{} with contains = {}",
                         solid_angle, ci, contains);
                 }
-                r = max_cell;
+                if (max_solid_angle > .5) {
+                    r = max_cell;
+                }
             }
         }
 #if defined(MTAO_TBB_ENABLED)
@@ -771,6 +777,148 @@ mtao::VecXi CutCellMesh<3>::get_cell_indices(
     }
 #endif
     return I;
+}
+
+namespace {
+coord_mask<3> projection_mask(const auto &grid, const auto &cell) {
+    coord_mask<3> mask;
+    auto s = grid.shape();
+    for (auto &&[b, c, m] : mtao::iterator::zip(s, cell, mask)) {
+        if (c < 0) {
+            m = 0;
+        }
+        if (c >= b) {
+            m = b - 1;
+        }
+    }
+    return mask;
+}
+}  // namespace
+int CutCellMesh<3>::get_nearest_cell_index(const VecCRef &p) const {
+    int index = get_cell_index(p, true);
+    if (index < 0) {
+        auto [grid_cell, quotient] = vertex_grid().coord(p);
+        auto mask = projection_mask(cell_grid(), grid_cell);
+        int count = mask.count();
+        coord_type projected_grid_cell = grid_cell;
+        mask.clamp(projected_grid_cell);
+
+        // find any cell that uses the vertex
+        if (int ret = m_exterior_grid.get_cell_index(p); ret != -1) {
+            return ret;
+        }
+        auto cell_indices = cut_cells_in_grid_cell(grid_cell);
+        if (count == 3) {
+            if (cell_indices.size() == 1) {
+                return *cell_indices.begin();
+            } else {
+                spdlog::warn(
+                    "Get nearest cell index failed because mtao was too "
+                    "lazy to implement the vertex case");
+                return -1;
+            }
+        } else if (count == 2) {
+            int edge_index = -1;
+            std::array<int, 2> edge_endpoints;
+            for (auto &&[eidx, edge] : mtao::iterator::enumerate(cut_edges())) {
+                if (edge.is_axial_edge()) {
+                    int axis = edge.as_axial_axis();
+                    if (edge.mask() == mask &&
+                        edge.as_axial_coord() == grid_cell[axis]) {
+                        double t = quotient[axis];
+                        auto [a, b] = edge.indices;
+                        if (t >= masked_vertex(a).quot(axis) &&
+                            t < masked_vertex(b).quot(axis)) {
+                            edge_index = eidx;
+                            edge_endpoints = edge.indices;
+                        }
+                    }
+                }
+            }
+            if (edge_index < 0) {
+                throw std::runtime_error(
+                    "Cutcell mesh wasnt made properly because we couldnt find "
+                    "an edge");
+            }
+            for (auto &&cell_index : cell_indices) {
+                for (auto &&[fidx, i] : cells().at(cell_index)) {
+                    const auto &face = cut_face(fidx);
+                    if (bool(face.external_boundary) &&
+                        std::get<0>(*face.external_boundary) == -2) {
+                        for (auto &&loop : face.indices) {
+                            for (size_t j = 0; j < loop.size(); ++j) {
+                                const auto &[a, b] = edge_endpoints;
+                                const auto &c = loop[j];
+                                const auto &d = loop[(j + 1) % loop.size()];
+                                if ((a == c && b == d) || (a == d && b == c)) {
+                                    return cell_index;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if (edge_index < 0) {
+                throw std::runtime_error(fmt::format(
+                    "Cutcell mesh wasnt made properly because we couldnt find "
+                    "a face that uses cutedge {}",
+                    edge_index));
+            }
+
+        } else if (count == 1) {
+            for (auto &&cell_index : cell_indices) {
+                for (auto &&[fidx, i] : cells().at(cell_index)) {
+                    const auto &face = cut_face(fidx);
+                    if (bool(face.external_boundary) &&
+                        std::get<0>(*face.external_boundary) == -2) {
+                        if (face.indices.size() != 1) {
+                            throw std::runtime_error(
+                                "projecting to nontrivial boundary faces not "
+                                "implemented yet");
+                        }
+                        for (auto &&v : *face.indices.begin()) {
+                            if (!is_grid_vertex(v)) {
+                                throw std::runtime_error(
+                                    "projecting non-gridlike faces not "
+                                    "implemented yet");
+                            }
+                        }
+                        if (face.mask() == mask) {
+                            return cell_index;
+                        }
+                    }
+                }
+            }
+        } else if (count == 0) {
+            spdlog::error(
+                "get_nearest_cell_index can only get a cell interior during "
+                "projection if the mesh was not produced properly!");
+        }
+    } else {
+        return index;
+    }
+    return -1;
+}
+mtao::VecXi CutCellMesh<3>::get_nearest_cell_indices(
+    Eigen::Ref<const ColVecs> P) const {
+    const auto g = exterior_grid().cell_ownership_grid();
+    const auto grid_to_cells = cut_cells_per_grid_cell();
+    auto cells = get_cell_indices(P);
+#if defined(MTAO_TBB_ENABLED)
+    tbb::parallel_for<int>(0, cells.size(), [&](const int j) {
+#else
+    for (int j = 0; j < I.size(); ++j) {
+#endif
+        int &cell = cells(j);
+        if (cell < 0) {
+            cell = get_nearest_cell_index(P.col(j));
+        }
+#if defined(MTAO_TBB_ENABLED)
+    });
+#else
+    }
+#endif
+    return cells;
 }
 
 bool CutCellMesh<3>::is_in_cell(const VecCRef &p, size_t index) const {

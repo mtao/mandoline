@@ -1,26 +1,24 @@
 #pragma once
-#include <bitset>
-#include <set>
-#include <array>
-#include <sstream>
 #include <algorithm>
-#include <mtao/iterator/zip.hpp>
-#include <mtao/iterator/enumerate.hpp>
+#include <array>
+#include <bitset>
 #include <mtao/eigen/iterable.hpp>
+#include <mtao/iterator/enumerate.hpp>
+#include <mtao/iterator/zip.hpp>
 #include <optional>
-
+#include <set>
+#include <sstream>
 
 namespace mandoline {
-template<int D>
+template <int D>
 struct Vertex;
-template<int D, typename T = int>
+template <int D, typename T = int>
 struct coord_mask : public std::array<std::optional<T>, D> {
     // coord mask partial ordering has all possible PO cases
-    enum class PartialOrdering { Less,
-                                 Greater,
-                                 Equal,
-                                 Unknown };
+    enum class PartialOrdering { Less, Greater, Equal, Unknown };
     using coord_type = std::array<T, D>;
+
+    bool operator==(const coord_mask &other) const = default;
 
     // rule of 5
     coord_mask() = default;
@@ -35,7 +33,6 @@ struct coord_mask : public std::array<std::optional<T>, D> {
     // bind everything (this is for grid vertices)
     coord_mask(const coord_type &o);
 
-
     void reset();
     // set to be a plane
     void reset(int idx, int coord);
@@ -45,8 +42,8 @@ struct coord_mask : public std::array<std::optional<T>, D> {
     // returns true if the axis is bound
     bool is_bound(size_t idx) const;
 
-    // if we're sure we have D-1 elements bound we can pick out the one unbound one
-    // this selects the axis that an axis-aligned edge lies on
+    // if we're sure we have D-1 elements bound we can pick out the one unbound
+    // one this selects the axis that an axis-aligned edge lies on
     int unbound_axis() const;
 
     // if we're sure we have one bound axis (i.e we have a plane)
@@ -65,16 +62,17 @@ struct coord_mask : public std::array<std::optional<T>, D> {
     // this lies on some grid plane
     bool active() const;
 
-
     // return the planes shared by two masks
     coord_mask &operator&=(const coord_mask &o);
     coord_mask operator&(const coord_mask &o) const;
 
-    // return the planes that either plane has (not sure why this would geometrically make sense)
+    // return the planes that either plane has (not sure why this would
+    // geometrically make sense)
     coord_mask &operator|=(const coord_mask &o);
     coord_mask operator|(const coord_mask &o) const;
 
-    // get unshared planes; useful when comparing partial ordered elements when we dont care about some axes
+    // get unshared planes; useful when comparing partial ordered elements when
+    // we dont care about some axes
     coord_mask &operator-=(const coord_mask &o);
     coord_mask operator-(const coord_mask &o) const;
 
@@ -89,9 +87,10 @@ struct coord_mask : public std::array<std::optional<T>, D> {
     // string for visualization
     operator std::string() const;
 
-    // if we know this mask applies to vec, we may want to make sure vec is assigned properly
-    // this sets the bound entries in vec to match up with the mask (i.e set q to 0, make sure integer parts are set right)
-    // integer part might be wrong if something is set to (N-1,.99999999999) -> (N,0)
+    // if we know this mask applies to vec, we may want to make sure vec is
+    // assigned properly this sets the bound entries in vec to match up with the
+    // mask (i.e set q to 0, make sure integer parts are set right) integer part
+    // might be wrong if something is set to (N-1,.99999999999) -> (N,0)
     void clamp(Vertex<D> &vec) const;
     // mostly a helper for the prior
     void clamp(coord_type &vec) const;
@@ -100,9 +99,10 @@ struct coord_mask : public std::array<std::optional<T>, D> {
     std::bitset<D> as_bitset() const;
 
     // Given a fully specified coordinate from a vertex (or
-    // coord-masked polygon), returns the grid cells that the object can be considered to be part of
+    // coord-masked polygon), returns the grid cells that the object can be
+    // considered to be part of
     std::set<coord_type> possible_cells(const coord_type &coord) const;
 };
-}// namespace mandoline
+}  // namespace mandoline
 
 #include "mandoline/coord_mask_impl.hpp"
