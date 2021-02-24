@@ -165,9 +165,80 @@ double CutFace<2>::winding_number(const Eigen::MatrixBase<Derived> &V,
     }
     return wn;
 }
+
 template <typename Derived, typename PDerived>
 bool CutFace<2>::is_inside(const Eigen::MatrixBase<Derived> &V,
                            const Eigen::MatrixBase<PDerived> &p) const {
     return winding_number(V, p) > .5;
 }
+
+template <typename Derived, typename VecType>
+double CutFace<3>::solid_angle(const Eigen::MatrixBase<Derived> &V,
+                               const Eigen::MatrixBase<VecType> &v) const {
+    double sa = 0;
+    if (triangulation) {
+        auto &F = *triangulation;
+        if (triangulated_vertices) {
+            auto &V = *triangulated_vertices;
+            for (int i = 0; i < F.cols(); ++i) {
+                auto f = F.col(i);
+
+                sa +=
+                    igl::solid_angle(V.col(f(0)), V.col(f(1)), V.col(f(2)), v);
+            }
+        } else {
+            for (int i = 0; i < F.cols(); ++i) {
+                auto f = F.col(i);
+
+                sa +=
+                    igl::solid_angle(V.col(f(0)), V.col(f(1)), V.col(f(2)), v);
+            }
+        }
+    } else {
+        for (auto &&f : indices) {
+            // just use triangle fan!
+            for (int i = 1; i < f.size() - 1; ++i) {
+                sa += igl::solid_angle(V.col(f[0]), V.col(f[i]),
+                                       V.col(f[i + 1]), v);
+            }
+        }
+    }
+    return sa;
+}
+// template <typename Derived, typename VecType>
+// double CutFace<3>::signed_distance(const Eigen::MatrixBase<Derived> &V,
+//                                   const Eigen::MatrixBase<VecType> &v) const
+//                                   {
+//    double sa = 0;
+//    if (triangulation) {
+//        auto &F = *triangulation;
+//        if (triangulated_vertices) {
+//            auto &V = *triangulated_vertices;
+//            for (int i = 0; i < F.cols(); ++i) {
+//                auto f = F.col(i);
+//
+//                sa +=
+//                    igl::solid_angle(V.col(f(0)), V.col(f(1)), V.col(f(2)),
+//                    v);
+//            }
+//        } else {
+//            for (int i = 0; i < F.cols(); ++i) {
+//                auto f = F.col(i);
+//
+//                sa +=
+//                    igl::solid_angle(V.col(f(0)), V.col(f(1)), V.col(f(2)),
+//                    v);
+//            }
+//        }
+//    } else {
+//        for (auto &&f : indices) {
+//            // just use triangle fan!
+//            for (int i = 1; i < f.size() - 1; ++i) {
+//                sa += igl::solid_angle(V.col(f[0]), V.col(f[i]),
+//                                       V.col(f[i + 1]), v);
+//            }
+//        }
+//    }
+//    return sa;
+//}
 }  // namespace mandoline

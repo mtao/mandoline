@@ -1,41 +1,40 @@
 #include "mandoline/construction/generator3.hpp"
-#include <mtao/geometry/mesh/boundary_facets.h>
+
 #include <mtao/geometry/mesh/boundary_elements.h>
-#include <mtao/geometry/grid/grid_data.hpp>
+#include <mtao/geometry/mesh/boundary_facets.h>
+
 #include <mtao/colvector_loop.hpp>
-#include <mtao/geometry/mesh/dual_edges.hpp>
 #include <mtao/eigen/stl2eigen.hpp>
+#include <mtao/geometry/grid/grid_data.hpp>
+#include <mtao/geometry/mesh/dual_edges.hpp>
 #include <mtao/iterator/enumerate.hpp>
 #include <mtao/logging/logger.hpp>
-#include "mandoline/construction/subgrid_transformer.hpp"
 #include <variant>
+
 #include "mandoline/construction/cell_collapser.hpp"
+#include "mandoline/construction/subgrid_transformer.hpp"
 #if defined(MANDOLINE_USE_ADAPTIVE_GRID)
 #include "mandoline/construction/adaptive_grid_factory.hpp"
-#else 
+#else
 #endif
 using namespace mtao::iterator;
 using namespace mtao::logging;
 
-
 namespace mandoline::construction {
-
 
 CutCellGenerator<3>::~CutCellGenerator() {}
 
-template<>
+template <>
 CutCellMesh<3> CutCellEdgeGenerator<3>::generate() const {
     CutCellMesh<3> ccm = generate_edges();
-    //make edge stuff
+    // make edge stuff
     return ccm;
 }
 
 CutCellMesh<3> CutCellGenerator<3>::generate() const {
-
-
     CutCellMesh<3> ccm = CCEG::generate();
     ccm.m_folded_faces = folded_faces;
-    //extra_metadata(ccm);
+    // extra_metadata(ccm);
     ccm.m_faces.clear();
     ccm.m_faces.resize(faces().size());
 #if defined(MANDOLINE_USE_ADAPTIVE_GRID)
@@ -51,7 +50,7 @@ CutCellMesh<3> CutCellGenerator<3>::generate() const {
     ccm.m_exterior_grid = *exterior_grid;
 #endif
 
-    //ccm.triangulated_cut_faces.resize(faces().size());
+    // ccm.triangulated_cut_faces.resize(faces().size());
     mtao::map<int, int> reindexer;
     int max = m_cut_faces.size();
     for (auto &&[i, ff] : mtao::iterator::enumerate(faces())) {
@@ -65,7 +64,8 @@ CutCellMesh<3> CutCellGenerator<3>::generate() const {
     // reindex a full set of indices
     auto redx = [&](const std::set<int> &i) {
         std::set<int> ret;
-        std::transform(i.begin(), i.end(), std::inserter(ret, ret.end()), [&](int idx) -> int { return reindexer.at(idx); });
+        std::transform(i.begin(), i.end(), std::inserter(ret, ret.end()),
+                       [&](int idx) -> int { return reindexer.at(idx); });
         return ret;
     };
 
@@ -75,15 +75,19 @@ CutCellMesh<3> CutCellGenerator<3>::generate() const {
         mtao::ColVecs3d B(3, cutface.size());
         for (auto &&[idx, i] : mtao::iterator::enumerate(cutface.indices)) {
             if (i < grid_vertex_size()) {
-                B.col(idx) = data().get_face_bary(cutface.parent_fid, grid_vertex(i));
+                B.col(idx) =
+                    data().get_face_bary(cutface.parent_fid, grid_vertex(i));
             } else {
-                B.col(idx) = data().get_face_bary(cutface.parent_fid, crossing(i));
+                B.col(idx) =
+                    data().get_face_bary(cutface.parent_fid, crossing(i));
             }
         }
-        ccm.m_mesh_cut_faces[idx] = BarycentricTriangleFace{ std::move(B), cutface.parent_fid };
+        ccm.m_mesh_cut_faces[idx] =
+            BarycentricTriangleFace{std::move(B), cutface.parent_fid};
     }
-    //ccm.mesh_faces = redx(mesh_face_indices);
-    for (auto &&[a, b] : mtao::iterator::zip(ccm.m_axial_faces, axis_face_indices)) {
+    // ccm.mesh_faces = redx(mesh_face_indices);
+    for (auto &&[a, b] :
+         mtao::iterator::zip(ccm.m_axial_faces, axis_face_indices)) {
         a = redx(b);
     }
     /*
@@ -108,19 +112,20 @@ CutCellMesh<3> CutCellGenerator<3>::generate() const {
         for (auto &&[i, j] : a) {
             int fidx = reindexer.at(i);
             b[fidx] = j;
-            // pos_cells currently fails with folded faces. lets give up on them for now
+            // pos_cells currently fails with folded faces. lets give up on them
+            // for now
             if (!ccm.is_folded_face(fidx)) {
                 inds.insert(fidx);
             }
         }
-        //std::cout << std::string(b) << std::endl;
+        // std::cout << std::string(b) << std::endl;
         auto pos_cells = possible_cells_cell(inds, ccm.faces());
-        if(pos_cells.size() == 1) {
-        b.grid_cell = *pos_cells.begin();
+        if (pos_cells.size() == 1) {
+            b.grid_cell = *pos_cells.begin();
         } else if (pos_cells.size() == 0) {
-            //std::cout << "CELL: " << a.index << std::endl;
-            //std::cout << "No possible cells!?!?!" << std::endl;
-            //for (auto &&ind : inds) {
+            // std::cout << "CELL: " << a.index << std::endl;
+            // std::cout << "No possible cells!?!?!" << std::endl;
+            // for (auto &&ind : inds) {
             //    std::cout << "Face " << ind << ": ";
             //    if (ccm.is_folded_face(ind)) {
             //        std::cout << "Folded: ";
@@ -141,9 +146,9 @@ CutCellMesh<3> CutCellGenerator<3>::generate() const {
 
             //    std::cout << std::endl;
             //}
-            //std::cout << std::endl;
+            // std::cout << std::endl;
         } else {
-            mtao::logging::warn()<< "Degenerate cell";
+            mtao::logging::warn() << "Degenerate cell";
         }
     }
     ccm.m_origV.resize(3, origV().size());
@@ -153,14 +158,10 @@ CutCellMesh<3> CutCellGenerator<3>::generate() const {
     ccm.m_origE = data().E();
     ccm.m_origF = data().F();
 
-
     return ccm;
 }
 
-
-void CutCellGenerator<3>::extra_metadata(CutCellMesh<3> &mesh) const {
-}
-
+void CutCellGenerator<3>::extra_metadata(CutCellMesh<3> &mesh) const {}
 
 void CutCellGenerator<3>::clear() {
 #if defined(MANDOLINE_USE_ADAPTIVE_GRID)
@@ -186,16 +187,13 @@ void CutCellGenerator<3>::clear() {
 }
 
 void CutCellGenerator<3>::bake() {
-
-
     auto t2 = mtao::logging::profiler("general bake", false, "profiler");
     CCEG::bake();
 
-
-    //In order to catch odd things like vertices touching stencils we have to relearn the stencil with the faces
+    // In order to catch odd things like vertices touching stencils we have to
+    // relearn the stencil with the faces
 
     update_active_grid_cell_mask();
-
 
     auto t = mtao::logging::profiler("grid bake cells", false, "profiler");
     bake_cells();
@@ -208,11 +206,13 @@ void CutCellGenerator<3>::update_active_grid_cell_mask() {
     for (auto &&[fidx, face] : faces()) {
         auto pc = possible_cells(face.indices);
         if (face.is_axial_face()) {
-            //dont only remove things from the mask, don't add
-            //therefore, if we had an external boundary before it should sitll be one
+            // dont only remove things from the mask, don't add
+            // therefore, if we had an external boundary before it should sitll
+            // be one
             assert(pc.size() == 2);
             if (pc.size() != 2) {
-                warn() << "Axial faces should have two possible cells!: face " << fidx;
+                warn() << "Axial faces should have two possible cells!: face "
+                       << fidx;
             }
             if (face.external_boundary) {
                 std::array<coord_type, 2> pca;
@@ -224,7 +224,8 @@ void CutCellGenerator<3>::update_active_grid_cell_mask() {
                     }
                 }
                 if (pca[0][idx] + 1 != pca[1][idx]) {
-                    std::cout << "SET WASNT LEXICOGRAPHICAL ORDER SOMEHOW?" << std::endl;
+                    std::cout << "SET WASNT LEXICOGRAPHICAL ORDER SOMEHOW?"
+                              << std::endl;
                 }
                 bool below = std::get<1>(*face.external_boundary);
                 auto choice = below ? pca[0] : pca[1];
@@ -234,7 +235,6 @@ void CutCellGenerator<3>::update_active_grid_cell_mask() {
             } else {
                 for (auto &&c : pc) {
                     if (mask.valid_index(c)) {
-
                         mask(c) = false;
                     }
                 }
@@ -242,7 +242,6 @@ void CutCellGenerator<3>::update_active_grid_cell_mask() {
         } else {
             for (auto &&c : pc) {
                 if (mask.valid_index_(c)) {
-
                     mask(c) = false;
                 }
             }
@@ -256,8 +255,8 @@ void CutCellGenerator<3>::bake_cells() {
         CellCollapser cc(m_faces);
         auto V = all_GV();
 
-        //auto [a,b] = adaptive_grid->compute_edges(adaptive_level);
-        //for(auto&& [hf,bd]: cc.m_halfface_to_cell) {
+        // auto [a,b] = adaptive_grid->compute_edges(adaptive_level);
+        // for(auto&& [hf,bd]: cc.m_halfface_to_cell) {
         //    auto&& [face_index, edge] = hf;
         //    auto&& [a,b] = edge;
         //    auto&& [bs,sgn] = bd;
@@ -265,23 +264,24 @@ void CutCellGenerator<3>::bake_cells() {
         //}
 
         cc.bake(V);
-        //spdlog::error("Baked!");
-        //for(auto&& [hf,bd]: cc.m_halfface_to_cell) {
+        // spdlog::error("Baked!");
+        // for(auto&& [hf,bd]: cc.m_halfface_to_cell) {
         //    auto&& [face_index, edge] = hf;
         //    auto&& [a,b] = edge;
         //    auto&& [bs,sgn] = bd;
         //    spdlog::warn("{}: ({},{}) => {}({})", face_index,a,b,bs,sgn);
         //}
         folded_faces = cc.folded_faces();
-        //m_normal_faces = cc.m_faces;
+        // m_normal_faces = cc.m_faces;
         boundary_vertices.clear();
-        //for(int i = 0; i < StaggeredGrid::vertex_size(); ++i) {
+        // for(int i = 0; i < StaggeredGrid::vertex_size(); ++i) {
         //    boundary_vertices.insert(i);
         //}
 
-        //cc.remove_boundary_cells_from_vertices(boundary_vertices);
+        // cc.remove_boundary_cells_from_vertices(boundary_vertices);
         cc.remove_boundary_cells();
-        //even though max index value could be vertex_shape in size, the max value is cell_Shape
+        // even though max index value could be vertex_shape in size, the max
+        // value is cell_Shape
         cc.remove_grid_boundary_cells(StaggeredGrid::cell_shape());
 
         if constexpr (false) {
@@ -298,46 +298,45 @@ void CutCellGenerator<3>::bake_cells() {
         cell_boundaries.resize(cb.size());
         for (auto &&[a, b] : mtao::iterator::zip(cell_boundaries, cb)) {
             a.insert(b.begin(), b.end());
-            for(auto&& [fidx,sgn]: a) {
-                auto&& f = m_faces[fidx];
-                if(f.external_boundary) {
+            for (auto &&[fidx, sgn] : a) {
+                auto &&f = m_faces[fidx];
+                if (f.external_boundary) {
                     std::get<1>(*f.external_boundary) = !sgn;
                 }
             }
         }
     }
 #if defined(MANDOLINE_USE_ADAPTIVE_GRID)
-        auto t = mtao::logging::profiler("Adaptive grid", false, "profiler");
-        assert(m_active_grid_cell_mask.shape() == cell_shape());
-        auto adaptive_grid_factory = AdaptiveGridFactory(m_active_grid_cell_mask);
-        adaptive_grid_factory.make_cells(adaptive_level);
-        adaptive_grid = adaptive_grid_factory.create();
-        adaptive_grid->Base::operator=(*this);
+    auto t = mtao::logging::profiler("Adaptive grid", false, "profiler");
+    assert(m_active_grid_cell_mask.shape() == cell_shape());
+    auto adaptive_grid_factory = AdaptiveGridFactory(m_active_grid_cell_mask);
+    adaptive_grid_factory.make_cells(adaptive_level);
+    auto &&cells = cell_boundaries;
+    int max_cell_id = cells.size();
+    {
+        // make cell names unique
+        int cbsize = cells.size();
+        auto gc = adaptive_grid_factory.cells;
+        adaptive_grid_factory.cells.clear();
+        for (auto &&[i, c] : mtao::iterator::enumerate(gc)) {
+            auto &&[j, b] = c;
+            int id = i + cbsize;
+            adaptive_grid_factory.cells[id] = b;
+        }
+        max_cell_id = cbsize + adaptive_grid_factory.cells.size();
+    }
+
+    adaptive_grid = adaptive_grid_factory.create();
+    adaptive_grid->Base::operator=(*this);
 #else
-        exterior_grid = ExteriorGrid<3>(*this, m_active_grid_cell_mask);
+    exterior_grid = ExteriorGrid<3>(*this, m_active_grid_cell_mask);
 #endif
 
     {
-        auto &&cells = cell_boundaries;
-        int max_cell_id = cells.size();
-#if defined(MANDOLINE_USE_ADAPTIVE_GRID)
-        {
-            //make cell names unique
-            int cbsize = cells.size();
-            auto &ag = *adaptive_grid;
-            auto gc = ag.m_cells;
-            ag.m_cells.clear();
-            for (auto &&[i, c] : mtao::iterator::enumerate(gc)) {
-                auto &&[j, b] = c;
-                int id = i + cbsize;
-                ag.m_cells[id] = b;
-            }
-            max_cell_id = cbsize + ag.m_cells.size();
-        }
-#endif
         mtao::data_structures::DisjointSet<int> cell_ds;
         {
-            auto t = mtao::logging::profiler("region disjoint set construction", false, "profiler");
+            auto t = mtao::logging::profiler("region disjoint set construction",
+                                             false, "profiler");
             for (int i = 0; i < cells.size(); ++i) {
                 cell_ds.add_node(i);
             }
@@ -357,17 +356,19 @@ void CutCellGenerator<3>::bake_cells() {
                 for (auto &&f : ag_faces) {
                     auto &&[a, b] = f.dual_edge;
                     if (a >= 0 && b >= 0) {
-                        cell_ds.join(grid.get(a), grid.get(b));
-                        //spdlog::info("ad{} <=> ad{}", a,b);
+                        cell_ds.join(a, b);
+                        // spdlog::info("ad{} <=> ad{}", a,b);
                     }
                 }
                 for (auto &&[id, f] : faces()) {
-                    if(f.is_mesh_face()) { continue; }
+                    if (f.is_mesh_face()) {
+                        continue;
+                    }
                     if (f.external_boundary) {
                         auto &[cid, s] = *f.external_boundary;
                         if (cid >= 0) {
                             cell_ds.join(max_cell_id + id, grid.get(cid));
-                            //spdlog::info("c{} <=> ad{}", cid,grid.get(cid));
+                            // spdlog::info("c{} <=> ad{}", cid,grid.get(cid));
                         }
                     }
                 }
@@ -380,7 +381,7 @@ void CutCellGenerator<3>::bake_cells() {
                         auto &&f = m_faces[fid];
                         if (!f.is_mesh_face()) {
                             cell_ds.join(cid, fid + max_cell_id);
-                            //spdlog::info("c{} <=> f{}", cid,fid);
+                            // spdlog::info("c{} <=> f{}", cid,fid);
                         }
                     }
                 }
@@ -431,11 +432,11 @@ void CutCellGenerator<3>::bake_cells() {
         reindexer[outside_root] = 0;
         for (int i = 0; i < cells.size(); ++i) {
             int root = cell_ds.get_root(i).data;
-            if (root != outside_root && reindexer.find(root) == reindexer.end()) {
+            if (root != outside_root &&
+                reindexer.find(root) == reindexer.end()) {
                 reindexer[root] = reindexer.size();
             }
         }
-
 
         std::vector<int> ret(cells.size());
         std::set<int> regions;
@@ -446,7 +447,6 @@ void CutCellGenerator<3>::bake_cells() {
         }
 #if defined(MANDOLINE_USE_ADAPTIVE_GRID)
         {
-
             auto &ag = *adaptive_grid;
             auto &agr = *(adaptive_grid_regions = std::map<int, int>());
             for (auto &&[cid, b] : ag.cells()) {
@@ -455,14 +455,12 @@ void CutCellGenerator<3>::bake_cells() {
         }
 #endif
 
-
-
         warn() << "Region count: " << regions.size();
         auto w = warn();
         /*
             for(auto&& r: regions) {
-                w << r << "(" << std::count_if(cells.begin(),cells.end(), [&](auto&& c) {
-                            return c.region == r;
+                w << r << "(" << std::count_if(cells.begin(),cells.end(),
+           [&](auto&& c) { return c.region == r;
                             })<< ") ";
             }
             for(auto&& r: regions) {
@@ -477,7 +475,8 @@ void CutCellGenerator<3>::bake_cells() {
                     if(c.region == r) {
                         for(auto&& [a,b]: c) {
                             std::cout << a << std::endl;
-                            std::cout << std::string(m_faces.at(a)) << std::endl;
+                            std::cout << std::string(m_faces.at(a)) <<
+           std::endl;
                         }
                         std::cout << std::endl;
                     }
@@ -502,7 +501,8 @@ mtao::Vec3d CutCellGenerator<3>::area_normal(const std::vector<int> &F) const {
     }
     return N / 2;
 }
-mtao::Vec3d CutCellGenerator<3>::area_normal(const std::set<std::vector<int>> &F) const {
+mtao::Vec3d CutCellGenerator<3>::area_normal(
+    const std::set<std::vector<int>> &F) const {
     mtao::Vec3d N = mtao::Vec3d::Zero();
     for (auto &&f : F) {
         N += area_normal(f);
@@ -516,10 +516,10 @@ bool CutCellGenerator<3>::check_face_utilization() const {
     for (auto &&[fidx, cs] : m_faces) {
         bool do_it = true;
         for (auto &&v : cs.indices) {
-
             for (int i = 0; i < 3; ++i) {
                 if (cs[i]) {
-                    if (axial_primal_faces[i].find(smallest_ordered_edge(v)) != axial_primal_faces[i].end()) {
+                    if (axial_primal_faces[i].find(smallest_ordered_edge(v)) !=
+                        axial_primal_faces[i].end()) {
                         do_it = false;
                     }
                 }
@@ -541,7 +541,8 @@ bool CutCellGenerator<3>::check_face_utilization() const {
         std::cout << std::string(face) << std::endl;
         std::cout << std::string(face.mask()) << std::endl;
         for (auto &&f : face.indices) {
-            std::copy(f.begin(), f.end(), std::ostream_iterator<int>(std::cout, ":"));
+            std::copy(f.begin(), f.end(),
+                      std::ostream_iterator<int>(std::cout, ":"));
             std::cout << " ";
         }
         std::cout << std::endl;
@@ -573,11 +574,13 @@ bool CutCellGenerator<3>::check_cell_containment() const {
     }
     return ret;
 }
-auto CutCellGenerator<3>::edge_slice(int dim, int coord) const -> std::set<Edge> {
-    if (auto it = axis_hem_data[dim].find(coord); it != axis_hem_data[dim].end()) {
+auto CutCellGenerator<3>::edge_slice(int dim, int coord) const
+    -> std::set<Edge> {
+    if (auto it = axis_hem_data[dim].find(coord);
+        it != axis_hem_data[dim].end()) {
         return it->second.edges;
     } else {
         return {};
     }
 }
-}// namespace mandoline::construction
+}  // namespace mandoline::construction

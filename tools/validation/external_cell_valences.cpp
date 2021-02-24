@@ -20,13 +20,12 @@ std::map<int,int> exterior_grid_valences(const mandoline::CutCellMesh<3>& ccm) {
     }
     for(auto&& face: ccm.exterior_grid().faces()) {
 
-        auto&& [ni,pi] = face.dual_edge;
+        auto&& [n,p] = face.dual_edge;
 
 
         //fmt::print("dual edge ({} {})\n", n, p);
-        if(ni >= 0) {
+        if(n >= 0) {
             
-            int n = cell_grid.get(ni);
             if(valences.find(n) != valences.end()) {
                 //valences[cell_grid.get(n)]++;
                 valences[n]++;
@@ -35,8 +34,7 @@ std::map<int,int> exterior_grid_valences(const mandoline::CutCellMesh<3>& ccm) {
                 valences[n] = 1;
             }
         }
-        if(pi >= 0) {
-            int p = cell_grid.get(pi);
+        if(p >= 0) {
             
             if(valences.find(p) != valences.end()) {
                 valences[p]++;

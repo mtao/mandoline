@@ -143,6 +143,7 @@ class AdaptiveGrid : public mtao::geometry::grid::StaggeredGrid<double, 3> {
     // std::vector<Edge> m_boundary;//Beware of -1!
     std::vector<Face> m_faces;
     std::vector<Edge> m_edges;
+    // vertices already offset by the number of cut-vertices
     std::map<int, Cell> m_cells;
 };
 

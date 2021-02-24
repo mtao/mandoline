@@ -98,6 +98,7 @@ SET(CUTMESH3_SRCS
     src/operators/masks.cpp
     src/operators/volume3.cpp
     src/operators/centroids3.cpp
+    src/operators/nearest_facet3.cpp
     )
 
 

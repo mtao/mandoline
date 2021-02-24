@@ -212,6 +212,7 @@ class MeshViewer : public mtao::opengl::Window3 {
         {
             auto g = ccm->Base::vertex_grid();
             auto s = g.shape();
+            //ccm->boundary();
         }
 
         std::vector<mtao::ColVecs3i> Fs;

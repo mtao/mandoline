@@ -1,4 +1,5 @@
 #include "mandoline/operators/boundary3.hpp"
+#include <spdlog/spdlog.h>
 
 #include "mandoline/operators/boundary.hpp"
 
@@ -76,20 +77,19 @@ std::vector<Eigen::Triplet<double>> boundary_triplets(const AdaptiveGrid &ag,
                                                       int offset,
                                                       bool domain_boundary) {
 
-    auto g = ag.cell_ownership_grid();
     std::vector<Eigen::Triplet<double>> trips;
     for (auto &&[i, face] : mtao::iterator::enumerate(ag.faces())) {
         auto &e = face.dual_edge;
         // if we are not the domain boundary 
         if (!(!domain_boundary && ag.is_boundary_face(e))) {
-            auto [l, h] = face.dual_edge;
+            auto [l, h] = e;
             if (l >= 0) {
                 //spdlog::info("{} => {} cell {}", l, g.get(l), i);
-                trips.emplace_back(offset + i, g.get(l), -1);
+                trips.emplace_back(offset + i, l, -1);
             }
             if (h >= 0) {
                 //spdlog::info("{} => {} cell {}", h, g.get(h), i);
-                trips.emplace_back(offset + i, g.get(h), 1);
+                trips.emplace_back(offset + i, h, 1);
             }
         }
     }

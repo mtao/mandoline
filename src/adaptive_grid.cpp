@@ -76,12 +76,18 @@ AdaptiveGrid::Square AdaptiveGrid::Square::from_proto(
 }
 void AdaptiveGrid::Face::serialize(protobuf::Face &c) const {
     Square::serialize(*c.mutable_geometry());
+
+    auto &e = dual_edge;
+    auto [l, h] = e;
     protobuf::serialize(dual_edge, *c.mutable_dual_edge());
 }
 AdaptiveGrid::Face AdaptiveGrid::Face::from_proto(const protobuf::Face &c) {
     Face ret;
     ret.Square::operator=(Square::from_proto(c.geometry()));
+
     protobuf::deserialize(c.dual_edge(), ret.dual_edge);
+    auto &e = ret.dual_edge;
+    auto [l, h] = e;
     return ret;
 }
 

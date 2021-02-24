@@ -448,11 +448,11 @@ void AdaptiveGridFactory::make_cells(const ActiveMask &mask, int level, const co
 }
 void AdaptiveGridFactory::make_cells(const GridData3 &mask, int level) {
     int jump = 1 << (level * logwidth);
-    std::cout << "Making cells from a mask with shape: ";
+    //std::cout << "Making cells from a mask with shape: ";
 
-    std::cout << mask.shape()[0] << " ";
-    std::cout << mask.shape()[1] << " ";
-    std::cout << mask.shape()[2] << std::endl;
+    //std::cout << mask.shape()[0] << " ";
+    //std::cout << mask.shape()[1] << " ";
+    //std::cout << mask.shape()[2] << std::endl;
     for (int a = 0; a < mask.shape()[0]; ++a) {
         for (int b = 0; b < mask.shape()[1]; ++b) {
             for (int c = 0; c < mask.shape()[2]; ++c) {
