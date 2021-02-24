@@ -4,6 +4,7 @@
 #include "mandoline/operators/boundary3.hpp"
 #include "mandoline/operators/interpolation3.hpp"
 #include "mandoline/operators/nearest_facet.hpp"
+#include "mtao/geometry/winding_number.hpp"
 namespace mandoline::operators {
 namespace {
 coord_mask<3> projection_mask(const auto& grid, const auto& cell) {
@@ -126,10 +127,11 @@ std::tuple<int, double> BoundaryFacetProjector3::nearest_grid_face(
 std::vector<std::tuple<int, double>> BoundaryFacetProjector3::nearest_triangles(
     const Eigen::Ref<const mtao::ColVecs3d> P) const {
     std::vector<std::tuple<int, double>> I(P.cols());
-    for (auto&& [idx, pr] : mtao::iterator::enumerate(I)) {
+    tbb::parallel_for<int>(0, I.size(), [&](int idx) {
+        auto& pr = I[idx];
         auto p = P.col(idx);
         pr = nearest_triangle(p);
-    }
+    });
     return I;
 }
 std::vector<std::tuple<int, double>>
@@ -199,13 +201,13 @@ CellParentMaps3::CellParentMaps3(const CutCellMesh<3>& ccm) : _projector(ccm) {
         }
     }
 
-    /*
     triangle_contained_faces.resize(ccm.origF().cols());
     for (auto&& [face_index, face] :
          mtao::iterator::enumerate(ccm.cut_faces())) {
         if (face.is_mesh_face()) {
             triangle_contained_faces[face.as_face_id()].emplace(face_index);
         } else {
+            continue;
             const auto& cells = cut_cell_coboundary[face_index];
 
             std::array<int, 3> coord{{0, 0, 0}};
@@ -231,6 +233,7 @@ CellParentMaps3::CellParentMaps3(const CutCellMesh<3>& ccm) : _projector(ccm) {
             grid_contained_faces[index].emplace(face_index);
         }
     }
+    /*
     {
         int count = 0;
         for (auto&& f : grid_contained_faces) {
@@ -394,13 +397,152 @@ mtao::VecXi nearest_edges(const CutCellMesh<3> &ccm,
 mtao::VecXi nearest_faces(const CutCellMesh<3> &ccm,
                       Eigen::Ref<const mtao::ColVecs3d> p);
 */
+// mtao::VecXi nearest_faces(const CutCellMesh<3>& ccm,
+//                          Eigen::Ref<const mtao::ColVecs3d> P) {
+//    CellParentMaps3 parent_maps(ccm);
+//    return nearest_faces(ccm, parent_maps, P);
+//}
+//
+// mtao::VecXi nearest_faces(const CutCellMesh<3>& ccm,
+//                          const CellParentMaps3& parent_maps,
+//                          Eigen::Ref<const mtao::ColVecs3d> P) {}
+
+mtao::VecXi nearest_mesh_cut_faces(const CutCellMesh<3>& ccm,
+                                   Eigen::Ref<const mtao::ColVecs3d> P) {
+    CellParentMaps3 parent_maps(ccm);
+    return nearest_mesh_cut_faces(ccm, parent_maps, P);
+}
+mtao::VecXi nearest_mesh_cut_faces(const CutCellMesh<3>& ccm,
+                                   const CellParentMaps3& parent_maps,
+                                   Eigen::Ref<const mtao::ColVecs3d> P) {
+    auto nearest_triangles = parent_maps._projector.nearest_triangles(P);
+    mtao::VecXi I(P.cols());
+    I.setConstant(-1);
+    tbb::parallel_for<int>(0, I.size(), [&](int j) {
+        const auto& [parent_triangle, distance] = nearest_triangles[j];
+        auto p = P.col(j);
+        auto& index = I(j);
+        index = parent_triangle;
+
+        auto tf = ccm.origF().col(parent_triangle);
+        auto a = ccm.origV().col(tf(0));
+        auto b = ccm.origV().col(tf(1));
+        auto c = ccm.origV().col(tf(2));
+        mtao::Matrix<double, 3, 2> B;
+        B.col(0) = b - a;
+        B.col(1) = c - a;
+        // A [1,0] = B
+        //   [0,1]
+        // B^T A = B^T B
+        // (B^T B )^{-1} B^T A = I
+        // (B^T B)^{-1} B^T = A^{-1}
+        // A x = P
+        // x = (B^T B)^{-1} B^T P
+
+        mtao::Vec2d p2 = (B.transpose() * B).inverse() * (B.transpose() * p);
+        bool move_x = p2.x() <= 0;
+        bool move_y = p2.y() <= 0;
+        bool move_z = p2.sum() >= 1;
+        if (move_x && move_y) {
+            p2.setZero();
+        } else if (move_x && move_z) {
+            p2.setUnit(1);
+        } else if (move_y && move_z) {
+            p2.setUnit(0);
+        } else if (move_x) {
+            p2.y() /= 1 - p2.x();  // p2.y() / (1 - p2.sum()) + p2.y()) = p2.y()
+                                   // / (1-p2.x());
+            p2.x() = 0;
+        } else if (move_y) {
+            p2.x() /= 1 - p2.y();
+        } else if (move_z) {
+            p2 /= p2.sum();
+        }
+
+        // spdlog::info("Triangle contained faces got {} / {}", parent_triangle,
+        // parent_maps.triangle_contained_faces.size());
+        const auto& cutfaces =
+            parent_maps.triangle_contained_faces[parent_triangle];
+        if (cutfaces.size() == 1) {
+            index = *cutfaces.begin();
+        } else if (cutfaces.size() > 1) {
+            for (auto&& cutface_index : cutfaces) {
+                const auto& mesh_face = ccm.mesh_cut_faces().at(cutface_index);
+                std::vector<int> loop(mesh_face.barys.cols());
+                std::iota(loop.begin(), loop.end(), 0);
+
+                if (mtao::geometry::interior_winding_number(
+                        mesh_face.barys.bottomRows<2>(), loop, p2)) {
+                    index = cutface_index;
+                    break;
+                }
+            }
+            if (index == -1) {  // almost definitely a boundary value
+                for (auto&& cutface_index : cutfaces) {
+                    const auto& mesh_face =
+                        ccm.mesh_cut_faces().at(cutface_index);
+                    const auto& B = mesh_face.barys;
+                    for (int j = 0; j < B.cols(); ++j) {
+                        auto ba = B.col(j);
+                        auto bb = B.col((j + 1) % B.cols());
+                        double tval;
+                        double a, b;
+                        if (move_x) {
+                            if (ba.x() == 0 && bb.x() == 0) {
+                                tval = p2.y();
+                                std::tie(a, b) =
+                                    std::make_tuple(ba.y(), bb.y());
+                            } else {
+                                continue;
+                            }
+                        } else if (move_y) {
+                            if (ba.y() == 0 && bb.y() == 0) {
+                                tval = p2.x();
+                                std::tie(a, b) =
+                                    std::make_tuple(ba.x(), bb.x());
+                            } else {
+                                continue;
+                            }
+                        } else if (move_z) {
+                            if (ba.z() == 0 && bb.z() == 0) {
+                                tval = p2.sum();
+                                std::tie(a, b) =
+                                    std::make_tuple(ba.sum(), bb.sum());
+                            } else {
+                                continue;
+                            }
+                        }
+                        if (b < a) {
+                            std::swap(a, b);
+                        }
+                        if (a <= tval && tval <= b) {
+                            index = cutface_index;
+                            break;
+                        }
+                    }
+                    if (index >= 0) {
+                        break;
+                    }
+                }
+            }
+        } else {
+            spdlog::error(
+                "Failed to find a mesh cutface holding {} in triangle {}",
+                fmt::join(p, ","), parent_triangle);
+        }
+    });
+    return I;
+}
 
 mtao::VecXi nearest_cells(const CutCellMesh<3>& ccm,
                           Eigen::Ref<const mtao::ColVecs3d> P) {
-    mtao::VecXi I = mtao::VecXi::Constant(P.cols(), -1);
-    spdlog::info("Nearest_cells Building parent maps");
     CellParentMaps3 parent_maps(ccm);
-    spdlog::info("Done building parent maps");
+    return nearest_cells(ccm, parent_maps, P);
+}
+mtao::VecXi nearest_cells(const CutCellMesh<3>& ccm,
+                          const CellParentMaps3& parent_maps,
+                          Eigen::Ref<const mtao::ColVecs3d> P) {
+    mtao::VecXi I(P.cols());
     // I.setConstant(0);
     // return I;
 
@@ -411,9 +553,9 @@ mtao::VecXi nearest_cells(const CutCellMesh<3>& ccm,
 
     // auto is_boundary_grid_face = [&](int index) {
     //    int axis = ccm.form_type<2>(index);
-    //    coord_type coord = ccm.staggered_unindex<2>(nearest_grid_index,axis);
-    //    int val = coord[axis];
-    //    return val == 0 || coord = ccm.shape()[axis];
+    //    coord_type coord =
+    //    ccm.staggered_unindex<2>(nearest_grid_index,axis); int val =
+    //    coord[axis]; return val == 0 || coord = ccm.shape()[axis];
 
     //}:
 
@@ -464,7 +606,7 @@ mtao::VecXi nearest_cells(const CutCellMesh<3>& ccm,
         spdlog::info("Case near {} far {} from coord {} / {} on axis {}",
                      near_boundary, far_boundary, fmt::join(coord, ","),
                      fmt::join(ccm.cell_shape(), ","), axis);
-        std::set<int>* potential_cells_ptr;
+        const std::set<int>* potential_cells_ptr;
         if (near_boundary) {
             potential_cells_ptr =
                 &parent_maps.grid_contained_cells[ccm.StaggeredGrid::cell_index(
@@ -483,14 +625,16 @@ mtao::VecXi nearest_cells(const CutCellMesh<3>& ccm,
         } else {
             // auto [grid_cell, quotient] = ccm.vertex_grid().coord(p);
             // for (auto&& [i, s] :
-            //        mtao::iterator::zip(grid_cell, ccm.cell_grid().shape())) {
+            //        mtao::iterator::zip(grid_cell,
+            //        ccm.cell_grid().shape())) {
             //    i = std::clamp(i, 0, s);
             //    potential_cells_ptr =
             //        &parent_maps.grid_contained_cells
             //        [ccm.StaggeredGrid::cell_index(coord)];
             //}
             spdlog::error(
-                "Interior faces should find neighbors with get_cell; setting "
+                "Interior faces should find neighbors with get_cell; "
+                "setting "
                 "particle {} to cell 0",
                 j);
             index = 0;
@@ -536,7 +680,8 @@ mtao::VecXi nearest_cells(const CutCellMesh<3>& ccm,
                             index = *cells.begin();
                         } else {
                             spdlog::warn(
-                                "Boundary faces cant have multiple interior "
+                                "Boundary faces cant have multiple "
+                                "interior "
                                 "({} I see )"
                                 "cells. picking the first one",
                                 cells.size());
@@ -550,9 +695,9 @@ mtao::VecXi nearest_cells(const CutCellMesh<3>& ccm,
                 }
             }
             // spdlog::warn(
-            //    "Did not implement non-trivial edge and vertex cell projection
-            //    " "cases! vertex {} has local coordinate {} + {} with {}
-            //    options "
+            //    "Did not implement non-trivial edge and vertex cell
+            //    projection " "cases! vertex {} has local coordinate {} +
+            //    {} with {} options "
             //    "({})",
             //    fmt::join(p, ","), fmt::join(coord, ","),
             //    fmt::join(quotient, ","), potential_cells.size(),
@@ -568,9 +713,8 @@ mtao::VecXi nearest_cells(const CutCellMesh<3>& ccm,
                     auto b = V.col(bi);
                     auto T = (b - a).eval();
                     double D = T.norm();
-                    double term = std::clamp<double>((T.dot(p - a) / D), 0, 1);
-                    auto pp = a + term * T;
-                    return (p - pp).norm();
+                    double term = std::clamp<double>((T.dot(p - a) / D), 0,
+            1); auto pp = a + term * T; return (p - pp).norm();
                 };
 
             }
