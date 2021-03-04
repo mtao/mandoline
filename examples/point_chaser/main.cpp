@@ -3,7 +3,6 @@
 #include <Magnum/GL/Renderer.h>
 #include <Magnum/Shaders/MeshVisualizer.h>
 #include <Magnum/Shaders/Phong.h>
-#include <mandoline/operators/nearest_facet.hpp>
 #include <mtao/eigen/stack.h>
 #include <mtao/opengl/drawables.h>
 #include <mtao/opengl/objects/bbox.h>
@@ -11,6 +10,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <mandoline/operators/nearest_facet.hpp>
 #include <memory>
 #include <mtao/cmdline_parser.hpp>
 #include <mtao/eigen/stl2eigen.hpp>
@@ -27,6 +27,7 @@ class MeshViewer : public mtao::opengl::Window3 {
     bool single_particle_mode = false;
     bool nearest_mode = true;
     bool triangle_cut_face_mode = true;
+    bool cut_face_mode = true;
     int current_ccm_cell = 0;
     int current_ccm_face = 0;
     std::optional<std::string> filename;
@@ -73,7 +74,7 @@ class MeshViewer : public mtao::opengl::Window3 {
             point_mesh.setColorBuffer(C);
         } else {
             mtao::ColVecs4f C(4, P.cols());
-            if (nearest_mode || triangle_cut_face_mode) {
+            if (nearest_mode || triangle_cut_face_mode || cut_face_mode) {
                 mtao::Vec3d s = bb.sizes();
                 bb.min() -= .5 * s;
                 bb.max() += .5 * s;
@@ -85,8 +86,10 @@ class MeshViewer : public mtao::opengl::Window3 {
             mtao::VecXi I;
             if (nearest_mode) {
                 I = ccm.get_nearest_cell_indices(P);
+            } else if (cut_face_mode) {
+                I = mandoline::operators::nearest_faces(ccm, P);
             } else if (triangle_cut_face_mode) {
-                I = mandoline::operators::nearest_mesh_cut_faces(ccm,P);
+                I = mandoline::operators::nearest_mesh_cut_faces(ccm, P);
             } else {
                 I = ccm.get_cell_indices(P);
             }
@@ -124,7 +127,7 @@ class MeshViewer : public mtao::opengl::Window3 {
         bbox_drawable->activate_edges();
         P.resize(3, 10000);
 
-        cell_colors.resize(4, std::max<int>(ccm.num_cells(),ccm.num_faces()));
+        cell_colors.resize(4, std::max<int>(ccm.num_cells(), ccm.num_faces()));
         cell_colors.setRandom();
         cell_colors.array() += 1;
         cell_colors /= 2;
@@ -166,6 +169,9 @@ class MeshViewer : public mtao::opengl::Window3 {
             update_points();
         }
         if (ImGui::Checkbox("Triangle-cut-face", &triangle_cut_face_mode)) {
+            update_points();
+        }
+        if (ImGui::Checkbox("Any -cut-face", &cut_face_mode)) {
             update_points();
         }
         if (input_phong) {

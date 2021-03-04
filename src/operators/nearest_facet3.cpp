@@ -54,6 +54,20 @@ std::tuple<int, double> BoundaryFacetProjector3::nearest_grid_face(
     mask.clamp(projected_grid_cell);
     // std::cout << facet_case << "(" << std::string(mask) << std::endl;
 
+    /*
+    idx = facet_case;
+
+        auto bb = bbox();
+        if(bb.contains(p)) {
+            dist = 88888;
+        } else {
+        auto dM = (p - bb.max());
+        auto dm = (bb.min() - p);
+        mtao::Vec3d diff = (dM.array() > 0).select(dM, 0);
+        diff = (dm.array() > 0).select(dm, diff);
+        dist = diff.norm();
+        }
+        */
     if (facet_case == 0) {  // in a grid cell
         bool above = true;
         for (int j = 0; j < 3; ++j) {
@@ -72,6 +86,7 @@ std::tuple<int, double> BoundaryFacetProjector3::nearest_grid_face(
         if (above) {
             projected_grid_cell[axis] += 1;
         }
+        dist /= dx()(axis);
     } else if (facet_case == 1) {  // in a grid face
         axis = mask.bound_axis();
         // spdlog::info("Doing face case on axis {}", axis);
@@ -80,15 +95,18 @@ std::tuple<int, double> BoundaryFacetProjector3::nearest_grid_face(
             projected_grid_cell[axis] += 1;
         }
         dist = std::abs(dist);
+        dist /= dx()(axis);
     } else if (facet_case == 2) {
         int edge_axis = mask.unbound_axis();
         // spdlog::info("Edge axis: {} with pc {}", edge_axis,
         //             fmt::join(projected_grid_cell, ","));
         bool above;
+        mtao::Vec2d local_dists;
         for (int j = 0; j < 2; ++j) {
             int my_axis = (j + edge_axis + 1) % 3;
-            double my_dist = quotient[my_axis] + grid_cell[my_axis] -
-                             projected_grid_cell[my_axis];
+            double& my_dist = local_dists(j) = quotient[my_axis] +
+                                               grid_cell[my_axis] -
+                                               projected_grid_cell[my_axis];
             double adist = std::abs(my_dist);
             if (adist < dist) {
                 dist = adist;
@@ -96,10 +114,12 @@ std::tuple<int, double> BoundaryFacetProjector3::nearest_grid_face(
                 // spdlog::info("axis {} got dist {}", dist, axis);
                 above = my_dist >= 1;
             }
+            my_dist /= dx()(my_axis);
         }
         if (above) {
             projected_grid_cell[axis] += 1;
         }
+        dist = local_dists.norm();
     }
     if (facet_case == 3) {
         bool above;
@@ -116,11 +136,17 @@ std::tuple<int, double> BoundaryFacetProjector3::nearest_grid_face(
         if (above) {
             projected_grid_cell[axis] += 1;
         }
+
+        auto bb = bbox();
+        auto dM = (p - bb.max());
+        auto dm = (bb.min() - p);
+        mtao::Vec3d diff = (dM.array() > 0).select(dM, 0);
+        diff = (dm.array() > 0).select(dm, diff);
+        dist = diff.norm();
     }
     idx = staggered_index<2>(projected_grid_cell, axis);
     // spdlog::info("Staggered index of {} on axis {} => {}",
     //             fmt::join(projected_grid_cell, ","), axis, idx);
-    dist /= dx()(axis);
     return ret;
 }
 
@@ -397,15 +423,188 @@ mtao::VecXi nearest_edges(const CutCellMesh<3> &ccm,
 mtao::VecXi nearest_faces(const CutCellMesh<3> &ccm,
                       Eigen::Ref<const mtao::ColVecs3d> p);
 */
-// mtao::VecXi nearest_faces(const CutCellMesh<3>& ccm,
-//                          Eigen::Ref<const mtao::ColVecs3d> P) {
-//    CellParentMaps3 parent_maps(ccm);
-//    return nearest_faces(ccm, parent_maps, P);
-//}
-//
-// mtao::VecXi nearest_faces(const CutCellMesh<3>& ccm,
-//                          const CellParentMaps3& parent_maps,
-//                          Eigen::Ref<const mtao::ColVecs3d> P) {}
+mtao::VecXi nearest_faces(const CutCellMesh<3>& ccm,
+                          Eigen::Ref<const mtao::ColVecs3d> P) {
+    CellParentMaps3 parent_maps(ccm);
+    return nearest_faces(ccm, parent_maps, P);
+}
+
+mtao::VecXi nearest_faces(const CutCellMesh<3>& ccm,
+                          const CellParentMaps3& parent_maps,
+                          Eigen::Ref<const mtao::ColVecs3d> P) {
+    auto nearest_triangles = parent_maps._projector.nearest_triangles(P);
+    auto nearest_grid_faces = parent_maps._projector.nearest_grid_faces(P);
+    mtao::VecXi I(P.cols());
+    I.setConstant(-1);
+
+    auto subVs = ccm.compute_subVs();
+    //tbb::parallel_for<int>(0, I.size(), [&](int j) {
+    for(int j = 0; j < I.size(); ++j) {
+        const auto& [parent_triangle, tri_distance] = nearest_triangles[j];
+        const auto& [parent_grid_face, grid_distance] = nearest_grid_faces[j];
+
+        auto p = P.col(j);
+        auto& index = I(j);
+
+        std::cout << tri_distance << " " << grid_distance << std::endl;
+        if (false &&  tri_distance < grid_distance) {
+            auto tf = ccm.origF().col(parent_triangle);
+            auto a = ccm.origV().col(tf(0));
+            auto b = ccm.origV().col(tf(1));
+            auto c = ccm.origV().col(tf(2));
+            mtao::Matrix<double, 3, 2> B;
+            B.col(0) = b - a;
+            B.col(1) = c - a;
+            // A [1,0] = B
+            //   [0,1]
+            // B^T A = B^T B
+            // (B^T B )^{-1} B^T A = I
+            // (B^T B)^{-1} B^T = A^{-1}
+            // A x = P
+            // x = (B^T B)^{-1} B^T P
+
+            mtao::Vec2d p2 =
+                (B.transpose() * B).inverse() * (B.transpose() * p);
+            bool move_x = p2.x() <= 0;
+            bool move_y = p2.y() <= 0;
+            bool move_z = p2.sum() >= 1;
+            if (move_x && move_y) {
+                p2.setZero();
+            } else if (move_x && move_z) {
+                p2.setUnit(1);
+            } else if (move_y && move_z) {
+                p2.setUnit(0);
+            } else if (move_x) {
+                p2.y() /= 1 - p2.x();  // p2.y() / (1 - p2.sum()) + p2.y()) =
+                                       // p2.y() / (1-p2.x());
+                p2.x() = 0;
+            } else if (move_y) {
+                p2.x() /= 1 - p2.y();
+            } else if (move_z) {
+                p2 /= p2.sum();
+            }
+
+            // spdlog::info("Triangle contained faces got {} / {}",
+            // parent_triangle, parent_maps.triangle_contained_faces.size());
+            const auto& cutfaces =
+                parent_maps.triangle_contained_faces[parent_triangle];
+            if (cutfaces.size() == 1) {
+                index = *cutfaces.begin();
+            } else if (cutfaces.size() > 1) {
+                for (auto&& cutface_index : cutfaces) {
+                    const auto& mesh_face =
+                        ccm.mesh_cut_faces().at(cutface_index);
+                    std::vector<int> loop(mesh_face.barys.cols());
+                    std::iota(loop.begin(), loop.end(), 0);
+
+                    if (mtao::geometry::interior_winding_number(
+                            mesh_face.barys.bottomRows<2>(), loop, p2)) {
+                        index = cutface_index;
+                        break;
+                    }
+                }
+                if (index == -1) {  // almost definitely a boundary value
+                    for (auto&& cutface_index : cutfaces) {
+                        const auto& mesh_face =
+                            ccm.mesh_cut_faces().at(cutface_index);
+                        const auto& B = mesh_face.barys;
+                        for (int j = 0; j < B.cols(); ++j) {
+                            auto ba = B.col(j);
+                            auto bb = B.col((j + 1) % B.cols());
+                            double tval;
+                            double a, b;
+                            if (move_x) {
+                                if (ba.x() == 0 && bb.x() == 0) {
+                                    tval = p2.y();
+                                    std::tie(a, b) =
+                                        std::make_tuple(ba.y(), bb.y());
+                                } else {
+                                    continue;
+                                }
+                            } else if (move_y) {
+                                if (ba.y() == 0 && bb.y() == 0) {
+                                    tval = p2.x();
+                                    std::tie(a, b) =
+                                        std::make_tuple(ba.x(), bb.x());
+                                } else {
+                                    continue;
+                                }
+                            } else if (move_z) {
+                                if (ba.z() == 0 && bb.z() == 0) {
+                                    tval = p2.x();
+                                    std::tie(a, b) =
+                                        std::make_tuple(ba.x(), bb.x());
+                                } else {
+                                    continue;
+                                }
+                            }
+                            if (b < a) {
+                                std::swap(a, b);
+                            }
+                            if (a <= tval && tval <= b) {
+                                index = cutface_index;
+                                break;
+                            }
+                        }
+                        if (index >= 0) {
+                            break;
+                        }
+                    }
+                }
+                if (index == -1) {
+                    spdlog::error(
+                        "Failed to find a mesh cutface holding {} in triangle "
+                        "{} in nearest_faces",
+                        fmt::join(p, ","), parent_triangle);
+                }
+            } else {
+                spdlog::error(
+                    "Failed to find a mesh cutface holding {} in triangle {} "
+                    "due to 0 faces",
+                    fmt::join(p, ","), parent_triangle);
+            }
+        } else {
+            const auto& nearest_cut_faces =
+                parent_maps.grid_contained_faces[parent_grid_face];
+            if (nearest_cut_faces.size() == 1) {
+                int cf = *nearest_cut_faces.begin();
+                index = cf;
+            continue;//return;
+            } else {
+                int axis = ccm.form_type<2>(parent_grid_face);
+                mtao::Vec2d pp;
+                pp(0) = p((axis + 1) % 3);
+                pp(1) = p((axis + 2) % 3);
+                const auto& V2 = subVs[axis];
+                auto is_inside = [&](auto&& face) -> bool {
+                    double wn = 0;
+                    for (auto&& c : face.indices) {
+                        double mywn = mtao::geometry::winding_number(V2, c, pp);
+                        wn += mywn;
+                    }
+                    return std::abs(wn) > .5;
+                };
+                const auto& nearest_grid_face_cut_faces =
+                    parent_maps.grid_contained_faces[parent_grid_face];
+                for (auto&& fidx : nearest_grid_face_cut_faces) {
+                    if (is_inside(ccm.cut_face(fidx))) {
+                        index = fidx;
+                        //return;
+            continue;//return;
+                    }
+                }
+
+                if(index == -1) {
+                spdlog::error(
+                    "Failed to find a grid cutface holding {} in face {}",
+                    fmt::join(p, ","), parent_grid_face);
+                }
+            }
+        }
+    //});
+}
+    return I;
+}
 
 mtao::VecXi nearest_mesh_cut_faces(const CutCellMesh<3>& ccm,
                                    Eigen::Ref<const mtao::ColVecs3d> P) {
@@ -422,7 +621,6 @@ mtao::VecXi nearest_mesh_cut_faces(const CutCellMesh<3>& ccm,
         const auto& [parent_triangle, distance] = nearest_triangles[j];
         auto p = P.col(j);
         auto& index = I(j);
-        index = parent_triangle;
 
         auto tf = ccm.origF().col(parent_triangle);
         auto a = ccm.origV().col(tf(0));
@@ -505,9 +703,12 @@ mtao::VecXi nearest_mesh_cut_faces(const CutCellMesh<3>& ccm,
                             }
                         } else if (move_z) {
                             if (ba.z() == 0 && bb.z() == 0) {
-                                tval = p2.sum();
+                                tval = p2.x();
                                 std::tie(a, b) =
-                                    std::make_tuple(ba.sum(), bb.sum());
+                                    std::make_tuple(ba.x(), bb.x());
+                                // spdlog::info("Intervaling {} between
+                                // [{},{}]",
+                                //             tval, a, b);
                             } else {
                                 continue;
                             }
@@ -523,6 +724,12 @@ mtao::VecXi nearest_mesh_cut_faces(const CutCellMesh<3>& ccm,
                     if (index >= 0) {
                         break;
                     }
+                }
+                if (index == -1) {
+                    spdlog::error(
+                        "Failed to find a mesh cutface holding {} in triangle "
+                        "{} through edges (bary was {})",
+                        fmt::join(p, ","), parent_triangle, fmt::join(p2, ","));
                 }
             }
         } else {
@@ -691,7 +898,7 @@ mtao::VecXi nearest_cells(const CutCellMesh<3>& ccm,
                     }
                 }
                 if (index != -1) {
-                    continue;
+                    spdlog::error("Failed to find nearest grid cutface");
                 }
             }
             // spdlog::warn(

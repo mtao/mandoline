@@ -45,6 +45,7 @@ class MeshViewer : public mtao::opengl::Window3 {
     float timestep = 1000.0;
     bool animate = false;
     float bbox_offset = .1;
+    float threshold = 0;
     using Vec = mtao::VectorX<GLfloat>;
     using Vec3 = mtao::Vec3f;
     Vec data;
@@ -98,7 +99,11 @@ class MeshViewer : public mtao::opengl::Window3 {
                 }
             }
             auto g = mtao::geometry::grid::StaggeredGrid3d::from_bbox(bbox, constructor.N);
+            if(threshold > 0) {
+            constructor.set_mesh(V,F,threshold);
+            } else {
             constructor.set_mesh(V,F,{});
+            }
             constructor.update_mesh_and_bbox(V,F,1.1);
 
         }
@@ -252,6 +257,8 @@ class MeshViewer : public mtao::opengl::Window3 {
 
         if (mv_drawable) {
             mv_drawable->gui();
+        }
+        if (ImGui::InputFloat("Threshold", &threshold)) {
         }
         if (ImGui::InputFloat("Boundingbox Offset", &bbox_offset)) {
             mtao::Vec3f C = (orig_bbox.min() + orig_bbox.max()) / 2;

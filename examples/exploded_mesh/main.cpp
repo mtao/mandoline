@@ -32,6 +32,7 @@ class MeshViewer : public mtao::opengl::Window3 {
     mandoline::tools::MeshExploder exploder;
     bool show_multi = false;
     int index = 0;
+    bool invert = false;
 
     bool show_wireframes = false;
 
@@ -152,9 +153,10 @@ class MeshViewer : public mtao::opengl::Window3 {
         }
         if (show_multi) {
             ImGui::InputInt("Region id", &index);
+            ImGui::Checkbox("Invert", &invert);
             for (auto&& [i, c, w] : mtao::iterator::enumerate(
                      exploded_vcolors, exploded_wireframes)) {
-                if (i == index) {
+                if (invert ^ (i == index)) {
                     c->set_visibility(true);
                     w->set_visibility(true);
                 } else {

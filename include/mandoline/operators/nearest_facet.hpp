@@ -61,11 +61,11 @@ struct CellParentMaps3 {
 ///                             Eigen::Ref<const mtao::ColVecs3d> p);
 /// mtao::VecXi nearest_edges(const CutCellMesh<3>& ccm,
 ///                          Eigen::Ref<const mtao::ColVecs3d> p);
-// mtao::VecXi nearest_faces(const CutCellMesh<3>& ccm,
-//                          Eigen::Ref<const mtao::ColVecs3d> p);
-// mtao::VecXi nearest_faces(const CutCellMesh<3>& ccm,
-//                          const CellParentMaps3& parent_maps,
-//                          Eigen::Ref<const mtao::ColVecs3d> p);
+mtao::VecXi nearest_faces(const CutCellMesh<3>& ccm,
+                          Eigen::Ref<const mtao::ColVecs3d> p);
+mtao::VecXi nearest_faces(const CutCellMesh<3>& ccm,
+                          const CellParentMaps3& parent_maps,
+                          Eigen::Ref<const mtao::ColVecs3d> p);
 
 mtao::VecXi nearest_mesh_cut_faces(const CutCellMesh<3>& ccm,
                                    Eigen::Ref<const mtao::ColVecs3d> p);
