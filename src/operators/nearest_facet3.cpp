@@ -778,7 +778,11 @@ mtao::VecXi nearest_cells(const CutCellMesh<3>& ccm,
     // vertices rewritten as projected to each cell
     auto V = ccm.vertices();
     auto subVs = ccm.compute_subVs();
-    for (int j = 0; j < P.cols(); ++j) {
+#if defined(MTAO_TBB_ENABLED)
+    tbb::parallel_for<int>(0, I.size(), [&](const int j) {
+#else
+    for (int j = 0; j < I.size(); ++j) {
+#endif
         auto p = P.col(j);
         int& index = I(j);
         auto [grid_cell, quotient] = ccm.vertex_grid().coord(p);
@@ -787,7 +791,11 @@ mtao::VecXi nearest_cells(const CutCellMesh<3>& ccm,
             int got_cell = ccm.get_cell_index(p);
             if (got_cell >= 0) {
                 index = got_cell;
-                continue;
+#if defined(MTAO_TBB_ENABLED)
+            return;
+#else
+            continue;
+#endif
             }
         }
 
@@ -803,7 +811,11 @@ mtao::VecXi nearest_cells(const CutCellMesh<3>& ccm,
             // cells.size());
             if (cells.size() == 1) {
                 index = *cells.begin();
-                continue;
+#if defined(MTAO_TBB_ENABLED)
+            return;
+#else
+            continue;
+#endif
             }
         }
         std::cout << std::endl;
@@ -854,17 +866,29 @@ mtao::VecXi nearest_cells(const CutCellMesh<3>& ccm,
                 "particle {} to cell 0",
                 j);
             index = 0;
+#if defined(MTAO_TBB_ENABLED)
+            return;
+#else
             continue;
+#endif
         }
         const std::set<int>& potential_cells = *potential_cells_ptr;
 
         if (potential_cells.size() == 0) {
             spdlog::error("No possible cells! giving index 0");
             index = 0;
+#if defined(MTAO_TBB_ENABLED)
+            return;
+#else
             continue;
+#endif
         } else if (potential_cells.size() == 1) {
             index = *potential_cells.begin();
+#if defined(MTAO_TBB_ENABLED)
+            return;
+#else
             continue;
+#endif
         } else {
             auto [grid_cell, quotient] = ccm.vertex_grid().coord(p);
             auto mask = projection_mask(ccm.cell_grid(), grid_cell);
@@ -936,7 +960,11 @@ mtao::VecXi nearest_cells(const CutCellMesh<3>& ccm,
             }
             */
         }
+#if defined(MTAO_TBB_ENABLED)
+    });
+#else
     }
+#endif
     return I;
     /*
 
