@@ -179,6 +179,7 @@ CellParentMaps3::CellParentMaps3(const CutCellMesh<3>& ccm) : _projector(ccm) {
         grid_contained_cells[ccm.StaggeredGrid::cell_index(cell.grid_cell)]
             .emplace(cell_index);
     }
+#if defined(MANDOLINE_USE_ADAPTIVE_GRID)
     for (auto&& [cid, desc] : ccm.exterior_grid().cells()) {
         auto&& abc = desc.corner();
         auto&& jump = desc.width();
@@ -192,6 +193,14 @@ CellParentMaps3::CellParentMaps3(const CutCellMesh<3>& ccm) : _projector(ccm) {
             }
         }
     }
+#else
+    for (auto&& [cid, coord] :
+         mtao::iterator::enumerate(ccm.exterior_grid().cell_coords())) {
+        int grid_index = ccm.StaggeredGrid::cell_index(coord);
+        grid_contained_cells[grid_index].emplace(cid);
+    }
+
+#endif
 
     cut_cell_coboundary.resize(ccm.face_size());
     {
@@ -438,8 +447,8 @@ mtao::VecXi nearest_faces(const CutCellMesh<3>& ccm,
     I.setConstant(-1);
 
     auto subVs = ccm.compute_subVs();
-    //tbb::parallel_for<int>(0, I.size(), [&](int j) {
-    for(int j = 0; j < I.size(); ++j) {
+    // tbb::parallel_for<int>(0, I.size(), [&](int j) {
+    for (int j = 0; j < I.size(); ++j) {
         const auto& [parent_triangle, tri_distance] = nearest_triangles[j];
         const auto& [parent_grid_face, grid_distance] = nearest_grid_faces[j];
 
@@ -447,7 +456,7 @@ mtao::VecXi nearest_faces(const CutCellMesh<3>& ccm,
         auto& index = I(j);
 
         std::cout << tri_distance << " " << grid_distance << std::endl;
-        if (false &&  tri_distance < grid_distance) {
+        if (false && tri_distance < grid_distance) {
             auto tf = ccm.origF().col(parent_triangle);
             auto a = ccm.origV().col(tf(0));
             auto b = ccm.origV().col(tf(1));
@@ -569,7 +578,7 @@ mtao::VecXi nearest_faces(const CutCellMesh<3>& ccm,
             if (nearest_cut_faces.size() == 1) {
                 int cf = *nearest_cut_faces.begin();
                 index = cf;
-            continue;//return;
+                continue;  // return;
             } else {
                 int axis = ccm.form_type<2>(parent_grid_face);
                 mtao::Vec2d pp;
@@ -589,20 +598,20 @@ mtao::VecXi nearest_faces(const CutCellMesh<3>& ccm,
                 for (auto&& fidx : nearest_grid_face_cut_faces) {
                     if (is_inside(ccm.cut_face(fidx))) {
                         index = fidx;
-                        //return;
-            continue;//return;
+                        // return;
+                        continue;  // return;
                     }
                 }
 
-                if(index == -1) {
-                spdlog::error(
-                    "Failed to find a grid cutface holding {} in face {}",
-                    fmt::join(p, ","), parent_grid_face);
+                if (index == -1) {
+                    spdlog::error(
+                        "Failed to find a grid cutface holding {} in face {}",
+                        fmt::join(p, ","), parent_grid_face);
                 }
             }
         }
-    //});
-}
+        //});
+    }
     return I;
 }
 

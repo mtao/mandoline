@@ -19,6 +19,9 @@
 
 #include "imgui.h"
 #include "mandoline/mesh3.hpp"
+#include <mandoline/construction/construct.hpp>
+#include <mtao/geometry/mesh/read_obj.hpp>
+#include <mtao/geometry/bounding_box.hpp>
 #include "mtao/opengl/Window.h"
 using namespace mtao::logging;
 
@@ -26,8 +29,8 @@ class MeshViewer : public mtao::opengl::Window3 {
    public:
     bool single_particle_mode = false;
     bool nearest_mode = true;
-    bool triangle_cut_face_mode = true;
-    bool cut_face_mode = true;
+    bool triangle_cut_face_mode = false;
+    bool cut_face_mode = false;
     int current_ccm_cell = 0;
     int current_ccm_face = 0;
     std::optional<std::string> filename;
@@ -116,7 +119,15 @@ class MeshViewer : public mtao::opengl::Window3 {
         myargs.addArgument("filename").parse(args.argc, args.argv);
         std::string filename = myargs.value("filename");
 
+        if(filename.ends_with("obj")) {
+            auto [V,F] = mtao::geometry::mesh::read_objD(filename);
+            auto bb = mtao::geometry::bounding_box(V);
+            bb.min().array() -= .5;
+            bb.max().array() += .5;
+            ccm = mandoline::construction::from_bbox(V,F,bb,std::array<int,3>{{5,5,5}});
+        } else {
         ccm = mandoline::CutCellMesh<3>::from_proto(filename);
+        }
         ccm.triangulate_faces();
         auto bb = ccm.bbox();
         bbox.set_bbox(bb.cast<float>());

@@ -306,12 +306,12 @@ void CutCellGenerator<3>::bake_cells() {
             }
         }
     }
+    auto &&cells = cell_boundaries;
 #if defined(MANDOLINE_USE_ADAPTIVE_GRID)
     auto t = mtao::logging::profiler("Adaptive grid", false, "profiler");
     assert(m_active_grid_cell_mask.shape() == cell_shape());
     auto adaptive_grid_factory = AdaptiveGridFactory(m_active_grid_cell_mask);
     adaptive_grid_factory.make_cells(adaptive_level);
-    auto &&cells = cell_boundaries;
     int max_cell_id = cells.size();
     {
         // make cell names unique
@@ -330,6 +330,8 @@ void CutCellGenerator<3>::bake_cells() {
     adaptive_grid->Base::operator=(*this);
 #else
     exterior_grid = ExteriorGrid<3>(*this, m_active_grid_cell_mask);
+    int max_cell_id = cells.size() + exterior_grid->num_cells();
+    int exterior_cell_offset = cells.size();
 #endif
 
     {
@@ -337,7 +339,7 @@ void CutCellGenerator<3>::bake_cells() {
         {
             auto t = mtao::logging::profiler("region disjoint set construction",
                                              false, "profiler");
-            for (int i = 0; i < cells.size(); ++i) {
+            for (int i = 0; i < max_cell_id; ++i) {
                 cell_ds.add_node(i);
             }
             for (auto &&[a, b] : m_faces) {
@@ -350,9 +352,7 @@ void CutCellGenerator<3>::bake_cells() {
                 auto &ag = *adaptive_grid;
                 auto grid = ag.cell_ownership_grid();
                 auto ag_faces = ag.faces();
-                for (auto &&[c, b] : ag.cells()) {
-                    cell_ds.add_node(c);
-                }
+
                 for (auto &&f : ag_faces) {
                     auto &&[a, b] = f.dual_edge;
                     if (a >= 0 && b >= 0) {
@@ -373,6 +373,47 @@ void CutCellGenerator<3>::bake_cells() {
                     }
                 }
             }
+#else
+            {
+                // exterior grid cells can access adjacency information
+                // relatively immediately
+                for (auto &&[a, b] : exterior_grid->boundary_facet_pairs()) {
+                    if (a >= 0 && b >= 0) {
+                        cell_ds.join(a + exterior_cell_offset,
+                                     b + exterior_cell_offset);
+                    }
+                }
+
+                for (auto &&[id, f] : faces()) {
+                    if (f.is_mesh_face()) {
+                        continue;
+                    }
+                    if (f.external_boundary) {
+                        auto &[cid, s] = *f.external_boundary;
+                        // cehck that its a boundary to a ninterior grid cell
+                        if (cid >= 0) {
+                            if (cid > exterior_grid->cell_indices().size()) {
+                                spdlog::error(
+                                    "Exterior boundary tried to access an "
+                                    "invalid cell outside the grid");
+                                continue;
+                            }
+                            int exterior_cell_id =
+                                exterior_grid->cell_indices().get(cid);
+                            if (exterior_cell_id < 0) {
+                                spdlog::error(
+                                    "Exterior grid has marked a cell as in the "
+                                    "cutcell region but the cutcell region "
+                                    "things its a mesh");
+                                continue;
+                            }
+                            cell_ds.join(max_cell_id + id, exterior_cell_id);
+                            // spdlog::info("c{} <=> ad{}", cid,grid.get(cid));
+                        }
+                    }
+                }
+            }
+
 #endif
 
             for (auto [cid, faces] : mtao::iterator::enumerate(cells)) {
@@ -453,6 +494,14 @@ void CutCellGenerator<3>::bake_cells() {
                 agr[cid] = reindexer[cell_ds.get_root(cid).data];
             }
         }
+#else
+        {
+            for (auto &&[eg_loc_idx, region_id] :
+                 mtao::iterator::enumerate(exterior_grid->m_regions)) {
+                int eg_idx = exterior_cell_offset + eg_loc_idx;
+                region_id = reindexer[cell_ds.get_root(eg_idx).data];
+            }
+        }
 #endif
 
         warn() << "Region count: " << regions.size();
@@ -485,7 +534,12 @@ void CutCellGenerator<3>::bake_cells() {
             */
     }
     mtao::logging::debug() << "Cell count: " << cell_boundaries.size();
+#if defined(MANDOLINE_USE_ADAPTIVE_GRID)
     spdlog::warn("Exterior grid face size: {}", adaptive_grid->num_faces());
+#else
+    spdlog::warn("Exterior grid face size: {}",
+                 exterior_grid->num_boundary_facets());
+#endif
 }
 mtao::Vec3d CutCellGenerator<3>::area_normal(const std::vector<int> &F) const {
     auto V = all_GV();

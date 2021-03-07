@@ -22,7 +22,9 @@ CutCellMesh<3> from_grid(const mtao::ColVecs3d &V, const mtao::ColVecs3i &F,
     }
     CutCellGenerator<3> ccg(stlp, grid, {});
 
+#if defined(MANDOLINE_USE_ADAPTIVE_GRID)
     ccg.adaptive_level = level;
+#endif
     {
         auto t = mtao::logging::profiler("generator_bake", false, "profiler");
         ccg.add_boundary_elements(F);
@@ -45,7 +47,9 @@ DeformingGeometryConstructor::DeformingGeometryConstructor(
     const mtao::geometry::grid::StaggeredGrid3d &grid, int adaptive_level,
     std::optional<double> threshold)
     : _ccg(std::make_unique<CutCellGenerator<3>>(V, grid, threshold)) {
+#if defined(MANDOLINE_USE_ADAPTIVE_GRID)
     _ccg->adaptive_level = adaptive_level;
+#endif
     assert(F.size() > 0);
     assert(V.size() > 0);
     {
@@ -60,7 +64,9 @@ DeformingGeometryConstructor::DeformingGeometryConstructor()
           std::array<int, 3>{{2, 2, 2}})} {}
 DeformingGeometryConstructor::~DeformingGeometryConstructor() {}
 void DeformingGeometryConstructor::set_adaptivity(int res) {
+#if defined(MANDOLINE_USE_ADAPTIVE_GRID)
     _ccg->adaptive_level = res;
+#endif
     _dirty = true;
 }
 void DeformingGeometryConstructor::update_vertices(

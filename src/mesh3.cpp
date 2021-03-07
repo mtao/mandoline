@@ -18,8 +18,8 @@
 #include "mandoline/operators/centroids3.hpp"
 #include "mandoline/operators/interpolation3.hpp"
 #include "mandoline/operators/masks.hpp"
-#include "mandoline/operators/volume3.hpp"
 #include "mandoline/operators/nearest_facet.hpp"
+#include "mandoline/operators/volume3.hpp"
 #include "mandoline/proto_util.hpp"
 #if defined(MTAO_TBB_ENABLED)
 #include <tbb/parallel_for.h>
@@ -392,9 +392,36 @@ std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> CutCellMesh<3>::triangulate_face(
             return {mtao::ColVecs3d{}, F};
         }
     } else {
+#if defined(MANDOLINE_USE_ADAPTIVE_GRID)
         return {mtao::ColVecs3d{},
                 exterior_grid().triangulated_face(face_index,
                                                   exterior_grid_face_offset())};
+
+#else
+        auto [face_coord, axis] =
+            exterior_grid.boundary_facet_to_grid_coord(face_index);
+
+        int nax = (axis + 1) % 3;
+        int pax = (axis + 2) % 3;
+        int a = vertex_index(face_coord);
+        face_coord[nax]++;
+        int b = vertex_index(face_coord);
+        face_coord[pax]++;
+        int c = vertex_index(face_coord);
+        face_coord[nax]--;
+        int d = vertex_index(face_coord);
+
+        mtao::ColVecs3i F(3, 2);
+        if (flip) {
+            F.col(0) << a, c, d;
+            F.col(1) << a, b, c;
+        } else {
+            F.col(0) << a, c, b;
+            F.col(1) << a, d, c;
+        }
+        return {mtao::ColVecs3d{}, F};
+
+#endif
     }
 }
 
@@ -512,12 +539,11 @@ std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> CutCellMesh<3>::triangulated_cell(
                 mFs.emplace_back(std::move(F));
             }
         }
-        if(vertex_offset == 0) {
-        return {{},
-                mtao::eigen::hstack_iter(mFs.begin(), mFs.end())};
+        if (vertex_offset == 0) {
+            return {{}, mtao::eigen::hstack_iter(mFs.begin(), mFs.end())};
         } else {
-        return {mtao::eigen::hstack_iter(mVs.begin(), mVs.end()),
-                mtao::eigen::hstack_iter(mFs.begin(), mFs.end())};
+            return {mtao::eigen::hstack_iter(mVs.begin(), mVs.end()),
+                    mtao::eigen::hstack_iter(mFs.begin(), mFs.end())};
         }
         /*
             if(mFs.size() > 0) {
@@ -573,6 +599,7 @@ CutCellMesh<3>::compact_triangulated_face(int face_index, bool flip) const {
             return {V, F};
         }
     } else {
+#if defined(MANDOLINE_USE_ADAPTIVE_GRID)
         auto [V, F] = mtao::geometry::mesh::compactify(
             vertices(), exterior_grid().triangulated_face(
                             face_index, exterior_grid_face_offset()));
@@ -582,6 +609,31 @@ CutCellMesh<3>::compact_triangulated_face(int face_index, bool flip) const {
             F.row(1) = R;
         }
         return {V, F};
+#else
+
+        auto [face_coord, axis] =
+            exterior_grid.boundary_facet_to_grid_coord(face_index);
+
+        int nax = (axis + 1) % 3;
+        int pax = (axis + 2) % 3;
+        int a = vertex_index(face_coord);
+        face_coord[nax]++;
+        int b = vertex_index(face_coord);
+        face_coord[pax]++;
+        int c = vertex_index(face_coord);
+        face_coord[nax]--;
+        int d = vertex_index(face_coord);
+
+        mtao::ColVecs3i F(3, 2);
+        if (flip) {
+            F.col(0) << a, c, d;
+            F.col(1) << a, b, c;
+        } else {
+            F.col(0) << a, c, b;
+            F.col(1) << a, d, c;
+        }
+        auto [V, F] = mtao::geometry::mesh::compactify(vertices(), F);
+#endif
     }
 }
 
@@ -609,7 +661,11 @@ CutCellMesh<3>::cells_per_grid_cell() const {
     for (auto &&[i, cell] : mtao::iterator::enumerate(cells())) {
         sets(cell.grid_cell).emplace(i);
     }
+#if defined(MANDOLINE_USE_ADAPTIVE_GRID)
     auto c = exterior_grid().cell_ownership_grid();
+#else
+    const auto &c = exterior_grid().cell_indices();
+#endif
     // each cell is only visited once so no accidental double writes!
     c.loop_parallel([&](const coord_type &cell, const int &index) {
         if (index >= 0) {
@@ -632,7 +688,11 @@ int CutCellMesh<3>::get_cell_index(const VecCRef &p,
     auto v = vertex_grid().local_coord(p);
     // check if its  in an adaptive grid cell, tehn we can just use that cell
     // if the grid returns -2 we pass that through
+#if defined(MANDOLINE_USE_ADAPTIVE_GRID)
     if (int ret = m_exterior_grid.get_cell_index(v); ret != -1) {
+#else
+    if (int ret = m_exterior_grid.cell_index(v); ret != -1) {
+#endif
         if (ret == -2) {
             mtao::logging::warn() << "Point lies outside the grid";
         }
@@ -648,7 +708,7 @@ int CutCellMesh<3>::get_cell_index(const VecCRef &p,
         }
         for (auto &&ci : cell_indices) {
             auto &&cell = cells().at(ci);
-            if (cell.contains(*VP, faces(), p)) {
+            if (cell.contains(*VP, faces(), p, folded_faces())) {
                 return ci;
             }
         }
@@ -664,8 +724,9 @@ int CutCellMesh<3>::get_cell_index(const VecCRef &p,
             double max_solid_angle = std::numeric_limits<double>::min();
             for (auto &&ci : cell_indices) {
                 const auto &cell = cells().at(ci);
-                double solid_angle = cell.solid_angle(*VP, faces(), p);
-                bool contains = cell.contains(*VP, faces(), p);
+                double solid_angle =
+                    cell.solid_angle(*VP, faces(), p, folded_faces());
+                bool contains = cell.contains(*VP, faces(), p, folded_faces());
                 if (solid_angle > max_solid_angle) {
                     max_cell = ci;
                     max_solid_angle = solid_angle;
@@ -687,7 +748,11 @@ mtao::VecXi CutCellMesh<3>::get_cell_indices(Eigen::Ref<const ColVecs> P,
                                              bool quiet_failures) const {
     mtao::VecXi I = mtao::VecXi::Constant(P.cols(), -1);
 
+#if defined(MANDOLINE_USE_ADAPTIVE_GRID)
     const auto g = exterior_grid().cell_ownership_grid();
+#else
+    const auto &g = exterior_grid().cell_indices();
+#endif
     const auto grid_to_cells = cut_cells_per_grid_cell();
     ColVecs V;
     const auto &CV = cached_vertices();
@@ -792,7 +857,8 @@ int CutCellMesh<3>::get_nearest_cell_index(const VecCRef &p) const {
     return operators::nearest_cells(*this, p)(0);
 }
 
-mtao::VecXi CutCellMesh<3>::get_nearest_cell_indices(Eigen::Ref<const ColVecs> P) const {
+mtao::VecXi CutCellMesh<3>::get_nearest_cell_indices(
+    Eigen::Ref<const ColVecs> P) const {
     return operators::nearest_cells(*this, P);
 }
 
@@ -800,7 +866,11 @@ bool CutCellMesh<3>::is_in_cell(const VecCRef &p, size_t index) const {
     auto v = vertex_grid().local_coord(p);
     // check if its  in an adaptive grid cell, tehn we can just use that
     // cell if the grid returns -2 we pass that through
+#if defined(MANDOLINE_USE_ADAPTIVE_GRID)
     if (int ret = m_exterior_grid.get_cell_index(v); ret != -1) {
+#else
+    if (int ret = m_exterior_grid.cell_index(v); ret != -1) {
+#endif
         if (ret == -2) {
             mtao::logging::warn() << "Point lies outside the grid";
         }

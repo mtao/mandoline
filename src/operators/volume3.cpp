@@ -1,6 +1,6 @@
 #include "mandoline/operators/volume3.hpp"
-#include "mandoline/operators/interpolation3.hpp"
 
+#include "mandoline/operators/interpolation3.hpp"
 
 namespace mandoline::operators {
 
@@ -14,17 +14,21 @@ mtao::VecXd cell_volumes(const CutCellMesh<3> &ccm) {
     }
 
     for (auto &&[k, c] : mtao::iterator::enumerate(ccm.cells())) {
-        V(k) = c.volume(face_brep_vols);
-        //V(k) = c.volume(Vs,faces);
-        //V(k) = mtao::geometry::brep_volume(Vs,c.triangulated(faces));
-        //std::cout << (V(k) / std::abs(c.volume(Vs,faces))) << std::endl;
+        V(k) = c.volume(face_brep_vols, ccm.folded_faces());
+        // V(k) = c.volume(Vs,faces);
+        // V(k) = mtao::geometry::brep_volume(Vs,c.triangulated(faces));
+        // std::cout << (V(k) / std::abs(c.volume(Vs,faces))) << std::endl;
     }
 
-
+#if defined(MANDOLINE_USE_ADAPTIVE_GRID)
     return mtao::eigen::vstack(V, ccm.exterior_grid().cell_volumes());
+#else
+    return mtao::eigen::vstack(
+        V, mtao::VecXd::Constant(ccm.dx().prod(),
+                                 ccm.exterior_grid().num_cells()));
+#endif
 }
 mtao::VecXd face_volumes(const CutCellMesh<3> &ccm, bool from_triangulation) {
-
     mtao::VecXd FV(ccm.faces().size());
     if (from_triangulation) {
         for (auto &&[i, face] : mtao::iterator::enumerate(ccm.faces())) {
@@ -36,7 +40,8 @@ mtao::VecXd face_volumes(const CutCellMesh<3> &ccm, bool from_triangulation) {
         }
         FV = mtao::eigen::vstack(FV, ccm.exterior_grid().face_volumes());
     } else {
-        //Use barycentric for tri-mesh cut-faces, planar areas for axial cut-faces, and let the adaptive grid do it's thing
+        // Use barycentric for tri-mesh cut-faces, planar areas for axial
+        // cut-faces, and let the adaptive grid do it's thing
         auto trimesh_vols = mtao::geometry::volumes(ccm.origV(), ccm.origF());
 
         if (trimesh_vols.size() > 0) {
@@ -58,16 +63,27 @@ mtao::VecXd face_volumes(const CutCellMesh<3> &ccm, bool from_triangulation) {
         } else {
             FV.resize(ccm.exterior_grid().num_faces());
         }
-        FV.tail(ccm.exterior_grid().num_faces()) = ccm.exterior_grid().face_volumes();
+
+#if defined(MANDOLINE_USE_ADAPTIVE_GRID)
+        FV.tail(ccm.exterior_grid().num_faces()) =
+            ccm.exterior_grid().face_volumes();
+#else
+        auto FVT = FV.tail(ccm.exterior_grid().num_faces());
+        mtao::Vec3d ddx = ccm.dx().prod() / ccm.dx();
+        for (auto &&[f, axis] : mtao::iterator::zip(
+                 FVT, ccm.exterior_grid().boundary_facet_axes())) {
+            f = ddx(axis);
+        }
+#endif
     }
 
     if (FV.minCoeff() < 0) {
-        mtao::logging::warn() << "Negative face area! warn mtao because this shouldn't happen";
+        mtao::logging::warn()
+            << "Negative face area! warn mtao because this shouldn't happen";
         FV = FV.cwiseAbs();
     }
     return FV;
 }
-
 
 mtao::VecXd dual_edge_lengths(const CutCellMesh<3> &ccm) {
     mtao::VecXd DL = mtao::VecXd::Zero(ccm.face_size());
@@ -142,4 +158,4 @@ mtao::VecXd primal_hodge3(const CutCellMesh<3> &ccm) {
     }
     return CV;
 }
-}// namespace mandoline::operators
+}  // namespace mandoline::operators

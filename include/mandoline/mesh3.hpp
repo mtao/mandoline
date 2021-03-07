@@ -201,10 +201,6 @@ struct CutCellMesh<3> : public CutCellMeshBase<3, CutCellMesh<3>> {
 
    private:
     void recompute_active_cell_mask();
-    void write_obj(const std::string &prefix, const std::set<int> &indices,
-                   const std::optional<int> &region = {},
-                   bool show_indices = false, bool show_base = true,
-                   bool show_flaps = false, bool mesh_face = false) const;
     // mtao::ColVecs3i origF;
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 };

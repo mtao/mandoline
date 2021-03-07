@@ -1,6 +1,8 @@
 #include "mandoline/cutcell.hpp"
-#include <mtao/logging/logger.hpp>
+
 #include <mtao/eigen/stack.h>
+
+#include <mtao/logging/logger.hpp>
 
 namespace mandoline {
 std::vector<Eigen::Triplet<double>> CutCell::boundary_triplets() const {
@@ -14,16 +16,15 @@ std::vector<Eigen::Triplet<double>> CutCell::boundary_triplets() const {
 CutCell::operator std::string() const {
     std::stringstream ss;
     ss << "CutCell[" << index << "(R" << region << ")";
-    for(auto&& [a,b]: *this) {
-        ss << a<<":" << b << " ";
+    for (auto &&[a, b] : *this) {
+        ss << a << ":" << b << " ";
     }
     ss << "]";
     return ss.str();
 }
 /*
-       auto CutCell::grid_cell(const std::vector<CutFace<3>>& F) const -> std::array<int,3> {
-       if(F.empty()) { return {}; }
-       if(empty()) { return {}; }
+       auto CutCell::grid_cell(const std::vector<CutFace<3>>& F) const ->
+   std::array<int,3> { if(F.empty()) { return {}; } if(empty()) { return {}; }
        auto mask = [&](int idx) {
        return F[idx].mask();
        };
@@ -47,7 +48,7 @@ CutCell::operator std::string() const {
        std::set<coord_type> possibles = possibles(std::get<0>(*this.begin()));
 
        for(auto&& f: F) {
-       auto m = 
+       auto m =
        auto s = GV(f).possible_cells();
        std::set<CoordType> i;
        std::set_intersection(possibles.begin(),possibles.end(),s.begin(),s.end(),std::inserter(i,i.end()));
@@ -63,9 +64,9 @@ CutCell::operator std::string() const {
 void CutCell::serialize(protobuf::CutCell &cell) const {
     cell.set_id(index);
     cell.set_region(region);
-    //std::cout << "cell grid cell: " ;
-    //std::copy(grid_cell.begin(),grid_cell.end(),std::ostream_iterator<int>(std::cout,","));
-    //std::cout << std::endl;
+    // std::cout << "cell grid cell: " ;
+    // std::copy(grid_cell.begin(),grid_cell.end(),std::ostream_iterator<int>(std::cout,","));
+    // std::cout << std::endl;
     protobuf::serialize(grid_cell, *cell.mutable_grid_cell());
     auto &&pmap = *cell.mutable_entries();
     for (auto &&[a, b] : *this) {
@@ -75,7 +76,7 @@ void CutCell::serialize(protobuf::CutCell &cell) const {
 CutCell CutCell::from_proto(const protobuf::CutCell &cell) {
     CutCell c;
     auto &&entries = cell.entries();
-    //c = std::map<int,bool>(entries.begin(),entries.end());
+    // c = std::map<int,bool>(entries.begin(),entries.end());
     for (auto &&[a, b] : entries) {
         c[a] = b;
     }
@@ -98,13 +99,16 @@ mtao::ColVecs3i CutCell::triangulated(const std::vector<CutFace<3>> &Fs) const {
                 b.row(1) = tmp;
             }
         } else {
-            mtao::logging::error() << "Cell tried to fetch triangulation from an untriangulated face";
+            mtao::logging::error() << "Cell tried to fetch triangulation from "
+                                      "an untriangulated face";
         }
     }
 
     return mtao::eigen::hstack_iter(T.begin(), T.end());
 }
-std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> CutCell::triangulated_with_additional_vertices(const std::vector<CutFace<3>> &Fs, int vertex_offset) const {
+std::tuple<mtao::ColVecs3d, mtao::ColVecs3i>
+CutCell::triangulated_with_additional_vertices(
+    const std::vector<CutFace<3>> &Fs, int vertex_offset) const {
     std::vector<mtao::ColVecs3i> T;
     std::vector<mtao::ColVecs3d> V;
     for (auto &&[s, b] : *this) {
@@ -128,16 +132,16 @@ std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> CutCell::triangulated_with_addition
                 b.row(1) = tmp;
             }
         } else {
-            mtao::logging::error() << "Cell tried to fetch triangulation from an untriangulated face";
+            mtao::logging::error() << "Cell tried to fetch triangulation from "
+                                      "an untriangulated face";
         }
     }
 
-    return { mtao::eigen::hstack_iter(V.begin(), V.end()),
-             mtao::eigen::hstack_iter(T.begin(), T.end()) };
+    return {mtao::eigen::hstack_iter(V.begin(), V.end()),
+            mtao::eigen::hstack_iter(T.begin(), T.end())};
 }
 
 double CutCell::volume(const mtao::VecXd &face_brep_vols) const {
-
     double vol = 0;
 
     for (auto &&[f, b] : *this) {
@@ -146,16 +150,28 @@ double CutCell::volume(const mtao::VecXd &face_brep_vols) const {
     }
     return vol;
 }
-mtao::Vec3d CutCell::moment(const mtao::ColVecs3d &face_brep_cents) const {
+double CutCell::volume(const mtao::VecXd &face_brep_vols,
+                       const std::set<int> &duplicated_faces) const {
+    double vol = 0;
 
+    for (auto &&[f, b] : *this) {
+        if (duplicated_faces.contains(f)) {
+            continue;
+        }
+        double sign = b ? 1 : -1;
+        vol += sign * face_brep_vols(f);
+    }
+    return vol;
+}
+mtao::Vec3d CutCell::moment(const mtao::ColVecs3d &face_brep_cents) const {
     mtao::Vec3d c = mtao::Vec3d::Zero();
 
     for (auto &&[f, b] : *this) {
         double sign = b ? 1 : -1;
-        //c += sign * face_brep_cents.col(f);
+        // c += sign * face_brep_cents.col(f);
         c += face_brep_cents.col(f);
     }
     c /= size();
     return c;
 }
-}// namespace mandoline
+}  // namespace mandoline
