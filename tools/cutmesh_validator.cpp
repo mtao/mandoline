@@ -4,17 +4,19 @@
 
 #include <iostream>
 #include <mandoline/construction/construct.hpp>
-#include <mandoline/construction/remesh_self_intersections.hpp>
+#include <mandoline/construction/tools/read_mesh.hpp>
 #include <mtao/geometry/bounding_box.hpp>
 #include <mtao/geometry/mesh/read_obj.hpp>
 #include <nlohmann/json.hpp>
 
+#include "utils/json_to_cutmesh.hpp"
 #include "validation/cutmesh_validation.hpp"
 
 int main(int argc, char* argv[]) {
     Corrade::Utility::Arguments args;
     args.addArgument("filename")
-        .setHelp("filename", ".cutmesh file to validate")
+        .setHelp("filename",
+                 ".cutmesh file to validate or .obj to mesh or .json to mesh")
         .addBooleanOption('a', "all")
         .setHelp("all", "Run all tests")
         .addOption("bounding-box-scale", "0.3")
@@ -52,9 +54,7 @@ int main(int argc, char* argv[]) {
     mandoline::CutCellMesh<3> ccm;
     const std::string filename = args.value("filename");
     if (filename.ends_with("obj")) {
-        auto [VV, FF] = mtao::geometry::mesh::read_objD(filename);
-        auto [V, F] =
-            mandoline::construction::remesh_self_intersections(VV, FF);
+        auto [V,F] = mandoline::construction::tools::read_mesh(filename,true);
         auto bb = mtao::geometry::bounding_box(V);
         mtao::Vec3d s = bb.sizes();
         s *= std::stof(args.value("bounding-box-scale"));
@@ -70,10 +70,18 @@ int main(int argc, char* argv[]) {
         spdlog::info("N = {}", N);
         ccm = mandoline::construction::from_bbox(V, F, bb,
                                                  std::array<int, 3>{{N, N, N}});
-        ccm.write("validation_output.cutmesh");
+
+    } else if (filename.ends_with("json")) {
+        ccm = json_to_cutmesh(filename);
     } else {
         ccm = mandoline::CutCellMesh<3>::from_proto(filename);
     }
+    auto tmp_path = std::filesystem::temp_directory_path();
+    auto output_cutmesh = tmp_path / "validation_output.cutmesh";
+    auto output_config = tmp_path / "cutmesh_config.json";
+    spdlog::info(
+            "Outputting generated mesh to /tmp/validation_output.cutmesh");
+    ccm.write(output_cutmesh);
     ccm.triangulate_faces(true);
     bool do_json = args.isSet("json");
     if (do_json) {
@@ -83,6 +91,7 @@ int main(int argc, char* argv[]) {
     bool run_all = args.isSet("all");
 
     if (run_all || args.isSet("pcwn")) {
+        spdlog::info("Checking cells for PCWN");
         auto [is_pcwn, is_not_pcwn] = pcwn_count(ccm);
         if (do_json) {
             js["pcwn"]["is"] = is_pcwn;
@@ -92,6 +101,7 @@ int main(int argc, char* argv[]) {
         }
     }
     if (run_all || args.isSet("face-utilization")) {
+        spdlog::info("Checking face utilization");
         bool val = faces_fully_utilized(ccm);
         if (do_json) {
             js["face-utilization"] = val;
@@ -100,6 +110,7 @@ int main(int argc, char* argv[]) {
         }
     }
     if (run_all || args.isSet("grid-utilization")) {
+        spdlog::info("Checking grid utilization");
         auto [bad_volumes, unused] = grid_cells_fully_utilized_count(ccm);
         if (do_json) {
             js["grid-utilization"] = {{"bad_volumes", bad_volumes},
@@ -109,6 +120,7 @@ int main(int argc, char* argv[]) {
         }
     }
     if (run_all || args.isSet("regions")) {
+        spdlog::info("Checking regions");
         auto [regions, input_regions] = region_counts(ccm);
         if (do_json) {
             js["regions"] = {{"regions", regions},
@@ -120,6 +132,7 @@ int main(int argc, char* argv[]) {
     }
 
     if (run_all || args.isSet("volume")) {
+        spdlog::info("Checking volume");
         bool val = volume_check(ccm);
         if (do_json) {
             js["volume"] = val;

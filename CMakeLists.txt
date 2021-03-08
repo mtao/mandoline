@@ -137,14 +137,23 @@ SET(CUTMESH3_HDRS
     include/mandoline/operators/volume3.hpp
     )
 
+set(CONSTRUCTION_TOOLS_SRCS
+    src/construction/tools/remesh_self_intersections.cpp
+    src/construction/tools/preprocess_mesh.cpp
+    src/construction/tools/read_mesh.cpp
+    )
+SET(CONSTRUCTION_TOOLS_HDRS
+    include/mandoline/construction/tools/remesh_self_intersections.hpp
+    include/mandoline/construction/tools/preprocess_mesh.hpp
+    include/mandoline/construction/tools/read_mesh.hpp
+    )
+
 SET(CONSTRUCTION_SRCS
     ${COMMON_SRCS}
     src/construction/generator3_make_faces.cpp
     src/construction/generator.cpp
     src/construction/generator3.cpp
     src/construction/cell_collapser.cpp
-    src/construction/remesh_self_intersections.cpp
-    src/construction/preprocess_mesh.cpp
     src/construction/generator2.cpp
     src/construction/subgrid_transformer.cpp
     src/construction/face_collapser.cpp
@@ -171,7 +180,6 @@ SET(CONSTRUCTION_HDRS
     include/mandoline/construction/cell_collapser.hpp
     include/mandoline/construction/face_collapser.hpp
     include/mandoline/construction/adaptive_grid_factory.hpp
-    include/mandoline/construction/remesh_self_intersections.hpp
     )
 
 if(MANDOLINE_USE_OPENGL)
@@ -224,6 +232,8 @@ SET(TOOLS2_HDRS
 
 ADD_LIBRARY(cutmesh2_obj OBJECT ${CUTMESH2_SRCS} ${CUTMESH2_HDRS})
 ADD_LIBRARY(cutmesh3_obj OBJECT ${CUTMESH3_SRCS} ${CUTMESH3_HDRS})
+ADD_LIBRARY(construction_tools_obj OBJECT ${CONSTRUCTION_TOOLS_SRCS}
+    ${CONSTRUCTION_TOOLS_HDRS})
 ADD_LIBRARY(construction_obj OBJECT ${CONSTRUCTION_SRCS} ${CONSTRUCTION_HDRS})
 ADD_LIBRARY(tools_obj OBJECT ${TOOLS_SRCS} ${TOOLS_HDRS})
 ADD_LIBRARY(tools2_obj OBJECT ${TOOLS2_SRCS} ${TOOLS2_HDRS})
@@ -233,6 +243,8 @@ ADD_LIBRARY(tools2_obj OBJECT ${TOOLS2_SRCS} ${TOOLS2_HDRS})
 # TODO: figure out why transitivity doesnt work
 TARGET_LINK_LIBRARIES(cutmesh2_obj PUBLIC mtao::headers mtao::geometry igl::core mandoline_headers protobuf::libprotobuf)
 TARGET_LINK_LIBRARIES(cutmesh3_obj PUBLIC mtao::headers mtao::geometry igl::core mandoline_headers protobuf::libprotobuf)
+TARGET_LINK_LIBRARIES(construction_tools_obj PUBLIC mtao::headers
+    mtao::geometry mandoline_headers PRIVATE igl::core )
 TARGET_LINK_LIBRARIES(construction_obj PUBLIC mtao::headers mtao::geometry igl::core mandoline_headers protobuf::libprotobuf)
 
 TARGET_LINK_LIBRARIES(tools_obj PUBLIC mtao::headers mtao::geometry igl::core mandoline_headers protobuf::libprotobuf)
@@ -245,6 +257,7 @@ ADD_LIBRARY(mandoline
     $<TARGET_OBJECTS:cutmesh2_obj>
     $<TARGET_OBJECTS:cutmesh3_obj>
     $<TARGET_OBJECTS:construction_obj>
+    $<TARGET_OBJECTS:construction_tools_obj>
     $<TARGET_OBJECTS:tools_obj>
     $<TARGET_OBJECTS:tools2_obj>
     )
@@ -260,6 +273,7 @@ ADD_LIBRARY(mandoline2 EXCLUDE_FROM_ALL
     $<TARGET_OBJECTS:cutmesh_proto>
     $<TARGET_OBJECTS:cutmesh2_obj>
     $<TARGET_OBJECTS:construction_obj>
+    $<TARGET_OBJECTS:construction_tools_obj>
     $<TARGET_OBJECTS:tools2_obj>
     )
 TARGET_LINK_LIBRARIES(mandoline2
@@ -275,6 +289,7 @@ ADD_LIBRARY(mandoline3 EXCLUDE_FROM_ALL
     $<TARGET_OBJECTS:cutmesh_proto>
     $<TARGET_OBJECTS:cutmesh3_obj>
     $<TARGET_OBJECTS:construction_obj>
+    $<TARGET_OBJECTS:construction_tools_obj>
     $<TARGET_OBJECTS:tools_obj>
     )
 TARGET_LINK_LIBRARIES(mandoline3 

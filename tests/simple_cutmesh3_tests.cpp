@@ -26,7 +26,7 @@
 
 #include <catch2/catch.hpp>
 #include <mandoline/construction/generator3.hpp>
-#include <mandoline/construction/preprocess_mesh.hpp>
+#include <mandoline/construction/tools/preprocess_mesh.hpp>
 using namespace mtao::logging;
 
 
@@ -277,7 +277,7 @@ TEST_CASE("3D IntersectingTets", "[ccm3]") {
 
     F = mtao::eigen::hstack(F, F.array() + V.cols());
     V = mtao::eigen::hstack(V.array() + .25, V.colwise() + mtao::Vec3d(.25, .25, .1));
-    std::tie(V, F) = mandoline::construction::preprocess_mesh(V, F);
+    std::tie(V, F) = mandoline::construction::tools::preprocess_mesh(V, F);
     //for (int i = 0; i < V.cols(); ++i) {
     //    std::cout << "v " << V.col(i).transpose() << std::endl;
     //}
@@ -310,7 +310,7 @@ TEST_CASE("3D IntersectingCubes", "[ccm3]") {
 
     F = mtao::eigen::hstack(F, F.array() + V.cols());
     V = mtao::eigen::hstack(V.colwise() + mtao::Vec3d(.5, .5, .3), V.colwise() + mtao::Vec3d(.5, .5, .7));
-    std::tie(V, F) = mandoline::construction::preprocess_mesh(V, F);
+    std::tie(V, F) = mandoline::construction::tools::preprocess_mesh(V, F);
     std::cout << V << std::endl;
 
     //std::cout << V << std::endl;

@@ -1,4 +1,4 @@
-#include "mandoline/construction/remesh_self_intersections.hpp"
+#include "mandoline/construction/tools/remesh_self_intersections.hpp"
 #ifdef MANDOLINE_HANDLE_SELF_INTERSECTIONS
 #define __gmp_const const
 #include <igl/copyleft/cgal/remesh_self_intersections.h>
@@ -7,7 +7,7 @@
 
 #include <mtao/logging/profiler.hpp>
 
-namespace mandoline::construction {
+namespace mandoline::construction::tools {
 std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> remesh_self_intersections(const mtao::ColVecs3d &V, const mtao::ColVecs3i &F) {
     auto t = mtao::logging::profiler("Remeshing self intersections");
 #ifdef MANDOLINE_HANDLE_SELF_INTERSECTIONS

@@ -19,7 +19,7 @@
 #pragma GCC diagnostic pop
 #include <mtao/geometry/mesh/boundary_facets.h>
 #include <mtao/geometry/prune_vertices.hpp>
-#include "mandoline/construction/remesh_self_intersections.hpp"
+#include "mandoline/construction/tools/remesh_self_intersections.hpp"
 using namespace mtao::logging;
 #include "make_cutmesh_from_cmdline.hpp"
 #include "make_cutmesh_generator_from_cmdline.hpp"
@@ -73,7 +73,7 @@ std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> read_mesh_input(const cxxopts::Pars
         if(si) {
             auto t = mtao::logging::profiler("remesh_time",false,"remesh_profiler");
             std::tie(V,F) = mtao::geometry::prune(V,F,0);
-            std::tie(V,F) = construction::remesh_self_intersections(V,F);
+            std::tie(V,F) = construction::tools::remesh_self_intersections(V,F);
         }
         auto&& dur = mtao::logging::profiler::durations();
         for(auto&& [pr,times_]: dur) {

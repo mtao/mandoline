@@ -22,8 +22,9 @@
 #include <mtao/geometry/grid/staggered_grid.hpp>
 #include <mtao/geometry/prune_vertices.hpp>
 #include <mandoline/construction/construct_gui_widget.hpp>
-#include <mandoline/construction/remesh_self_intersections.hpp>
-#include <mandoline/construction/preprocess_mesh.hpp>
+#include <mandoline/construction/tools/preprocess_mesh.hpp>
+#include <mandoline/construction/tools/remesh_self_intersections.hpp>
+#include <mandoline/construction/tools/read_mesh.hpp>
 #include <mandoline/mesh3.hpp>
 #include <mandoline/tools/cutmesh_info.hpp>
 #include "validation/cutmesh_validation.hpp"
@@ -70,22 +71,16 @@ class MeshViewer : public mtao::opengl::Window3 {
         Corrade::Utility::Arguments myargs;
         myargs.addArgument("filename").parse(args.argc, args.argv);
         std::string filename = myargs.value("filename");
-        Eigen::MatrixXd VV;
-        Eigen::MatrixXi FF;
-        igl::read_triangle_mesh(filename, VV, FF);
 
 
         //std::tie(V,F) = mtao::geometry::mesh::read_objD(filename);
-        V = VV.transpose();
-        F = FF.transpose();
+        std::tie(V,F) = mandoline::construction::tools::read_mesh(filename, true);
         std::cout << "V/E/F " << V.cols() << "/" << mtao::geometry::mesh::boundary_facets(F).cols() << "/" << F.cols() << std::endl;
         mesh.setTriangleBuffer(V.cast<float>(), F.cast<unsigned int>());
         orig_bbox = bbox = mtao::geometry::bounding_box(V.cast<float>().eval());
         mtao::Vec3f trans_e = -((bbox.min() + bbox.max()) / 2).cast<float>();
         Magnum::Math::Vector3<float> trans(trans_e.x(), trans_e.y(), trans_e.z());
 
-        std::tie(V, F) = mtao::geometry::prune(V, F, 0);
-        std::tie(V, F) = mandoline::construction::preprocess_mesh(V, F);
 
         {
             auto bbox = mtao::geometry::bounding_box(V);

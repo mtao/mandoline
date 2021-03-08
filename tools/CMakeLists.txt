@@ -36,12 +36,10 @@ ENDIF(Corrade_FOUND)
 
 IF(HANDLE_SELF_INTERSECTIONS)
     ADD_EXECUTABLE(remove_self_intersections remove_self_intersections.cpp
-        ../include/mandoline/construction/remesh_self_intersections.hpp
-        ../src/construction/remesh_self_intersections.cpp
+    $<TARGET_OBJECTS:construction_tools_obj>
         )
-    TARGET_LINK_LIBRARIES(remove_self_intersections ${MANDOLINE_SELF_INTERSECTION_LIBS}
-        mandoline_headers
-        mtao::common igl::core)
+    TARGET_LINK_LIBRARIES(remove_self_intersections mandoline
+        ${MANDOLINE_SELF_INTERSECTION_LIBS})
     TARGET_COMPILE_DEFINITIONS(remove_self_intersections
         PUBLIC -DMANDOLINE_HANDLE_SELF_INTERSECTIONS)
 
@@ -54,6 +52,7 @@ IF(HANDLE_SELF_INTERSECTIONS)
         validation/cutmesh_validation.cpp
         )
     TARGET_LINK_LIBRARIES(cutmesh_validation_tools gmp CGAL mpfr  fmt
+        mandoline_tool_utils
         mandoline)
 
     ADD_EXECUTABLE(cutmesh_validator
