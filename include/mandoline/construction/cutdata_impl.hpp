@@ -7,6 +7,9 @@
 #include <set>
 #include <thread>
 #include <tuple>
+#if defined(MTAO_TBB_ENABLED)
+#include <tbb/parallel_for.h>
+#endif
 
 #include "mandoline/construction/cutdata.hpp"
 
@@ -99,21 +102,33 @@ void CutData<D, Indexer>::bake(const std::optional<SGType> &grid, bool fuse,
             // auto t = mtao::logging::timer("data bake edges");
             auto t = mtao::logging::profiler("mesh edge intersections", false,
                                              "profiler");
+#if defined(MTAO_TBB_ENABLED)
+            tbb::parallel_for<int>(0, m_edge_intersections.size(), [&](int i) {
+                m_edge_intersections[i].bake(grid);
+            });
+#else
             int i;
 #pragma omp parallel for
             for (i = 0; i < m_edge_intersections.size(); i++) {
                 m_edge_intersections[i].bake(grid);
             }
+#endif
         }
         if constexpr (D == 3) {
             auto t = mtao::logging::profiler("mesh face intersections", false,
                                              "profiler");
             // auto t = mtao::logging::timer("data bake faces");
+#if defined(MTAO_TBB_ENABLED)
+            tbb::parallel_for<int>(
+                0, m_triangle_intersections.size(),
+                [&](int i) { m_triangle_intersections[i].bake(grid); });
+#else
             int i;
 #pragma omp parallel for
             for (i = 0; i < m_triangle_intersections.size(); i++) {
                 m_triangle_intersections[i].bake(grid);
             }
+#endif
             //#pragma omp parallel
         }
         {
@@ -135,27 +150,28 @@ void CutData<D, Indexer>::bake(const std::optional<SGType> &grid, bool fuse,
         auto add_edge = [&](const coord_mask<D> &m, const std::array<int, 2> &E,
                             int eidx) {
             std::scoped_lock lock(edge_mutex);
-            //size_t tot_size = grid_size() + crossings().size();
-            //if (E[0] >= tot_size || E[1] >= tot_size) {
+            // size_t tot_size = grid_size() + crossings().size();
+            // if (E[0] >= tot_size || E[1] >= tot_size) {
             //    spdlog::error("Adding edge {} {}", fmt::join(E, ","),
             //                 std::string(m));
             //}
             m_cut_edges.emplace_back(m, E, eidx);
         };
-        //for (auto &&[a, b] : m_vertex_indexer) {
+        // for (auto &&[a, b] : m_vertex_indexer) {
         //    spdlog::info("Vertex indexer contains index {}", b);
         //}
-        //for(auto&& c: m_crossings) {
+        // for(auto&& c: m_crossings) {
         //    std::cout << std::string(c) << std::endl;
         //}
 
         // loop over every edge and find potential edges
         int i = 0;
-//#pragma omp parallel for
+        //#pragma omp parallel for
         for (i = 0; i < m_edge_intersections.size(); i++) {
             auto &&EI = m_edge_intersections[i];
             coord_mask<D> ei_mask = EI.mask();
-            //spdlog::info("Checking edge index {} (underlying edge index {} of {})", i, EI.edge_index,nE() );
+            // spdlog::info("Checking edge index {} (underlying edge index {} of
+            // {})", i, EI.edge_index,nE() );
 
             // if the edge has no intersections AND no edge has
             // intersections then the resulting cut-edge is the
@@ -180,13 +196,15 @@ void CutData<D, Indexer>::bake(const std::optional<SGType> &grid, bool fuse,
                     }
                 }
                 for (auto &&[i, v] : mtao::iterator::enumerate(e)) {
-                    //std::cout << ei(i) << " ==> " << std::string(m_crossings[ei(i)]) << std::endl;
+                    // std::cout << ei(i) << " ==> " <<
+                    // std::string(m_crossings[ei(i)]) << std::endl;
                     v = m_crossings[ei(i)].index;
                 }
 
-                //spdlog::info("Adding a null edge case original indices {} {}", ei(0),ei(1), fmt::join(e,",") );
+                // spdlog::info("Adding a null edge case original indices {}
+                // {}", ei(0),ei(1), fmt::join(e,",") );
                 add_edge(ei_mask, e, EI.edge_index);
-                //spdlog::warn("done adding edge");
+                // spdlog::warn("done adding edge");
 
             } else {  // can't just put subsequent logic in here because edge
                       // can set trivial
@@ -197,7 +215,7 @@ void CutData<D, Indexer>::bake(const std::optional<SGType> &grid, bool fuse,
                     assert(Es.size() != 0);
                 }
                 for (auto &&E : Es) {
-                    //spdlog::info("Adding interior edge case");
+                    // spdlog::info("Adding interior edge case");
                     add_edge(ei_mask, E, EI.edge_index);
                 }
             }
@@ -227,7 +245,7 @@ void CutData<D, Indexer>::bake(const std::optional<SGType> &grid, bool fuse,
                                 v = vtx.index;
                             }
                             if (inside_grid) {
-                                //spdlog::info(
+                                // spdlog::info(
                                 //    "Adding triangle boundary edge case");
                                 add_edge(ei_mask, e, EI.edge_index);
                             }
@@ -243,7 +261,7 @@ void CutData<D, Indexer>::bake(const std::optional<SGType> &grid, bool fuse,
                                      m_vertex_indexer.end())) {
                                 e[0] = m_vertex_indexer.at(EI.vptr_edge[0]);
                                 e[1] = m_vertex_indexer.at(EI.vptr_edge[1]);
-                                //spdlog::info(
+                                // spdlog::info(
                                 //    "Adding triangle interior edge case");
                                 add_edge(ei_mask, e, EI.edge_index);
                             }
@@ -314,8 +332,13 @@ void CutData<D, Indexer>::bake(const std::optional<SGType> &grid, bool fuse,
 
         // loop over every triangle and find potential faces
         int i = 0;
+
+#if defined(MTAO_TBB_ENABLED)
+        tbb::parallel_for<int>(0, m_triangle_intersections.size(), [&](int i) {
+#else
 #pragma omp parallel for
         for (i = 0; i < m_triangle_intersections.size(); i++) {
+#endif
             auto &&FI = m_triangle_intersections[i];
             coord_mask<D> fi_mask = FI.mask();
 
@@ -358,7 +381,11 @@ void CutData<D, Indexer>::bake(const std::optional<SGType> &grid, bool fuse,
                     add_face(fi_mask, F, FI.triangle_index);
                 }
             }
+#if defined(MTAO_TBB_ENABLED)
+        });
+#else
         }
+#endif
     }
 }
 
@@ -572,15 +599,15 @@ auto CutData<D, Indexer>::compute_crossings(bool fuse,
     if (filter_external) {
         auto t = mtao::logging::timer("filtering external crossings");
         E.erase(std::remove_if(E.begin(), E.end(),
-                                 [&](const Crossing<D> &v) {
-                                     return !v.vertex().is_in_grid(*this);
-                                 }),
-                  E.end());
+                               [&](const Crossing<D> &v) {
+                                   return !v.vertex().is_in_grid(*this);
+                               }),
+                E.end());
         F.erase(std::remove_if(F.begin(), F.end(),
-                                 [&](const Crossing<D> &v) {
-                                     return !v.vertex().is_in_grid(*this);
-                                 }),
-                  F.end());
+                               [&](const Crossing<D> &v) {
+                                   return !v.vertex().is_in_grid(*this);
+                               }),
+                F.end());
     }
     std::vector<Crossing<D>> ret;
     ret.resize(V.size() + E.size() + F.size());

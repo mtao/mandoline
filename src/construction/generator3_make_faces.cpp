@@ -99,33 +99,35 @@ void CutCellGenerator<3>::bake_faces() {
     auto axialEdges = axial_edges();
     //#pragma omp parallel for
 
-    auto t = mtao::logging::profiler("Flagging active cells");
-    for (auto &&c : activeCells) {
-        for (int i = 0; i < D; ++i) {
-            int p1 = (i + 1) % 3;
-            int p2 = (i + 2) % 3;
-            auto &ahdata = axis_hem_data[i];
-            Edge c2{{c[p1], c[p2]}};
-            if (c[p1] < 0 || c[p1] >= cell_shape()[p1]) {
-                continue;
-            }
-            if (c[p2] < 0 || c[p2] >= cell_shape()[p2]) {
-                continue;
-            }
-            auto flag = [&](int idx) {
-                if (auto it = ahdata.find(idx); it == ahdata.end()) {
-                    ahdata[idx].active_grid_cell_mask =
-                        AxisHEMData::GridDatab::Constant(true,
-                                                         grids[i].cell_shape());
+    {
+        auto t = mtao::logging::profiler("Flagging active cells");
+        for (auto &&c : activeCells) {
+            for (int i = 0; i < D; ++i) {
+                int p1 = (i + 1) % 3;
+                int p2 = (i + 2) % 3;
+                auto &ahdata = axis_hem_data[i];
+                Edge c2{{c[p1], c[p2]}};
+                if (c[p1] < 0 || c[p1] >= cell_shape()[p1]) {
+                    continue;
                 }
-                auto &ahd = ahdata[idx];
-                ahd.active_grid_cell_mask(c2) = false;
-            };
-            if (c[i] >= 0) {
-                flag(c[i]);
-            }
-            if (c[i] + 1 < vertex_shape()[i]) {
-                flag(c[i] + 1);
+                if (c[p2] < 0 || c[p2] >= cell_shape()[p2]) {
+                    continue;
+                }
+                auto flag = [&](int idx) {
+                    if (auto it = ahdata.find(idx); it == ahdata.end()) {
+                        ahdata[idx].active_grid_cell_mask =
+                            AxisHEMData::GridDatab::Constant(
+                                true, grids[i].cell_shape());
+                    }
+                    auto &ahd = ahdata[idx];
+                    ahd.active_grid_cell_mask(c2) = false;
+                };
+                if (c[i] >= 0) {
+                    flag(c[i]);
+                }
+                if (c[i] + 1 < vertex_shape()[i]) {
+                    flag(c[i] + 1);
+                }
             }
         }
     }
@@ -378,9 +380,9 @@ void CutCellGenerator<3>::compute_faces_axis(int idx) {
     std::vector<int> axial_edge_indices(ahdata.size());
     std::transform(ahdata.begin(), ahdata.end(), axial_edge_indices.begin(),
                    [](auto &&pr) { return pr.first; });
-    auto it = axial_edge_indices.begin();
     std::vector<mtao::map<int, CutFace<D>>> faces_vec(ahdata.size());
 
+    auto it = axial_edge_indices.begin();
 #pragma omp parallel for
     for (it = axial_edge_indices.begin(); it < axial_edge_indices.end(); it++) {
         int cidx = *it;
@@ -417,7 +419,7 @@ mtao::map<int, CutFace<3>> CutCellGenerator<3>::compute_faces_axis(
                         .cross(mtao::Vec3d::Unit((idx + 2) % 3));
 
     auto mesh_faces = ahd.hem.cells_multi_component_map();
-    spdlog::info("AHD {},{} got {} faces", idx, cidx, mesh_faces.size());
+    // spdlog::info("AHD {},{} got {} faces", idx, cidx, mesh_faces.size());
 
     auto vols = ahd.hem.signed_areas(VV);
     // std::cout << "Forbidden edges: ";
@@ -425,7 +427,14 @@ mtao::map<int, CutFace<3>> CutCellGenerator<3>::compute_faces_axis(
     //    std::cout << a << ":" << b << " ";
     //}
     // std::cout << std::endl;
+    //#if defined(MTAO_TBB_ENABLED)
+    //    tbb::parallel_for_each(
+    //        mesh_faces.begin(), mesh_faces.end(), [&](const auto &pr) {
+    //            const auto &[i, v] = pr;
+    //
+    //#else
     for (auto &&[i, v] : mesh_faces) {
+        //#endif
         CutFace<D> F;
         F.id = Edge{{idx, cidx}};
         auto add_loop = [&](const std::vector<int> &v) {
@@ -434,8 +443,8 @@ mtao::map<int, CutFace<3>> CutCellGenerator<3>::compute_faces_axis(
                 // std::cout << ": ";
                 auto e = smallest_ordered_edge(v);
                 // auto er = smallest_ordered_edge_reverse(v);
-                // std::cout << "Trying edge " << e[0] << ":" << e[1] << " rev:
-                // " << er[0] << ":" << er[1] << std::endl;
+                // std::cout << "Trying edge " << e[0] << ":" << e[1] << "
+                // rev: " << er[0] << ":" << er[1] << std::endl;
                 if (axial_primal_faces[idx].find(e) ==
                     axial_primal_faces[idx].end()) {
                     // std::vector<int> vv(v.size());
@@ -452,9 +461,10 @@ mtao::map<int, CutFace<3>> CutCellGenerator<3>::compute_faces_axis(
         //    std::cout << " ";
         //}
         // std::cout << std::endl;
-        for (auto &v : v) {  // for every boundary cell figure out if this is a
-                             // boundary stencil
-            // spdlog::info("Is boundary face?: {}", ahd.is_boundary_cell(v));
+        for (const auto &v : v) {  // for every boundary cell figure out if this
+                                   // is a boundary stencil
+            // spdlog::info("Is boundary face?: {}",
+            // ahd.is_boundary_cell(v));
             if (ahd.is_boundary_cell(v)) {
                 auto pc = possible_cells(v);
                 if (pc.empty()) {
@@ -488,7 +498,11 @@ mtao::map<int, CutFace<3>> CutCellGenerator<3>::compute_faces_axis(
             faces[i] = std::move(F);
             // std::cout << std::string(faces[i]) << std::endl;
         }
+        //#if defined(MTAO_TBB_ENABLED)
+        //        });
+        //#else
     }
+    //#endif
 
     /*
                 //debug when i was only generating quads

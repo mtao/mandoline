@@ -1,7 +1,7 @@
 #include "mandoline/construction/generator3.hpp"
 
-#include <mtao/geometry/mesh/boundary_elements.h>
 #include <fmt/format.h>
+#include <mtao/geometry/mesh/boundary_elements.h>
 #include <mtao/geometry/mesh/boundary_facets.h>
 
 #include <mtao/colvector_loop.hpp>
@@ -315,6 +315,8 @@ void CutCellGenerator<3>::bake_cells() {
     adaptive_grid_factory.make_cells(adaptive_level);
     int max_cell_id = cells.size();
     {
+        auto t =
+            mtao::logging::profiler("Reindexing factory", false, "profiler");
         // make cell names unique
         int cbsize = cells.size();
         auto gc = adaptive_grid_factory.cells;
@@ -327,8 +329,12 @@ void CutCellGenerator<3>::bake_cells() {
         max_cell_id = cbsize + adaptive_grid_factory.cells.size();
     }
 
-    adaptive_grid = adaptive_grid_factory.create();
-    adaptive_grid->Base::operator=(*this);
+    {
+        auto t = mtao::logging::profiler(
+            "Writing to adaptive grid from factory", false, "profiler");
+        adaptive_grid = adaptive_grid_factory.create();
+        adaptive_grid->Base::operator=(*this);
+    }
 #else
     exterior_grid = ExteriorGrid<3>(*this, m_active_grid_cell_mask);
     int max_cell_id = cells.size() + exterior_grid->num_cells();

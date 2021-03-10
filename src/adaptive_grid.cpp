@@ -245,6 +245,7 @@ auto AdaptiveGrid::faces(const GridData3i &grid) const -> std::vector<Face> {
         }
     };
     std::set<Face, decltype(myless)> faces(myless);
+    // std::mutex face_mutex;
     auto add_bdry = [&](int d, int a, int b) {
         if (a != b) {
             Edge dual_edge{{a, b}};
@@ -274,26 +275,48 @@ auto AdaptiveGrid::faces(const GridData3i &grid) const -> std::vector<Face> {
                 }
             }
             // spdlog::info("Adding dual edge {} {}",dual_edge[0],dual_edge[1]);
+            // std::scoped_lock lock(face_mutex);
             faces.emplace(Square{corner, axis, width}, dual_edge);
         }
     };
     for (int d = 0; d < 3; ++d) {
         auto shape = cell_shape();
         shape[d]++;
+        //#if defined(MTAO_TBB_ENABLED)
+        //        using range_t = tbb::blocked_rangeNd<int, 3>;
+        //        tbb::parallel_for(range_t({0, shape[0]}, {0, shape[1]}, {0,
+        //        shape[2]}),
+        //                          [&](range_t range) {
+        //                              auto range_x = range.dim(0);
+        //                              auto range_y = range.dim(1);
+        //                              auto range_z = range.dim(2);
+        //                              coord_type abc;
+        //                              for (int &a = abc[0] = range_x.begin();
+        //                                   a < range_x.end(); ++a) {
+        //                                  for (int &b = abc[1] =
+        //                                  range_y.begin();
+        //                                       b < range_y.end(); ++b) {
+        //                                      for (int &c = abc[2] =
+        //                                      range_z.begin();
+        //                                           c < range_z.end(); ++c) {
+        //#else
         coord_type abc;
         for (int &a = abc[0] = 0; a < shape[0]; ++a) {
             for (int &b = abc[1] = 0; b < shape[1]; ++b) {
                 for (int &c = abc[2] = 0; c < shape[2]; ++c) {
+                    //#endif
                     bool low = abc[d] == 0;
                     bool high = abc[d] == shape[d] - 1;
                     // fmt::print("{} {} {}\n", a,b,c);
-                    if (low) {  // if one of htem but not when theres both
+                    if (low) {  // if one of htem but not
+                                // when theres both
                         int val = grid(abc);
                         if (val >= 0) {
                             add_bdry(d, -2, val);
                         }
                     } else if (high) {
-                        // if we're high we have to go down one grid cell
+                        // if we're high we have to go
+                        // down one grid cell
                         coord_type tmp = abc;
                         tmp[d]--;
                         int val = grid(tmp);
@@ -314,6 +337,9 @@ auto AdaptiveGrid::faces(const GridData3i &grid) const -> std::vector<Face> {
                 }
             }
         }
+        //#if defined(MTAO_TBB_ENABLED)
+        //                          });
+        //#endif
     }
 
     std::vector<Face> faces_vec(faces.size());
