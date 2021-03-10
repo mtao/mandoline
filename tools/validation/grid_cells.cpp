@@ -4,6 +4,7 @@
 #include <spdlog/spdlog.h>
 
 #include "cutmesh_validation.hpp"
+#include "mandoline/operators/grid_cell_ownership.hpp"
 using namespace mandoline;
 std::array<int, 2> grid_cells_fully_utilized_count(const CutCellMesh<3>& ccm) {
     auto V = ccm.vertices();
@@ -112,6 +113,21 @@ std::array<int, 2> grid_cells_fully_utilized_count(const CutCellMesh<3>& ccm) {
             }
         }
     });
+
+    auto cell_grid_chlidren_vec = operators::grid_cell_ownership(ccm);
+    for (auto&& [grid_index, cells] :
+         mtao::iterator::enumerate(cell_grid_chlidren_vec)) {
+        double vol = 0;
+        for (auto&& c : cells) {
+            vol += vols(c);
+        }
+        if (std::abs(1 - vol / cell_vol) > 1e-5) {
+            spdlog::warn(
+                "Grid cell {} had an invalid volume inside: {} / {} "
+                "(children were {})",
+                grid_index, vol, cell_vol, fmt::join(cells, ","));
+        }
+    }
     if (invalid_parent_cells > 0) {
         spdlog::error("Invalid parent cells: {}", invalid_parent_cells);
     }
