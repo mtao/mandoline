@@ -138,11 +138,7 @@ void CutCellGenerator<3>::bake_faces() {
         VV[i] = grid_vertex(i);
     }
     std::string timer_str = "Flagging active cells 0";
-#if defined(MTAO_TBB_ENABLED)
-    tbb::parallel_for(0, 3, [&](int i) {
-#else
     for (int i = 0; i < 3; ++i) {
-#endif
         int dim = i;
         auto &&ahdata = axis_hem_data[i];
         auto &&axialEdges_dim = axialEdges[i];
@@ -251,11 +247,7 @@ void CutCellGenerator<3>::bake_faces() {
                 face_size = ahd.hem.cell_indices().maxCoeff() + 1;
             }
         }
-#if defined(MTAO_TBB_ENABLED)
-    });
-#else
     }
-#endif
     /*
                for(auto&& axis_hem: axis_hem_data) {
                for(auto&& [i,ahd]: axis_hem) {

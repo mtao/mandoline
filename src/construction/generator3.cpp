@@ -1,6 +1,7 @@
 #include "mandoline/construction/generator3.hpp"
 
 #include <mtao/geometry/mesh/boundary_elements.h>
+#include <fmt/format.h>
 #include <mtao/geometry/mesh/boundary_facets.h>
 
 #include <mtao/colvector_loop.hpp>

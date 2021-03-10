@@ -26,7 +26,7 @@ std::array<int, 2> region_counts(const mandoline::CutCellMesh<3> &ccm,
     // igl's C will give us regions, including the infinite region.
     //|regions - {infinite}| = maxCoeff because of an implicit "-1" for region 0
     std::set<int> IR;
-    for(auto&& c: mtao::eigen::iterable(C)) {
+    for (auto &&c : mtao::eigen::iterable(C)) {
         IR.emplace(c);
     }
     std::set<int> cr;
@@ -78,20 +78,22 @@ mtao::VecXd brep_region_volumes(const mandoline::CutCellMesh<3> &ccm) {
 std::map<int, double> region_volumes(const mandoline::CutCellMesh<3> &ccm) {
     std::map<int, int> unindexer;
     auto R = ccm.regions();
-    auto V = ccm.cell_volumes();
-    for (int i = 0; i < R.size(); ++i) {
-        if (unindexer.find(R[i]) == unindexer.end()) {
-            int s = unindexer.size();
-            unindexer[R[i]] = s;
-        }
+    std::set<int> regions(R.begin(), R.end());
+
+    for (auto &&[a, b] : mtao::iterator::enumerate(regions)) {
+        unindexer[b] = a;
     }
 
     mtao::VecXd vol(unindexer.size());
     vol.setZero();
+
+    auto V = ccm.cell_volumes();
+
     assert(R.size() == V.size());
     for (int i = 0; i < ccm.cell_size(); ++i) {
         vol(unindexer[R[i]]) += V(i);
     }
+
     std::map<int, double> vols;
     for (auto &&[a, b] : unindexer) {
         vols[b] = vol(a);
@@ -130,6 +132,7 @@ bool volume_check(const mandoline::CutCellMesh<3> &ccm) {
     // but this isn't robust
     bool external_boundary_used = false;
     auto vols = region_volumes(ccm);
+
     for (auto &&[ridx, vol] : vols) {
         if (ridx < 0) {
             continue;
