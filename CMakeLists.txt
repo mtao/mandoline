@@ -33,7 +33,7 @@ FIND_PACKAGE(OpenMP REQUIRED)
 
 
 
-protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS proto/cutmesh.proto)
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS proto/cutmesh.proto proto/common.proto)
 protobuf_generate_python(PROTO_PY proto/cutmesh.proto)
 
 ADD_LIBRARY(cutmesh_proto OBJECT ${PROTO_SRCS} ${PROTO_HDRS})

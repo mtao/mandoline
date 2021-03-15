@@ -1,13 +1,8 @@
 syntax = "proto3";
+import "common.proto";
 
 package mandoline.protobuf;
 
-// A vector or position in R^3
-message Vec3d {
-    double x = 1;
-    double y = 2;
-    double z = 3;
-}
 
 // An augmented vertex rep using trilinear coordinates in the grid 
 // and a bitmask
@@ -28,17 +23,6 @@ message Vertex {
     bool ck = 9; // equiv to w == 0
 }
 
-// An integer vector in Z^2
-message Vec2i {
-    int64 x = 1;
-    int64 y = 2;
-}
-// An integer vector in Z^3
-message Vec3i {
-    int64 x = 1;
-    int64 y = 2;
-    int64 z = 3;
-}
 
 // An axis aligned plane, defined implicitly by {[x_1,x_2,x_3]: x_axis == value} 
 message AxialPlane {

@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package mandoline.protobuf;
+
+message CutMeshParameters {
+    message Grid {
+        BoundingBox3 bounding_box = 1;
+        Vec3i shape = 2;
+    }
+
+    Grid grid = 1;
+
+    string mesh_path = 2;
+
+    bool process_self_intersections = 3;
+}

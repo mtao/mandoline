@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package mandoline.protobuf;
+
+
+
+// A vector or position in R^3
+message Vec2d {
+    double x = 1;
+    double y = 2;
+}
+// An integer vector in Z^2
+message Vec2i {
+    int64 x = 1;
+    int64 y = 2;
+}
+// A vector or position in R^3
+message Vec3d {
+    double x = 1;
+    double y = 2;
+    double z = 3;
+}
+// An integer vector in Z^3
+message Vec3i {
+    int64 x = 1;
+    int64 y = 2;
+    int64 z = 3;
+}
+
+message BoundingBox2 {
+    Vec2d min = 1;
+    Vec2d max = 2;
+}
+message BoundingBox3 {
+    Vec3d min = 1;
+    Vec3d max = 2;
+}
