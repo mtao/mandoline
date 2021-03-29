@@ -5,14 +5,15 @@
 #include <fstream>
 // this set sould be removed after updating mtao core because prune vertices
 // missed an include
-#include <mandoline/construction/construct.hpp>
-#include <mandoline/construction/tools/read_mesh.hpp>
+#include "mandoline/construction/construct2.hpp"
+#include <mtao/geometry/mesh/read_obj.hpp>
 #include <mtao/json/bounding_box.hpp>
 #include <set>
 
-#include "json_to_cutmesh.hpp"
+#include "mandoline/construction/tools/json_to_cutmesh2.hpp"
 
-mandoline::CutCellMesh<3> json_to_cutmesh(const std::string& filename) {
+namespace mandoline::construction::tools {
+mandoline::CutCellMesh<2> json_to_cutmesh2(const std::string& filename) {
     std::filesystem::path path(filename);
     if (!std::filesystem::exists(filename)) {
         spdlog::error("mandoline: JSON file doesnt exist");
@@ -22,14 +23,23 @@ mandoline::CutCellMesh<3> json_to_cutmesh(const std::string& filename) {
     nlohmann::json js;
     ifs >> js;
 
-    return json_to_cutmesh(js, path.parent_path());
+    return json_to_cutmesh2(js, path.parent_path());
 }
-mandoline::CutCellMesh<3> json_to_cutmesh(
+mandoline::CutCellMesh<2> json_to_cutmesh2(
     const nlohmann::json& js, const std::filesystem::path& relative_path) {
-    auto bbox = js["grid"]["bounding_box"].get<Eigen::AlignedBox<double, 3>>();
-    std::array<int, 3> shape;
+    Eigen::AlignedBox<double,2> bbox;
+    try {
+    bbox = js["grid"]["bounding_box"].get<Eigen::AlignedBox<double, 2>>();
+    } catch ( const std::exception& e) {
+        std::cout << "grid" << "bounding_box" << " => " << e.what() << std::endl;
+    }
+    std::array<int, 2> shape;
+    try{
     mtao::eigen::stl2eigen(shape) =
-        mtao::json::json2vector<int, 3>(js["grid"]["shape"]);
+        mtao::json::json2vector<int, 2>(js["grid"]["shape"]);
+    } catch ( const std::exception& e) {
+        std::cout << "grid" << "shape" << " => " << e.what() << std::endl;
+    }
 
     const std::string local_mesh_path = js["mesh"].get<std::string>();
     spdlog::info("Local mesh path: {}", local_mesh_path);
@@ -52,10 +62,9 @@ mandoline::CutCellMesh<3> json_to_cutmesh(
         // throw std::filesystem::filesystem_error("File not found",
         // mesh_path,std::error_code(1,std::generic_category{}));
     }
-    bool do_remesh =
-        js.contains("perform_remeshing") && js["perform_remeshing"].get<bool>();
-    auto [V, F] =
-        mandoline::construction::tools::read_mesh(mesh_path, do_remesh);
+    auto [V, E] =
+         mtao::geometry::mesh::read_obj2D(mesh_path);
 
-    return mandoline::construction::from_bbox(V, F, bbox, shape);
+    return mandoline::construction::from_bbox(V, E, bbox, shape);
+}
 }

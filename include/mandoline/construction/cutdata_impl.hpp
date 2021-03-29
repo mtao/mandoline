@@ -542,7 +542,7 @@ void CutData<D, Indexer>::reset_intersections() {
     }
 
     if (m_FE.cols() == 0) {
-        m_FE = mtao::geometry::mesh::boundary_elements(m_F, m_E);
+        m_FE = mtao::geometry::mesh::simplex_boundary_indices(m_F, m_E);
     }
     for (int i = 0; i < m_F.cols(); ++i) {
         m_triangle_intersections.emplace_back(m_V, m_F, m_E, m_FE,

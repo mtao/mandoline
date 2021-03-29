@@ -22,16 +22,14 @@ TARGET_LINK_LIBRARIES(boundary_curves_to_cutmesh2 mandoline OpenMP::OpenMP_CXX m
 
 
 
-add_library(mandoline_tool_utils utils/json_to_cutmesh.cpp
-    utils/json_to_cutmesh2.cpp)
-target_link_libraries(mandoline_tool_utils PUBLIC cutmesh_maker mandoline
-    OpenMP::OpenMP_CXX mtao::common)
 
+if(MANDOLINE_USE_JSON)
 ADD_EXECUTABLE(json_to_cutmesh json_to_cutmesh.cpp)
-TARGET_LINK_LIBRARIES(json_to_cutmesh mandoline_tool_utils)
+TARGET_LINK_LIBRARIES(json_to_cutmesh mandoline)
 
 ADD_EXECUTABLE(json_to_cutmesh2 json_to_cutmesh2.cpp)
-TARGET_LINK_LIBRARIES(json_to_cutmesh2 mandoline_tool_utils)
+TARGET_LINK_LIBRARIES(json_to_cutmesh2 mandoline)
+endif()
 IF(Corrade_FOUND)
     ADD_EXECUTABLE(cfg_to_cutmesh cfg_to_cutmesh.cpp)
     TARGET_LINK_LIBRARIES(cfg_to_cutmesh cutmesh_maker mandoline OpenMP::OpenMP_CXX mtao::common  Corrade::Utility)
@@ -56,7 +54,6 @@ IF(HANDLE_SELF_INTERSECTIONS)
         validation/cutmesh_validation.cpp
         )
     TARGET_LINK_LIBRARIES(cutmesh_validation_tools gmp CGAL mpfr  fmt
-        mandoline_tool_utils
         mandoline)
 
     ADD_EXECUTABLE(cutmesh_validator

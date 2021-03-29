@@ -77,6 +77,7 @@ SET(COMMON_SRCS
 SET(CUTMESH2_SRCS
     ${COMMON_SRCS}
     src/mesh2.cpp
+    src/operators/region_boundaries2.cpp
     src/operators/boundary2.cpp
     src/operators/interpolation2.cpp
     src/operators/volume2.cpp
@@ -98,6 +99,7 @@ SET(CUTMESH3_SRCS
     src/operators/volume3.cpp
     src/operators/centroids3.cpp
     src/operators/nearest_facet3.cpp
+    src/operators/region_boundaries3.cpp
     src/operators/grid_cell_ownership.cpp
     )
 
@@ -137,6 +139,8 @@ SET(CUTMESH3_HDRS
     include/mandoline/operators/masks.hpp
     include/mandoline/operators/volume3.hpp
     )
+
+
 
 set(CONSTRUCTION_TOOLS_SRCS
     src/construction/tools/remesh_self_intersections.cpp
@@ -188,6 +192,13 @@ if(MANDOLINE_USE_OPENGL)
     set(CONSTRUCTION_HDRS ${CONSTRUCTION_HDRS} include/mandoline/construction/construct_gui_widget.hpp)
     set(CONSTRUCTION_SRCS ${CONSTRUCTION_SRCS} src/construction/construct2_gui_widget.cpp)
     set(CONSTRUCTION_HDRS ${CONSTRUCTION_HDRS} include/mandoline/construction/construct2_gui_widget.hpp)
+endif()
+if(MANDOLINE_USE_JSON)
+    set(CONSTRUCTION_TOOLS_SRCS ${CONSTRUCTION_TOOLS_SRCS}
+        src/construction/tools/json_to_cutmesh.cpp
+        src/construction/tools/json_to_cutmesh2.cpp
+        )
+
 endif()
 
 SET(MANDOLINE2_SRCS

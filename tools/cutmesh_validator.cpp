@@ -9,7 +9,7 @@
 #include <mtao/geometry/mesh/read_obj.hpp>
 #include <nlohmann/json.hpp>
 
-#include "utils/json_to_cutmesh.hpp"
+#include <mandoline/construction/tools/json_to_cutmesh.hpp>
 #include "validation/cutmesh_validation.hpp"
 
 int main(int argc, char* argv[]) {
@@ -72,7 +72,7 @@ int main(int argc, char* argv[]) {
                                                  std::array<int, 3>{{N, N, N}});
 
     } else if (filename.ends_with("json")) {
-        ccm = json_to_cutmesh(filename);
+        ccm = mandoline::construction::tools::json_to_cutmesh(filename);
     } else {
         ccm = mandoline::CutCellMesh<3>::from_proto(filename);
     }

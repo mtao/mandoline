@@ -1,4 +1,4 @@
-#include "utils/json_to_cutmesh.hpp"
+#include "mandoline/construction/tools/json_to_cutmesh.hpp"
 
 #include <spdlog/spdlog.h>
 
@@ -15,7 +15,7 @@ int main(int argc, char* argv[]) {
 
     const auto ppath = path.parent_path();
 
-    auto ccm = json_to_cutmesh(js, ppath);
+    auto ccm = mandoline::construction::tools::json_to_cutmesh(js, ppath);
     if (argc > 2) {
         ccm.write(argv[2]);
         return 0;
