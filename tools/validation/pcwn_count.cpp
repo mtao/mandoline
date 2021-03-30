@@ -1,4 +1,6 @@
+#if !defined(__gmp_const)
 #define __gmp_const const
+#endif
 #include <igl/copyleft/cgal/piecewise_constant_winding_number.h>
 #include <tbb/parallel_reduce.h>
 
