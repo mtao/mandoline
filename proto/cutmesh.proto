@@ -60,7 +60,7 @@ message CutFace {
     // sometimes we may cache vertices for a triangulation, but dont depend on
     // it. if this is empty then the indices in triangulation (if htey exist)
     // point to the cut-cell mesh's vertices
-    repeated Vec3i triangulation_vertices = 7;
+    repeated Vec3d triangulation_vertices = 7;
     // for cut-cells on the boundary of the stencil, point to the cut-cell grid
     // should connect to
     FaceBoundary face_boundary = 6;

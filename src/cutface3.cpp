@@ -214,6 +214,12 @@ void CutFace<3>::serialize(protobuf::CutFace &face) const {
             protobuf::serialize(T.col(i), *face.add_triangulation());
         }
     }
+    if (triangulated_vertices) {
+        auto &&T = *triangulated_vertices;
+        for (int i = 0; i < T.cols(); ++i) {
+            protobuf::serialize(T.col(i), *face.add_triangulation_vertices());
+        }
+    }
     if (external_boundary) {
         auto [b, s] = *external_boundary;
         auto &&fb = *face.mutable_face_boundary();

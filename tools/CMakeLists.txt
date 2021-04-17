@@ -16,6 +16,9 @@ TARGET_LINK_LIBRARIES(obj_to_cutmesh cutmesh_maker mandoline OpenMP::OpenMP_CXX 
 ADD_EXECUTABLE(cutmesh_info cutmesh_info.cpp)
 TARGET_LINK_LIBRARIES(cutmesh_info mandoline_cutmesh3)
 
+ADD_EXECUTABLE(add_triangulation_to_cutmesh add_triangulation_to_cutmesh.cpp)
+TARGET_LINK_LIBRARIES(add_triangulation_to_cutmesh mandoline_cutmesh3 cxxopts)
+
 ADD_EXECUTABLE(boundary_curves_to_cutmesh2 boundary_curves_to_cutmesh2.cpp)
 TARGET_LINK_LIBRARIES(boundary_curves_to_cutmesh2 mandoline OpenMP::OpenMP_CXX mtao::common cxxopts)
 
