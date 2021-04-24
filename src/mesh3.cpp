@@ -150,7 +150,7 @@ std::vector<int> CutCellMesh<3>::regions(bool boundary_sign_regions) const {
 
 std::vector<std::array<std::set<int>, 2>> CutCellMesh<3>::face_regions() const {
     auto R = regions();
-    std::copy(R.begin(), R.end(), std::ostream_iterator<int>(std::cout, ","));
+    //std::copy(R.begin(), R.end(), std::ostream_iterator<int>(std::cout, ","));
     std::vector<std::array<std::set<int>, 2>> ret(
         *std::max_element(R.begin(), R.end()) + 1);
     for (auto &&[cidx, c] : mtao::iterator::enumerate(cells())) {

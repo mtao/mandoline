@@ -50,6 +50,7 @@ struct CutCellMesh<3> : public CutCellMeshBase<3, CutCellMesh<3>> {
     const CutFace<3> &cut_face(size_t index) const { return m_faces.at(index); }
     const auto &cells() const { return m_cells; }
     const ExteriorGridType &exterior_grid() const { return m_exterior_grid; }
+    const mtao::ColVecs2i &origE() const { return m_origE; }
     const mtao::ColVecs3i &origF() const { return m_origF; }
     const mtao::map<int, BarycentricTriangleFace> &mesh_cut_faces() const {
         return m_mesh_cut_faces;
