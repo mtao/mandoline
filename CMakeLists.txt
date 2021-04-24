@@ -14,6 +14,7 @@ SET(MTAO_PATH "" CACHE STRING "location of mtao core libs" )
 SET(LIBIGL_PATH "" CACHE STRING "location of libigl libs" )
 
 OPTION(MANDOLINE_USE_OPENGL "Build opengl stuff" ON)
+OPTION(MANDOLINE_USE_PYTHON "Activate python bindings" ON)
 IF(APPLE)
     SET(MANDOLINE_USE_OPENMP_PRE OFF)
 ELSE(APPLE)
@@ -37,6 +38,8 @@ protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS proto/cutmesh.proto proto/common.pro
 protobuf_generate_python(PROTO_PY proto/cutmesh.proto)
 
 ADD_LIBRARY(cutmesh_proto OBJECT ${PROTO_SRCS} ${PROTO_HDRS})
+
+target_compile_options(cutmesh_proto PUBLIC -fPIC)
 TARGET_LINK_LIBRARIES(cutmesh_proto protobuf::libprotobuf)
 TARGET_INCLUDE_DIRECTORIES(cutmesh_proto PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 
@@ -244,6 +247,7 @@ SET(TOOLS2_HDRS
 
 ADD_LIBRARY(cutmesh2_obj OBJECT ${CUTMESH2_SRCS} ${CUTMESH2_HDRS})
 ADD_LIBRARY(cutmesh3_obj OBJECT ${CUTMESH3_SRCS} ${CUTMESH3_HDRS})
+target_compile_options(cutmesh3_obj PUBLIC -fPIC)
 ADD_LIBRARY(construction_tools_obj OBJECT ${CONSTRUCTION_TOOLS_SRCS}
     ${CONSTRUCTION_TOOLS_HDRS})
 ADD_LIBRARY(construction_obj OBJECT ${CONSTRUCTION_SRCS} ${CONSTRUCTION_HDRS})
@@ -274,6 +278,23 @@ ADD_LIBRARY(mandoline
     $<TARGET_OBJECTS:tools2_obj>
     )
 TARGET_LINK_LIBRARIES(mandoline
+    mtao::geometry OpenMP::OpenMP_CXX
+    ${MANDOLINE_SELF_INTERSECTION_LIBS}
+    igl::core
+    protobuf::libprotobuf
+    mandoline_headers
+    )
+
+ADD_LIBRARY(mandoline_static STATIC
+    $<TARGET_OBJECTS:cutmesh_proto>
+    $<TARGET_OBJECTS:cutmesh2_obj>
+    $<TARGET_OBJECTS:cutmesh3_obj>
+    $<TARGET_OBJECTS:construction_obj>
+    $<TARGET_OBJECTS:construction_tools_obj>
+    $<TARGET_OBJECTS:tools_obj>
+    $<TARGET_OBJECTS:tools2_obj>
+    )
+TARGET_LINK_LIBRARIES(mandoline_static
     mtao::geometry OpenMP::OpenMP_CXX
     ${MANDOLINE_SELF_INTERSECTION_LIBS}
     igl::core
@@ -358,3 +379,13 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND MANDOLINE_BUILD_TESTING)
     ADD_SUBDIRECTORY(tests)
 endif()
 ADD_SUBDIRECTORY(tools )
+
+
+
+
+target_compile_options(mandoline_static PUBLIC -fPIC)
+if(MANDOLINE_USE_PYTHON)
+pybind11_add_module(mandoline_py src/python_api.cpp
+    )
+target_link_libraries(mandoline_py PUBLIC mandoline_static)
+endif()

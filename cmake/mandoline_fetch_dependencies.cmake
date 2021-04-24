@@ -9,6 +9,7 @@ set(PROTOBUF_COMMIT v3.11.3)
 set(LIBIGL_COMMIT v2.2.0)
 set(CATCH_COMMIT v2.9.1)
 set(CGAL_COMMIT releases/CGAL-5.0.1)
+set(PYBIND_COMMIT v2.5.0)
 
 function(fetch_dep REPO_NAME GIT_REPO GIT_TAG ADD_SUBDIR)
     FetchContent_Declare(
@@ -137,4 +138,8 @@ if(MANDOLINE_BUILD_TESTING)
     endif()
 
     endif()
+endif()
+
+if(MANDOLINE_USE_PYTHON)
+fetch_dep(pybind11 https://github.com/pybind/pybind11.git ${PYBIND_COMMIT} ON)
 endif()
