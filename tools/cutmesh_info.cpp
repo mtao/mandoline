@@ -11,7 +11,9 @@ int main(int argc, char* argv[]) {
         if (i > 1) {
             std::cout << std::endl << std::endl;
         }
-        mandoline::tools::print_file_info(argv[i]);
+        nlohmann::json js;
+        mandoline::tools::print_file_info(argv[i], &js);
+        std::cout << js.dump(2) << std::endl;
     }
 
     return 0;
