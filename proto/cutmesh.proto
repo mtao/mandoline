@@ -146,9 +146,9 @@ message CutMeshProto {
     // Adaptive grid structure stuff
     // the indices and positions of cube-cells
     map<int64,Cube> cubes = 11;
-    // the indices  and positions of square-faces that bound hte
-    // cube-cells
-    map<int64,Square> squares = 14;
+    // the indices, positions, and topologies of square-faces that
+    // bound hte cube-cells
+    repeated Face squares = 14;
     // the region ids for the cube-cells, they're aligned with the regions used for cut-cells
     map<int64,int64> cube_regions = 12;
 }

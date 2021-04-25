@@ -150,7 +150,8 @@ std::vector<int> CutCellMesh<3>::regions(bool boundary_sign_regions) const {
 
 std::vector<std::array<std::set<int>, 2>> CutCellMesh<3>::face_regions() const {
     auto R = regions();
-    //std::copy(R.begin(), R.end(), std::ostream_iterator<int>(std::cout, ","));
+    // std::copy(R.begin(), R.end(), std::ostream_iterator<int>(std::cout,
+    // ","));
     std::vector<std::array<std::set<int>, 2>> ret(
         *std::max_element(R.begin(), R.end()) + 1);
     for (auto &&[cidx, c] : mtao::iterator::enumerate(cells())) {
@@ -275,6 +276,11 @@ void CutCellMesh<3>::serialize(protobuf::CutMeshProto &cmp) const {
         for (auto &&[c, cell] : m_exterior_grid.cells()) {
             cell.serialize(cmap[c]);
         }
+
+        for (auto &&face : m_exterior_grid.faces()) {
+            face.serialize(*cmp.add_squares());
+        }
+
         auto &rmap = *cmp.mutable_cube_regions();
         for (auto &&[a, b] : m_adaptive_grid_regions) {
             rmap[a] = b;
@@ -346,7 +352,18 @@ CutCellMesh<3> CutCellMesh<3>::from_proto(const protobuf::CutMeshProto &cmp) {
     for (auto &&[a, b] : cmp.cubes()) {
         ret.m_exterior_grid.m_cells[a] = AdaptiveGrid::Cell::from_proto(b);
     }
-    ret.m_exterior_grid.make_faces();
+
+    ret.m_exterior_grid.m_faces.reserve(cmp.squares().size());
+    // measure for cutmeshes that were created before faces were
+    // properly serialized
+    if (cmp.squares().empty()) {
+        ret.m_exterior_grid.make_faces();
+    } else {
+        for (auto &&sqr : cmp.squares()) {
+            ret.m_exterior_grid.m_faces.emplace_back(
+                AdaptiveGrid::Face::from_proto(sqr));
+        }
+    }
     for (auto &&[a, b] : cmp.cube_regions()) {
         ret.m_adaptive_grid_regions[a] = b;
     }
