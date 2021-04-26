@@ -3,7 +3,7 @@ version: 2
 jobs:
     build-linux:
         docker:
-            - image: "ubuntu:devel"
+            - image: "ubuntu:20.10"
         steps:
             - checkout
             - run:
