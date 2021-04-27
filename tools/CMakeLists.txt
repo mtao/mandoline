@@ -59,6 +59,11 @@ IF(HANDLE_SELF_INTERSECTIONS)
     TARGET_LINK_LIBRARIES(cutmesh_validation_tools gmp CGAL mpfr  fmt
         mandoline)
 
+    if(DEFINED ENV{CIRCLECI})
+        target_compile_definitions(cutmesh_validation_tools
+            -DMANDOLINE_ASSUME_CELLS_DONT_INTERSECT)
+    endif()
+
     ADD_EXECUTABLE(cutmesh_validator
         cutmesh_validator.cpp
         )

@@ -26,6 +26,7 @@ void print_all_info(const CutCellMesh<3>& ccm, nlohmann::json* json) {
     print_region_info(ccm, json);
     print_volume_info(ccm, json);
     print_face_adjacent_grid_info(ccm, json);
+    print_boundary_info(ccm, json);
 }
 
 void print_general_info(const CutCellMesh<3>& ccm, nlohmann::json* json) {
@@ -142,6 +143,18 @@ void print_cell_info(const CutCellMesh<3>& ccm, nlohmann::json* json) {
             }
         }
     }
+}
+
+void print_boundary_info(const CutCellMesh<3>& ccm, nlohmann::json* json) {
+    std::vector<std::set<std::tuple<int, double>>> boundary(ccm.cell_size());
+    auto B = operators::boundary(ccm, true);
+    for (int o = 0; o < B.outerSize(); ++o) {
+        for (Eigen::SparseMatrix<double>::InnerIterator it(B, o); it; ++it) {
+            boundary[it.col()].emplace(it.row(), it.value());
+        }
+    }
+
+    (*json)["boundary_matrix"] = boundary;
 }
 
 void print_face_adjacent_grid_info(const CutCellMesh<3>& ccm,

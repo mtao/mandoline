@@ -15,6 +15,7 @@ void print_region_info(const CutCellMesh<3>& ccm,
 void print_volume_info(const CutCellMesh<3>& ccm,
                        nlohmann::json* json = nullptr);
 void print_cell_info(const CutCellMesh<3>& ccm, nlohmann::json* json = nullptr);
+void print_boundary_info(const CutCellMesh<3>& ccm, nlohmann::json* json = nullptr);
 
 // something somewhat specialized that was requested
 void print_face_adjacent_grid_info(const CutCellMesh<3>& ccm,

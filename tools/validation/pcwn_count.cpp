@@ -1,13 +1,18 @@
 #if !defined(__gmp_const)
 #define __gmp_const const
 #endif
+#ifdef MANDOLINE_ASSUME_CELLS_DONT_INTERSECT
+#include <igl/piecewise_constant_winding_number.h>
+#else
 #include <igl/copyleft/cgal/piecewise_constant_winding_number.h>
+#endif
 #include <tbb/parallel_reduce.h>
 
 #include "cutmesh_validation.hpp"
 using namespace mandoline;
 std::array<int, 2> pcwn_count(const CutCellMesh<3>& ccm) {
     auto V = ccm.vertices();
+
     Eigen::MatrixXd IV = V.transpose();
     return tbb::parallel_reduce(
         tbb::blocked_range<int>(0, ccm.cells().size()),
@@ -20,6 +25,9 @@ std::array<int, 2> pcwn_count(const CutCellMesh<3>& ccm) {
                 auto [V_, F] = ccm.triangulated_cell(true, true);
                 mtao::RowVecs3i FF = F.transpose();
                 double wn = 0;
+#if defined(MANDOLINE_ASSUME_CELLS_DONT_INTERSECT)
+                wn = igl::piecewise_constant_winding_number(FF);
+#else
                 if (V_.size() == 0) {
                     wn = igl::copyleft::cgal::piecewise_constant_winding_number(
                         IV, FF);
@@ -28,6 +36,7 @@ std::array<int, 2> pcwn_count(const CutCellMesh<3>& ccm) {
                     wn = igl::copyleft::cgal::piecewise_constant_winding_number(
                         VV, FF);
                 }
+#endif
 
                 if (wn) {
                     is_pcwn++;
