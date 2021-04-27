@@ -60,7 +60,7 @@ IF(HANDLE_SELF_INTERSECTIONS)
         mandoline)
 
     if(DEFINED ENV{CIRCLECI})
-        target_compile_definitions(cutmesh_validation_tools
+        target_compile_definitions(cutmesh_validation_tools PRIVATE
             -DMANDOLINE_ASSUME_CELLS_DONT_INTERSECT)
     endif()
 
