@@ -273,12 +273,10 @@ void CutCellEdgeGenerator<D>::add_edges(const Edges &E) {
     auto Esize = [&]() { return m_origEMap.size() + newEMap.size(); };
     auto has_e = [&](Edge e) -> bool {
         // if we can't find it in this order
-        if (m_origEMap.find(e) == m_origEMap.end() ||
-            newEMap.find(e) == newEMap.end()) {
+        if (!m_origEMap.contains(e) && !newEMap.contains(e)) {
             std::swap(e[0], e[1]);
             // or in the reverse order
-            if (m_origEMap.find(e) == m_origEMap.end() ||
-                newEMap.find(e) == newEMap.end()) {
+            if (!m_origEMap.contains(e) && !newEMap.contains(e)) {
                 return false;
             }
         }
@@ -290,15 +288,16 @@ void CutCellEdgeGenerator<D>::add_edges(const Edges &E) {
         Edge e;
         mtao::eigen::stl2eigen(e) = E.col(i);
         if (!has_e(e)) {
-            int oldsize = newEMap.size();
+            // int oldsize = newEMap.size();
+            // spdlog::info("{} <= {}", fmt::join(e, ","), Esize());
             newEMap[e] = Esize();
-            int newsize = newEMap.size();
-            if (oldsize == newsize) {
-                for (int j = 0; j < i; ++j) {
-                    Edge e2;
-                    mtao::eigen::stl2eigen(e2) = E.col(j);
-                }
-            }
+            // int newsize = newEMap.size();
+            // if (oldsize == newsize) {
+            //    for (int j = 0; j < i; ++j) {
+            //        Edge e2;
+            //        mtao::eigen::stl2eigen(e2) = E.col(j);
+            //    }
+            //}
 
             ////mtao::logging::debug() << i << " " << newEMap[e];
         } else {
