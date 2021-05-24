@@ -198,7 +198,7 @@ class MeshViewer : public mtao::opengl::Window3 {
             std::cout << std::endl;
             for(auto&& [idx,fs]: mtao::iterator::enumerate(Fs)) {
                 std::stringstream name;
-                name << "objfile" << idx << ".obj";
+                name << "region" << idx << ".obj";
                 mtao::geometry::mesh::write_objD(ccm->origV(),mtao::eigen::stl2eigen(fs), name.str());
             }
 #endif

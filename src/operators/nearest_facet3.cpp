@@ -26,7 +26,7 @@ BoundaryFacetProjector3::BoundaryFacetProjector3(const CutCellMesh<3>& ccm)
     : Base(static_cast<const Base&>(ccm)) {
     _V = ccm.origV().transpose();
     _F = ccm.origF().transpose();
-    _aabb = std::make_unique<igl::AABB<mtao::RowVecs3d, 3>>();
+    _aabb = std::make_shared<igl::AABB<mtao::RowVecs3d, 3>>();
     _aabb->init(_V, _F);
 }
 BoundaryFacetProjector3::~BoundaryFacetProjector3() {}
