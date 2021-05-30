@@ -542,10 +542,10 @@ void CutCellGenerator<3>::bake_cells() {
     }
     mtao::logging::debug() << "Cell count: " << cell_boundaries.size();
 #if defined(MANDOLINE_USE_ADAPTIVE_GRID)
-    spdlog::warn("Exterior grid face size: {}", adaptive_grid->num_faces());
+    spdlog::trace("Exterior grid face size: {}", adaptive_grid->num_faces());
 #else
-    spdlog::warn("Exterior grid face size: {}",
-                 exterior_grid->num_boundary_facets());
+    spdlog::trace("Exterior grid face size: {}",
+                  exterior_grid->num_boundary_facets());
 #endif
 }
 mtao::Vec3d CutCellGenerator<3>::area_normal(const std::vector<int> &F) const {

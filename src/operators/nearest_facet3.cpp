@@ -3,6 +3,7 @@
 #include "mandoline/mesh3.hpp"
 #include "mandoline/operators/boundary3.hpp"
 #include "mandoline/operators/interpolation3.hpp"
+#include "mandoline/operators/cell_indices.hpp"
 #include "mandoline/operators/nearest_facet.hpp"
 #include "mtao/geometry/winding_number.hpp"
 namespace mandoline::operators {
@@ -28,6 +29,7 @@ BoundaryFacetProjector3::BoundaryFacetProjector3(const CutCellMesh<3>& ccm)
     _F = ccm.origF().transpose();
     _aabb = std::make_shared<igl::AABB<mtao::RowVecs3d, 3>>();
     _aabb->init(_V, _F);
+    _cell_ownership_grid = ccm.exterior_grid().cell_ownership_grid();
 }
 BoundaryFacetProjector3::~BoundaryFacetProjector3() {}
 
@@ -788,7 +790,7 @@ mtao::VecXi nearest_cells(const CutCellMesh<3>& ccm,
         auto [grid_cell, quotient] = ccm.vertex_grid().coord(p);
         // if we're on the inside then use the gotten cell
         if (bbox.contains(p)) {
-            int got_cell = ccm.get_cell_index(p);
+            int got_cell = get_cell_index(ccm,parent_maps._projector._cell_ownership_grid,p);
             if (got_cell >= 0) {
                 index = got_cell;
 #if defined(MTAO_TBB_ENABLED)

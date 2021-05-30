@@ -33,6 +33,7 @@ struct BoundaryFacetProjector3 : public mtao::geometry::grid::StaggeredGrid3d {
     std::vector<std::tuple<int, double>> nearest_grid_faces(
         const Eigen::Ref<const mtao::ColVecs3d> p) const;
     std::shared_ptr<igl::AABB<mtao::RowVecs3d, 3>> _aabb;
+    mtao::geometry::grid::GridData3i _cell_ownership_grid;
     mtao::RowVecs3d _V;
     mtao::RowVecs3i _F;
 };
