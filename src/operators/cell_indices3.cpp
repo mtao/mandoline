@@ -130,9 +130,9 @@ int get_cell_index(
     auto ec = mtao::eigen::stl2eigen(coord);
     //if (exterior_grid.Base::cell_grid().valid_index(coord)) {
     if (ec.minCoeff() < 0 || (ec.array() >= mtao::eigen::stl2eigen(exterior_grid.Base::cell_grid().shape()).array()).any()) {
-        return cell_ownership_grid(coord);
-    } else {
         return -2;
+    } else {
+        return cell_ownership_grid(coord);
     }
 }
 }  // namespace mandoline::operators
