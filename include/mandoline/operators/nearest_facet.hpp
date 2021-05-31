@@ -51,6 +51,7 @@ struct CellParentMaps3 {
     std::vector<std::set<int>> cut_cell_coboundary;
 
     std::vector<std::set<int>> triangle_contained_faces;
+    std::array<mtao::ColVecs2d,3> subVs;
 };
 
 /// int nearest_vertex(const CutCellMesh<3>& ccm, Eigen::Ref<const mtao::Vec3d>

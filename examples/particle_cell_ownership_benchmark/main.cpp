@@ -1,6 +1,7 @@
 #include <fmt/os.h>
 #include <mandoline/operators/cell_indices.hpp>
 #include <spdlog/spdlog.h>
+#include <mandoline/operators/nearest_facet.hpp>
 
 #include <cxxopts.hpp>
 #include <filesystem>
@@ -59,7 +60,9 @@ int main(int argc, char* argv[]) {
 
         double average_grid_access = 0;
         double average_ccm_access = 0;
+        double average_ccm_nearest_access = 0;
 
+        ccm.cache_vertices();
         const auto& grid = ccm.StaggeredGrid::vertex_grid();
         {
             mtao::VecXi I(samples.cols());
@@ -76,7 +79,7 @@ int main(int argc, char* argv[]) {
                     .count() / double(samples.cols());
         }
 
-        ccm.cache_vertices();
+        mtao::VecXi get_cell_I;
         {
             auto com = ccm.exterior_grid().cell_ownership_grid();
             mtao::VecXi I(samples.cols());
@@ -90,13 +93,30 @@ int main(int argc, char* argv[]) {
                 std::chrono::duration_cast<std::chrono::milliseconds>(end -
                                                                       start)
                     .count() / double(samples.cols());
+            get_cell_I = I;
         }
+        mtao::VecXi nearest_I;
+        {
+            auto cpm = mandoline::operators::CellParentMaps3(ccm);
+            mtao::VecXi I(samples.cols());
+            auto start = clock_type::now();
+            for (int j = 0; j < samples.cols(); ++j) {
+                auto s = samples.col(j);
+                I(j) = mandoline::operators::nearest_cells(ccm,cpm,s)(0);
+            }
+            auto end = clock_type::now();
+            average_ccm_nearest_access=
+                std::chrono::duration_cast<std::chrono::milliseconds>(end -
+                                                                      start)
+                    .count() / double(samples.cols());
+        }
+        int diff = (get_cell_I.array() != nearest_I.array()).count();
 
-        fmt::print("{},{},{},{},{}\n", N, ccm.num_cells(), ccm.num_cut_cells(),
-                   average_grid_access, average_ccm_access);
-        ofs << fmt::format("{},{},{},{},{}", N, ccm.num_cells(),
+        fmt::print("{},{},{},{},{},{}: inacc {}\n", N, ccm.num_cells(), ccm.num_cut_cells(),
+                   average_grid_access, average_ccm_access, average_ccm_nearest_access, diff);
+        ofs << fmt::format("{},{},{},{},{},{}", N, ccm.num_cells(),
                            ccm.num_cut_cells(), average_grid_access,
-                           average_ccm_access)
+                           average_ccm_access,average_ccm_nearest_access)
             << std::endl;
     }
 

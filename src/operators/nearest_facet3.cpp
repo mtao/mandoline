@@ -308,6 +308,8 @@ CellParentMaps3::CellParentMaps3(const CutCellMesh<3>& ccm) : _projector(ccm) {
         spdlog::info("{} {}", it.row(), it.col());
     }
     */
+
+    subVs = ccm.compute_subVs();
 }
 
 /*
@@ -448,7 +450,7 @@ mtao::VecXi nearest_faces(const CutCellMesh<3>& ccm,
     mtao::VecXi I(P.cols());
     I.setConstant(-1);
 
-    auto subVs = ccm.compute_subVs();
+    const auto& subVs = parent_maps.subVs;
     // tbb::parallel_for<int>(0, I.size(), [&](int j) {
     for (int j = 0; j < I.size(); ++j) {
         const auto& [parent_triangle, tri_distance] = nearest_triangles[j];
@@ -776,10 +778,15 @@ mtao::VecXi nearest_cells(const CutCellMesh<3>& ccm,
     //    coord[axis]; return val == 0 || coord = ccm.shape()[axis];
 
     //}:
+    const auto& subVs = parent_maps.subVs;
 
     // vertices rewritten as projected to each cell
-    auto V = ccm.vertices();
-    auto subVs = ccm.compute_subVs();
+    mtao::ColVecs3d _V;
+    const auto& CV = ccm.cached_vertices();
+    const mtao::ColVecs3d* V = CV ? &*CV : &_V;
+    if (!CV) {
+        _V = ccm.vertices();
+    }
 #if defined(MTAO_TBB_ENABLED)
     tbb::parallel_for<int>(0, I.size(), [&](const int j) {
 #else
