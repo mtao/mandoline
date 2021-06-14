@@ -462,7 +462,7 @@ bool CutCellMesh<3>::has_triangulated_faces_cached() const {
     bool all_cached = true;
 #if defined(MTAO_TBB_ENABLED)
     tbb::parallel_for_each(m_faces.begin(), m_faces.end(),
-                           [&](CutFace<3> &face) {
+                           [&](const CutFace<3> &face) {
                                if (!face.has_cached_triangulation()) {
                                    all_cached = false;
                                }

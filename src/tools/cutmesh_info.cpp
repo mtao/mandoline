@@ -76,7 +76,8 @@ void print_face_info(const CutCellMesh<3>& ccm, nlohmann::json* json) {
     if (json) {
         (*json)["face_info"] = {
             {"total", ccm.face_size()},
-            {"cut_ount", ccm.cut_face_size()},
+            {"cut_count", ccm.cut_face_size()},
+            {"cached_triangulations", ccm.has_triangulated_faces_cached()},
             {"cubic_count", ccm.exterior_grid().num_faces()}};
     } else {
         if (size_t size = ccm.face_size(); size > 0) {
@@ -87,7 +88,13 @@ void print_face_info(const CutCellMesh<3>& ccm, nlohmann::json* json) {
                 std::cout << size << " cut-faces, ";
             }
             if (size_t size = ccm.exterior_grid().num_faces(); size > 0) {
-                std::cout << size << " cubic/adaptive-faces";
+                std::cout << size << " cubic/adaptive-faces, ";
+            }
+
+            if (ccm.has_triangulated_faces_cached()) {
+                std::cout << "has faces cached";
+            } else {
+                std::cout << "no faces cached";
             }
             std::cout << ")" << std::endl;
         } else {
