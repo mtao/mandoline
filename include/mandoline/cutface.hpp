@@ -116,6 +116,8 @@ struct CutFace<3> : public CutFaceBase<3> {
     std::optional<mtao::ColVecs3d> triangulated_vertices;
     std::optional<mtao::ColVecs3i> triangulation;
 
+    bool has_cached_triangulation() const { return bool(triangulation); }
+
     template <typename Derived>
     mtao::Vec3d brep_centroid(const Eigen::MatrixBase<Derived> &V,
                               bool use_triangulation = false) const;

@@ -152,6 +152,7 @@ struct CutCellMesh<3> : public CutCellMeshBase<3, CutCellMesh<3>> {
     // Caches triangulations for each CutFace, important for triangulating
     // things like cells
     void triangulate_faces(bool add_verts = true);
+    void has_triangulated_faces_cached() const;
 
     // If the input ColVecs3d has nonzero size then the mesh is with reference
     // to those vertices Triangulation of different mesh elements
