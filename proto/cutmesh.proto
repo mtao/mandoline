@@ -71,7 +71,7 @@ message CutCell {
     // the region id for this cell, 0 typically means outside the input mesh
     int64 region = 2;
     // a map of cut-face indices and relative signs of the
-    // boundary  (true = positive)
+    // boundary  (true = positive / normal faces out of the cell)
     map<int64,bool> entries = 3;
     // the grid cell that this cut-cell lies within
     Vec3i grid_cell = 4;
