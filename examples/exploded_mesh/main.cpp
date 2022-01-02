@@ -36,6 +36,8 @@ class MeshViewer : public mtao::opengl::Window3 {
 
     bool show_wireframes = false;
 
+    bool only_show_mesh_cut_faces = false;
+
     float scale = 1.1;
     float region_center_scale = 0.0;
     bool do_slice = false;

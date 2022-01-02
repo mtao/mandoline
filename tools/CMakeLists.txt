@@ -14,7 +14,8 @@ ADD_EXECUTABLE(obj_to_cutmesh obj_to_cutmesh.cpp)
 TARGET_LINK_LIBRARIES(obj_to_cutmesh cutmesh_maker mandoline OpenMP::OpenMP_CXX mtao::common)
 
 ADD_EXECUTABLE(cutmesh_info cutmesh_info.cpp)
-TARGET_LINK_LIBRARIES(cutmesh_info mandoline_cutmesh3 nlohmann_json)
+TARGET_LINK_LIBRARIES(cutmesh_info mandoline_cutmesh3
+    nlohmann_json::nlohmann_json)
 
 ADD_EXECUTABLE(add_triangulation_to_cutmesh add_triangulation_to_cutmesh.cpp)
 TARGET_LINK_LIBRARIES(add_triangulation_to_cutmesh mandoline_cutmesh3 cxxopts)
@@ -27,11 +28,12 @@ TARGET_LINK_LIBRARIES(boundary_curves_to_cutmesh2 mandoline OpenMP::OpenMP_CXX m
 
 
 if(MANDOLINE_USE_JSON)
+    find_package(nlohmann_json REQUIRED)
 ADD_EXECUTABLE(json_to_cutmesh json_to_cutmesh.cpp)
-TARGET_LINK_LIBRARIES(json_to_cutmesh mandoline)
+TARGET_LINK_LIBRARIES(json_to_cutmesh mandoline nlohmann_json::nlohmann_json)
 
 ADD_EXECUTABLE(json_to_cutmesh2 json_to_cutmesh2.cpp)
-TARGET_LINK_LIBRARIES(json_to_cutmesh2 mandoline)
+TARGET_LINK_LIBRARIES(json_to_cutmesh2 mandoline nlohmann_json::nlohmann_json)
 endif()
 IF(Corrade_FOUND)
     ADD_EXECUTABLE(cfg_to_cutmesh cfg_to_cutmesh.cpp)
@@ -70,7 +72,8 @@ IF(HANDLE_SELF_INTERSECTIONS)
 
     TARGET_LINK_LIBRARIES(cutmesh_validator mandoline cutmesh_validation_tools
         Corrade::Utility
-        nlohmann_json::nlohmann_json)
+        nlohmann_json::nlohmann_json
+        )
 ENDIF(HANDLE_SELF_INTERSECTIONS)
 if(${MANDOLINE_USE_OPENGL})
     ADD_EXECUTABLE(make_cutmesh_gui make_cutmesh_gui.cpp)

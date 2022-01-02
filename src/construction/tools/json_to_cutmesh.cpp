@@ -58,6 +58,8 @@ CutCellMesh<3> json_to_cutmesh(const nlohmann::json& js,
         js.contains("perform_remeshing") && js["perform_remeshing"].get<bool>();
     auto [V, F] = read_mesh(mesh_path, do_remesh);
 
+    spdlog::info("Grid shape [{}] {} => {}", fmt::join(shape, ","),
+                 fmt::join(bbox.min(), ","), fmt::join(bbox.max(), ","));
     return from_bbox(V, F, bbox, shape);
 }
 }  // namespace mandoline::construction::tools

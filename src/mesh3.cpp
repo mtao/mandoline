@@ -578,7 +578,7 @@ std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> CutCellMesh<3>::triangulated_cell(
             }
         }
         if (vertex_offset == 0) {
-            return {{}, mtao::eigen::hstack_iter(mFs.begin(), mFs.end())};
+            return {mtao::ColVecs3d{}, mtao::eigen::hstack_iter(mFs.begin(), mFs.end())};
         } else {
             return {mtao::eigen::hstack_iter(mVs.begin(), mVs.end()),
                     mtao::eigen::hstack_iter(mFs.begin(), mFs.end())};
