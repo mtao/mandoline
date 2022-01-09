@@ -383,15 +383,23 @@ void CutCellGenerator<3>::compute_faces_axis(int idx) {
     std::vector<mtao::map<int, CutFace<D>>> faces_vec(ahdata.size());
 
     auto it = axial_edge_indices.begin();
+
+    {
+#define MANDOLINE_SERIAL_AXIS_EDGE_LOOP
+#if defined(MANDOLINE_SERIAL_AXIS_EDGE_LOOP)
+    for (it = axial_edge_indices.begin(); it < axial_edge_indices.end(); it++) {
+        int cidx = *it;
+#else
 #pragma omp parallel for
     for(size_t idx = 0; idx < axial_edge_indices.size(); ++idx) {
-
         int cidx = axial_edge_indices[idx];;
-        auto &ahd = ahdata.at(cidx);
+#endif
+        //auto &ahd = ahdata.at(cidx);
         auto r = compute_faces_axis(idx, cidx);
         // spdlog::info("compute faces axis {} level {} got size
         // {}",idx,cidx,r.size());
         faces_vec[std::distance(axial_edge_indices.begin(), it)] = std::move(r);
+    }
     }
 
     for (auto &&fcs : faces_vec) {
