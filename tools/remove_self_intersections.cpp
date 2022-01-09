@@ -24,7 +24,13 @@ int main(int argc, char* argv[]) {
         std::tie(V, F) = tools::remesh_self_intersections(V, F);
     }
     auto&& dur = mtao::logging::profiler::durations();
+
+#if defined(__clang__)
+    for (auto&& [pr, _times] : dur) {
+        const auto& times = _times;
+#else
     for (auto&& [pr, times] : dur) {
+#endif
         auto&& [name, level] = pr;
         static const std::string pname = "mesh_profiler";
         if (name == pname) {

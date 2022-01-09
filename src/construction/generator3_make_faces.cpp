@@ -384,8 +384,9 @@ void CutCellGenerator<3>::compute_faces_axis(int idx) {
 
     auto it = axial_edge_indices.begin();
 #pragma omp parallel for
-    for (it = axial_edge_indices.begin(); it < axial_edge_indices.end(); it++) {
-        int cidx = *it;
+    for(size_t idx = 0; idx < axial_edge_indices.size(); ++idx) {
+
+        int cidx = axial_edge_indices[idx];;
         auto &ahd = ahdata.at(cidx);
         auto r = compute_faces_axis(idx, cidx);
         // spdlog::info("compute faces axis {} level {} got size
