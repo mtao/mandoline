@@ -14,7 +14,6 @@
 
 #include "mandoline/construction/cell_collapser.hpp"
 #include "mandoline/construction/subgrid_transformer.hpp"
-#include "mandoline/construction/tools/tbb_looping.hpp"
 #if defined(MANDOLINE_USE_ADAPTIVE_GRID)
 #include "mandoline/construction/adaptive_grid_factory.hpp"
 #else

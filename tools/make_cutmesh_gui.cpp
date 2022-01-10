@@ -23,7 +23,6 @@
 #include <mtao/geometry/prune_vertices.hpp>
 
 #include "imgui.h"
-#include "mandoline/construction/tools/tbb_looping.hpp"
 #include "mtao/geometry/bounding_box.hpp"
 #include "mtao/geometry/mesh/boundary_facets.h"
 #include "mtao/geometry/mesh/read_obj.hpp"
@@ -185,8 +184,6 @@ class MeshViewer : public mtao::opengl::Window3 {
     }
 
     void make_ccm() {
-        // mandoline::construction::tools::run_empty_tbb_loops(
-        //    10000, 10000, "CMG make_ccm start");
         ccm = constructor.generate();
         if (ccm) {
             spdlog::info("Made CCM!!");

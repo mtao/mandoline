@@ -71,7 +71,6 @@ SET(COMMON_SRCS
     src/domain_boundary.cpp
     src/operators/boundary.cpp
     src/interpolated_edge.cpp
-    src/construction/tools/tbb_looping.cpp
     )
 
 
