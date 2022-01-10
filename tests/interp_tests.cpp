@@ -35,7 +35,7 @@ TEST_CASE("2D", "[interpolation]") {
         Eigen::SparseMatrix<double> E = mandoline::operators::edge_grid_volume_matrix(ccm);
         REQUIRE(E.rows() == ccm.num_edges());
         REQUIRE(E.cols() == ccm.Base::form_size<1>());
-        auto CS = Eigen::MatrixXd(E).colwise().sum();
+        mtao::VecXd CS = Eigen::MatrixXd(E).colwise().sum();
         double min = CS.minCoeff();
         double max = CS.maxCoeff();
         REQUIRE(min == Approx(1));
@@ -46,7 +46,7 @@ TEST_CASE("2D", "[interpolation]") {
         std::cout << E << std::endl;
         REQUIRE(E.rows() == ccm.num_faces());
         REQUIRE(E.cols() == ccm.Base::form_size<2>());
-        auto CS = Eigen::MatrixXd(E).colwise().sum();
+        mtao::VecXd CS = Eigen::MatrixXd(E).colwise().sum();
         double min = CS.minCoeff();
         double max = CS.maxCoeff();
         REQUIRE(min == Approx(1));
