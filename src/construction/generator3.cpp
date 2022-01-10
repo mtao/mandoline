@@ -14,6 +14,7 @@
 
 #include "mandoline/construction/cell_collapser.hpp"
 #include "mandoline/construction/subgrid_transformer.hpp"
+#include "mandoline/construction/tools/tbb_looping.hpp"
 #if defined(MANDOLINE_USE_ADAPTIVE_GRID)
 #include "mandoline/construction/adaptive_grid_factory.hpp"
 #else
@@ -189,6 +190,7 @@ void CutCellGenerator<3>::clear() {
 
 void CutCellGenerator<3>::bake() {
     auto t2 = mtao::logging::profiler("general bake", false, "profiler");
+
     CCEG::bake();
 
     // In order to catch odd things like vertices touching stencils we have to
@@ -200,7 +202,6 @@ void CutCellGenerator<3>::bake() {
     bake_cells();
 }
 void CutCellGenerator<3>::update_active_grid_cell_mask() {
-    return;
     GridDatab mask = GridDatab::Constant(true, StaggeredGrid::cell_shape());
     auto &old_mask = m_active_grid_cell_mask;
 

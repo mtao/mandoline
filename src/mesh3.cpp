@@ -445,38 +445,18 @@ std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> CutCellMesh<3>::triangulate_face(
 void CutCellMesh<3>::triangulate_faces(bool add_verts) {
     std::array<mtao::ColVecs2d, 3> subVs = compute_subVs();
 
-#if defined(MTAO_TBB_ENABLED)
     tbb::parallel_for_each(
         m_faces.begin(), m_faces.end(),
         [&](CutFace<3> &face) { face.cache_triangulation(subVs, add_verts); });
-#else
-    int i = 0;
-#pragma omp parallel for
-    for (i = 0; i < m_faces.size(); ++i) {
-        auto &&face = m_faces[i];
-        face.cache_triangulation(subVs, add_verts);
-    }
-#endif
 }
 bool CutCellMesh<3>::has_triangulated_faces_cached() const {
     bool all_cached = true;
-#if defined(MTAO_TBB_ENABLED)
     tbb::parallel_for_each(m_faces.begin(), m_faces.end(),
                            [&](const CutFace<3> &face) {
                                if (!face.has_cached_triangulation()) {
                                    all_cached = false;
                                }
                            });
-#else
-    int i = 0;
-#pragma omp parallel for
-    for (i = 0; i < m_faces.size(); ++i) {
-        auto &&face = m_faces[i];
-        if (!face.has_cached_triangulation()) {
-            all_cached = false;
-        }
-    }
-#endif
     return all_cached;
 }
 

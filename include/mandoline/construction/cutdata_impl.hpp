@@ -1,5 +1,6 @@
 #pragma once
 #include <spdlog/spdlog.h>
+#include <tbb/parallel_for.h>
 
 #include <iostream>
 #include <map>
@@ -7,9 +8,6 @@
 #include <set>
 #include <thread>
 #include <tuple>
-#if defined(MTAO_TBB_ENABLED)
-#include <tbb/parallel_for.h>
-#endif
 
 #include "mandoline/construction/cutdata.hpp"
 
@@ -102,33 +100,17 @@ void CutData<D, Indexer>::bake(const std::optional<SGType> &grid, bool fuse,
             // auto t = mtao::logging::timer("data bake edges");
             auto t = mtao::logging::profiler("mesh edge intersections", false,
                                              "profiler");
-#if defined(MTAO_TBB_ENABLED)
             tbb::parallel_for<int>(0, m_edge_intersections.size(), [&](int i) {
                 m_edge_intersections[i].bake(grid);
             });
-#else
-            int i;
-#pragma omp parallel for
-            for (i = 0; i < m_edge_intersections.size(); i++) {
-                m_edge_intersections[i].bake(grid);
-            }
-#endif
         }
         if constexpr (D == 3) {
             auto t = mtao::logging::profiler("mesh face intersections", false,
                                              "profiler");
             // auto t = mtao::logging::timer("data bake faces");
-#if defined(MTAO_TBB_ENABLED)
             tbb::parallel_for<int>(
                 0, m_triangle_intersections.size(),
                 [&](int i) { m_triangle_intersections[i].bake(grid); });
-#else
-            int i;
-#pragma omp parallel for
-            for (i = 0; i < m_triangle_intersections.size(); i++) {
-                m_triangle_intersections[i].bake(grid);
-            }
-#endif
             //#pragma omp parallel
         }
         {
@@ -333,12 +315,7 @@ void CutData<D, Indexer>::bake(const std::optional<SGType> &grid, bool fuse,
         // loop over every triangle and find potential faces
         int i = 0;
 
-#if defined(MTAO_TBB_ENABLED)
         tbb::parallel_for<int>(0, m_triangle_intersections.size(), [&](int i) {
-#else
-#pragma omp parallel for
-        for (i = 0; i < m_triangle_intersections.size(); i++) {
-#endif
             auto &&FI = m_triangle_intersections[i];
             coord_mask<D> fi_mask = FI.mask();
 
@@ -381,11 +358,7 @@ void CutData<D, Indexer>::bake(const std::optional<SGType> &grid, bool fuse,
                     add_face(fi_mask, F, FI.triangle_index);
                 }
             }
-#if defined(MTAO_TBB_ENABLED)
         });
-#else
-        }
-#endif
     }
 }
 
@@ -750,11 +723,7 @@ auto CutData<D, Indexer>::edge_edges(
     std::set<Edge> edges;
 
     std::vector<std::set<Edge>> per_edges(m_edge_intersections.size());
-    int i = 0;
-#ifdef MTAO_OPENMP
-#pragma omp parallel for
-#endif  // MTAO_OPENMP
-    for (i = 0; i < m_edge_intersections.size(); ++i) {
+    tbb::parallel_for<int>(0, m_edge_intersections.size(), [&](int i) {
         auto gv = m_edge_intersections[i].vptr_edges();
         auto &&e = per_edges[i];
         for (auto &&ve : gv) {
@@ -764,7 +733,7 @@ auto CutData<D, Indexer>::edge_edges(
                 per_edges[i].insert(e);
             }
         }
-    }
+    });
 
     for (auto &&e : per_edges) {
         edges.insert(e.begin(), e.end());
@@ -794,11 +763,8 @@ auto CutData<D, Indexer>::face_edges(
     auto t = mtao::logging::timer("data pulling face edges");
     std::set<Edge> edges;
 
-    int i = 0;
-#ifdef MTAO_OPENMP
-#pragma omp parallel for
-#endif  // MTAO_OPENMP
-    for (i = 0; i < m_triangle_intersections.size(); ++i) {
+    std::mutex mut;
+    tbb::parallel_for<int>(0, m_triangle_intersections.size(), [&](int i) {
         auto &FT = m_triangle_intersections[i];
         // if(!FT.is_cut()) {
         //    continue;
@@ -808,13 +774,11 @@ auto CutData<D, Indexer>::face_edges(
             Edge e{{index(ve[0]), index(ve[1])}};
             if (e[0] != e[1]) {
                 std::sort(e.begin(), e.end());
-#ifdef MTAO_OPENMP
-#pragma omp critical
-#endif  // MTAO_OPENMP
+                std::scoped_lock lock(mut);
                 edges.insert(e);
             }
         }
-    }
+    });
 
     return edges;
 }

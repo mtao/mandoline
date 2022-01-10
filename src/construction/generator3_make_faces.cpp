@@ -1,5 +1,7 @@
 #include <mtao/geometry/mesh/boundary_elements.h>
 #include <mtao/geometry/mesh/boundary_facets.h>
+#include <tbb/parallel_for.h>
+#include <tbb/parallel_for_each.h>
 
 #include <mtao/eigen/stl2eigen.hpp>
 #include <mtao/geometry/grid/grid_data.hpp>
@@ -8,14 +10,9 @@
 #include <mtao/geometry/trigonometry.hpp>
 #include <mtao/iterator/enumerate.hpp>
 #include <mtao/logging/logger.hpp>
-
-#include "mandoline/construction/generator3.hpp"
-#if defined(MTAO_TBB_ENABLED)
-#include <tbb/parallel_for.h>
-#include <tbb/parallel_for_each.h>
-#endif
 #include <variant>
 
+#include "mandoline/construction/generator3.hpp"
 #include "mandoline/construction/subgrid_transformer.hpp"
 using namespace mtao::iterator;
 using namespace mtao::logging;
@@ -140,6 +137,7 @@ void CutCellGenerator<3>::bake_faces() {
         VV[i] = grid_vertex(i);
     }
     std::string timer_str = "Flagging active cells 0";
+
     for (int i = 0; i < 3; ++i) {
         int dim = i;
         auto &&ahdata = axis_hem_data[i];
@@ -166,16 +164,9 @@ void CutCellGenerator<3>::bake_faces() {
                            axial_edge_indices.begin(),
                            [](auto &&pr) { return pr.first; });
             auto it = axial_edge_indices.begin();
-#if defined(MTAO_TBB_ENABLED)
             tbb::parallel_for_each(
                 axial_edge_indices.begin(), axial_edge_indices.end(),
                 [&](int cidx) {
-#else
-#pragma omp parallel for
-            for (it = axial_edge_indices.begin(); it < axial_edge_indices.end();
-                 it++) {
-                int cidx = *it;
-#endif
                     auto &E = axialEdges_dim[cidx];
                     // auto&& [cidx,E] = *it;
                     // for(auto&& [cidx,E]: axialEdges_dim) {
@@ -236,11 +227,7 @@ void CutCellGenerator<3>::bake_faces() {
                                        }
                                        return e;
                                    });
-#if defined(MTAO_TBB_ENABLED)
                 });
-#else
-            }
-#endif
             for (auto &&[cidx, E] : axialEdges_dim) {
                 coord_type coord;
                 auto &ahd = ahdata[cidx];
@@ -387,20 +374,25 @@ void CutCellGenerator<3>::compute_faces_axis(int idx) {
     {
 #define MANDOLINE_SERIAL_AXIS_EDGE_LOOP
 #if defined(MANDOLINE_SERIAL_AXIS_EDGE_LOOP)
-    for (it = axial_edge_indices.begin(); it < axial_edge_indices.end(); it++) {
-        int cidx = *it;
+        for (it = axial_edge_indices.begin(); it < axial_edge_indices.end();
+             it++) {
+            int cidx = *it;
 #else
-#pragma omp parallel for
-    for(size_t idx = 0; idx < axial_edge_indices.size(); ++idx) {
-        int cidx = axial_edge_indices[idx];;
+        tbb::parallel_for(size_t(0), axial_edge_indices.size(), [&](size_t idx) {
+            int cidx = axial_edge_indices[idx];
 #endif
-        //auto &ahd = ahdata.at(cidx);
-        auto r = compute_faces_axis(idx, cidx);
-        // spdlog::info("compute faces axis {} level {} got size
-        // {}",idx,cidx,r.size());
-        faces_vec[std::distance(axial_edge_indices.begin(), it)] = std::move(r);
+            // auto &ahd = ahdata.at(cidx);
+            auto r = compute_faces_axis(idx, cidx);
+            // spdlog::info("compute faces axis {} level {} got size
+            // {}",idx,cidx,r.size());
+            faces_vec[std::distance(axial_edge_indices.begin(), it)] =
+                std::move(r);
+        }
+#if defined(MANDOLINE_SERIAL_AXIS_EDGE_LOOP)
     }
-    }
+#else
+    });
+#endif
 
     for (auto &&fcs : faces_vec) {
         for (auto &&[id, fs] : fcs) {

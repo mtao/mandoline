@@ -1,6 +1,7 @@
 #pragma once
 #include <mtao/eigen/stack.h>
 #include <spdlog/spdlog.h>
+#include <tbb/parallel_for.h>
 
 #include <algorithm>
 #include <iostream>
@@ -173,6 +174,7 @@ CutCellEdgeGenerator<D>::CutCellEdgeGenerator(const StaggeredGrid &g)
 template <int D>
 void CutCellEdgeGenerator<D>::bake() {
     { m_data.bake(vertex_grid(), true, toss_external_facets); }
+
     {
         // auto t = mtao::logging::timer("generator bake vertices");
         auto t =
@@ -769,9 +771,7 @@ void CutCellEdgeGenerator<D>::bake_active_grid_cell_mask() {
 
         auto AC = active_cells();
 
-#pragma omp parallel
-#pragma omp for
-        for (int i = 0; i < D; ++i) {
+        tbb::parallel_for(int(0), D, [&](int i) {
             for (auto &&c : AC) {
                 if (m_active_grid_cell_mask.valid_index(c)) {
                     m_active_grid_cell_mask(c) = false;
@@ -784,7 +784,7 @@ void CutCellEdgeGenerator<D>::bake_active_grid_cell_mask() {
                         c);
                 }
             }
-        }
+        });
     }
 }
 template <int D>
@@ -794,15 +794,15 @@ void CutCellEdgeGenerator<D>::bake_edges() {
         m_cut_edges = data().cut_edges();
     }
 
-    //spdlog::info("Bad edges from data directly");
+    // spdlog::info("Bad edges from data directly");
     for (auto &&[idx, e] : mtao::iterator::enumerate(m_cut_edges)) {
         if (e.indices[0] >= total_vertex_size() ||
             e.indices[1] >= total_vertex_size()) {
-            //std::cout << idx << ": " << std::string(e.mask()) << " ";
-            //std::cout << e.indices[0] << ":" << e.indices[1] << std::endl;
+            // std::cout << idx << ": " << std::string(e.mask()) << " ";
+            // std::cout << e.indices[0] << ":" << e.indices[1] << std::endl;
         }
     }
-    //spdlog::info("====================directly");
+    // spdlog::info("====================directly");
 
     auto get_grid_edge = [&](coord_type c, int type) -> Edge {
         int fidx = StaggeredGrid::vertex_index(c);
@@ -844,9 +844,7 @@ void CutCellEdgeGenerator<D>::bake_edges() {
             }
         };
 
-        int i;
-#pragma omp for
-        for (i = 0; i < m_per_axis_crossings.size(); i++) {
+        tbb::parallel_for(size_t(0), m_per_axis_crossings.size(), [&](int i) {
             // for(auto&& [i,crossings]:
             // mtao::iterator::enumerate(m_per_axis_crossings)) {
             auto &&crossings = m_per_axis_crossings[i];
@@ -857,7 +855,7 @@ void CutCellEdgeGenerator<D>::bake_edges() {
                     add_edges(crossings, c, i);
                 }
             }
-        }
+        });
     }
 }
 template <int D>
@@ -882,7 +880,9 @@ CutCellMesh<D> CutCellEdgeGenerator<D>::generate_vertices() const {
             if (idx >= 0 && idx < size) {
                 V[idx] = c.vertex();
             } else {
-                spdlog::error("More non-grid cut-vertices than there should be ({} / {})", idx, size);
+                spdlog::error(
+                    "More non-grid cut-vertices than there should be ({} / {})",
+                    idx, size);
             }
         }
     }
@@ -915,8 +915,9 @@ CutCellMesh<D> CutCellEdgeGenerator<D>::generate_edges() const {
                   std::back_inserter(ret.m_cut_edges));
 
     } else {
-        // make sure that hybrid cut_edges havea nonempty masks (because they must have some mask).
-        // something. It could be a grid-cut-edge and TODO lets make sure that it's identified properly if it is
+        // make sure that hybrid cut_edges havea nonempty masks (because they
+        // must have some mask). something. It could be a grid-cut-edge and TODO
+        // lets make sure that it's identified properly if it is
         std::transform(m_cut_edges.begin(), m_cut_edges.end(),
                        std::back_inserter(ret.m_cut_edges),
                        [](const CutMeshEdge<D> &E) -> CutEdge<D> {
@@ -929,10 +930,13 @@ CutCellMesh<D> CutCellEdgeGenerator<D>::generate_edges() const {
                                            std::array<int, 2>{{j, *m[j]}});
                                    }
                                }
-                               // we can only get here if an edge without a parent eid does ont belong in a grid plane, which would be teh result of some very weird numerical artifact.
-                           assert(false);
-                               }
-                               return E;
+                               // we can only get here if an edge without a
+                               // parent eid does ont belong in a grid plane,
+                               // which would be teh result of some very weird
+                               // numerical artifact.
+                               assert(false);
+                           }
+                           return E;
                        });
         std::copy(m_grid_edges.begin(), m_grid_edges.end(),
                   std::back_inserter(ret.m_cut_edges));
@@ -962,9 +966,9 @@ CutCellMesh<D> CutCellEdgeGenerator<D>::generate_edges() const {
                 if (vi < grid_vertex_size()) {
                     t = data().get_edge_coord(ce.parent_eid, grid_vertex(vi));
                 } else {
-                    //spdlog::info("Looking into crossing {} of {}", vi,
+                    // spdlog::info("Looking into crossing {} of {}", vi,
                     //             total_vertex_size());
-                    //std::cout << std::string(crossing(vi)) << std::endl;
+                    // std::cout << std::string(crossing(vi)) << std::endl;
                     t = data().get_edge_coord(ce.parent_eid, crossing(vi));
                 }
             }
