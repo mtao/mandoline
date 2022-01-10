@@ -14,12 +14,7 @@ SET(MTAO_PATH "" CACHE STRING "location of mtao core libs" )
 SET(LIBIGL_PATH "" CACHE STRING "location of libigl libs" )
 
 OPTION(MANDOLINE_USE_OPENGL "Build opengl stuff" ON)
-IF(APPLE)
-    SET(MANDOLINE_USE_OPENMP_PRE OFF)
-ELSE(APPLE)
-    SET(MANDOLINE_USE_OPENMP_PRE ON)
-ENDIF(APPLE)
-OPTION(MANDOLINE_USE_OPENMP "Use OpenMP stuff" ${MANDOLINE_USE_OPENMP_PRE})
+
 OPTION(HANDLE_SELF_INTERSECTIONS "Handle Self-Intersections" ON)
 OPTION(MANDOLINE_USE_JSON "Use json" ON)
 SET(MANDOLINE_BUILD_TESTING ${BUILD_TESTING})
@@ -51,9 +46,6 @@ TARGET_COMPILE_DEFINITIONS(mandoline_headers
     INTERFACE -DMANDOLINE_USE_ADAPTIVE_GRID
     )
 
-IF(OpenMP_Found)
-    target_compile_definitions(mandoline_headers INTERFACE -DMTAO_OPENMP)
-ENDIF(OpenMP_Found)
 
 target_include_directories(mandoline_headers INTERFACE
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

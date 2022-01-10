@@ -2,10 +2,9 @@ include(FetchContent REQUIRED)
 
 
 set(MTAO_COMMIT 
-    6c0413a536b1f193a0d961141e485775f9184ff5
+    2dcc9b7a0d60f344bad343f7ec61cda5ab730ebf
     )
 set(PROTOBUF_COMMIT v3.11.3)
-set(LIBIGL_COMMIT v2.2.0)
 set(CATCH_COMMIT v2.9.1)
 set(CGAL_COMMIT releases/CGAL-5.0.1)
 
@@ -50,31 +49,9 @@ endif()
 
 
 
-IF(MANDOLINE_USE_OPENMP)
-    FIND_PACKAGE(OpenMP REQUIRED)
-ENDIF(MANDOLINE_USE_OPENMP)
 
 
 
-MESSAGE(STATUS "LIBIGL Path: ${LIBIGL_PATH}")
-option(LIBIGL_USE_STATIC_LIBRARY "Use libigl as static library" OFF)
-option(LIBIGL_WITH_COMISO            "Use CoMiso"                   OFF)
-option(LIBIGL_WITH_EMBREE            "Use Embree"                   OFF)
-option(LIBIGL_WITH_OPENGL            "Use OpenGL"                   OFF)
-option(LIBIGL_WITH_OPENGL_GLFW       "Use GLFW"                     OFF)
-option(LIBIGL_WITH_OPENGL_GLFW_IMGUI "Use ImGui"                    OFF)
-option(LIBIGL_WITH_PNG               "Use PNG"                      OFF)
-option(LIBIGL_WITH_TETGEN            "Use Tetgen"                   OFF)
-option(LIBIGL_WITH_TRIANGLE          "Use Triangle"                 OFF)
-option(LIBIGL_WITH_PREDICATES        "Use exact predicates"         OFF)
-option(LIBIGL_WITH_XML               "Use XML"                      OFF)
-option(LIBIGL_WITH_PYTHOFF            "Use Python"                  OFF)
-option(LIBIGL_SKIP_DOWNLOAD "Skip downloading external libraries" ON)
-if(LIBIGL_PATH)
-    ADD_SUBDIRECTORY("${LIBIGL_PATH}" ${CMAKE_BINARY_DIR}/libigl EXCLUDE_FROM_ALL)
-else()
-    fetch_dep(libigl https://github.com/libigl/libigl.git ${LIBIGL_COMMIT} ON)
-endif()
 
 if(MANDOLINE_USE_OPENGL)
     find_package(ImGui REQUIRED)
