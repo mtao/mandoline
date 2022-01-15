@@ -47,9 +47,12 @@ void print_general_info(const CutCellMesh<3>& ccm, nlohmann::json* json) {
         }
     }
     if (json) {
+            (*json)["vertex_count"] = ccm.origV().cols();
+            (*json)["face_count"] = ccm.origF().cols();
+            (*json)["cut_vertex_count"] = ccm.vertex_size();
         (*json)["cell_info"] = {
             {"total", ccm.cell_size()},
-            {"cut_ount", ccm.cut_cell_size()},
+            {"cut_count", ccm.cut_cell_size()},
             {"cubic_count", ccm.exterior_grid().num_cells()}};
     } else {
         if (size_t size = ccm.cell_size(); size > 0) {

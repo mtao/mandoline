@@ -32,7 +32,7 @@ protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS proto/cutmesh.proto proto/common.pro
 protobuf_generate_python(PROTO_PY proto/cutmesh.proto)
 
 ADD_LIBRARY(cutmesh_proto OBJECT ${PROTO_SRCS} ${PROTO_HDRS})
-TARGET_LINK_LIBRARIES(cutmesh_proto protobuf::libprotobuf)
+TARGET_LINK_LIBRARIES(cutmesh_proto PUBLIC protobuf::libprotobuf)
 TARGET_INCLUDE_DIRECTORIES(cutmesh_proto PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 
 IF(HANDLE_SELF_INTERSECTIONS)
@@ -52,7 +52,7 @@ target_include_directories(mandoline_headers INTERFACE
   $<INSTALL_INTERFACE:include> ${CMAKE_CURRENT_BINARY_DIR}
 )
 TARGET_LINK_LIBRARIES(mandoline_headers PUBLIC INTERFACE Eigen3::Eigen
-    mtao::headers mtao::geometry igl::core protobuf::libprotobuf tbb
+    mtao::headers mtao::geometry igl::core protobuf::libprotobuf tbb cutmesh_proto
     )
 
 
