@@ -1,0 +1,3 @@
+[submodule "subprojects/balsa"]
+	path = subprojects/balsa
+	url = https://github.com/mtao/balsa.git

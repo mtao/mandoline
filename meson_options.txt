@@ -1,0 +1,3 @@
+
+option('visualization', type : 'boolean', value : false, description : 'Build visualization support')
+option('json', type : 'boolean', value : true, description : 'Use json')
