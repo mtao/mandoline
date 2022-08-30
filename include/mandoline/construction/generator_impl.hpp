@@ -1,5 +1,5 @@
 #pragma once
-#include <mtao/eigen/stack.h>
+#include <balsa/eigen/stack.hpp>
 #include <spdlog/spdlog.h>
 #include <tbb/parallel_for.h>
 
@@ -7,7 +7,7 @@
 #include <iostream>
 #include <iterator>
 #include <mtao/colvector_loop.hpp>
-#include <mtao/eigen/stl2eigen.hpp>
+#include <balsa/eigen/stl2eigen.hpp>
 #include <mtao/iterator/enumerate.hpp>
 
 #include "mandoline/construction/cutdata.hpp"
@@ -74,7 +74,7 @@ bool CutCellEdgeGenerator<D>::valid_grid() const {
 template <int D>
 auto CutCellEdgeGenerator<D>::colvecs_to_vecvector(const ColVecs &V)
     -> VecVector {
-    mtao::vector<mtao::Vector<double, D>> stlp(V.cols());
+    mtao::vector<balsa::eigen::Vector<double, D>> stlp(V.cols());
     for (auto &&[i, v] : mtao::iterator::enumerate(stlp)) {
         v = V.col(i);
     }
@@ -288,7 +288,7 @@ void CutCellEdgeGenerator<D>::add_edges(const Edges &E) {
     int count = 0;
     for (int i = 0; i < E.cols(); ++i) {
         Edge e;
-        mtao::eigen::stl2eigen(e) = E.col(i);
+        balsa::eigen::stl2eigen(e) = E.col(i);
         if (!has_e(e)) {
             // int oldsize = newEMap.size();
             // spdlog::info("{} <= {}", fmt::join(e, ","), Esize());
@@ -297,7 +297,7 @@ void CutCellEdgeGenerator<D>::add_edges(const Edges &E) {
             // if (oldsize == newsize) {
             //    for (int j = 0; j < i; ++j) {
             //        Edge e2;
-            //        mtao::eigen::stl2eigen(e2) = E.col(j);
+            //        balsa::eigen::stl2eigen(e2) = E.col(j);
             //    }
             //}
 
@@ -311,7 +311,7 @@ void CutCellEdgeGenerator<D>::add_edges(const Edges &E) {
     int oldsize = origE.cols();
     origE.resize(2, Esize());
     for (auto &&[e, idx] : newEMap) {
-        origE.col(idx) = mtao::eigen::stl2eigen(e);
+        origE.col(idx) = balsa::eigen::stl2eigen(e);
     }
     std::copy(newEMap.begin(), newEMap.end(),
               std::inserter(m_origEMap, m_origEMap.end()));
@@ -588,7 +588,7 @@ auto CutCellEdgeGenerator<D>::V() const -> ColVecs {
 }
 template <int D>
 auto CutCellEdgeGenerator<D>::all_V() const -> ColVecs {
-    return mtao::eigen::hstack(StaggeredGrid::vertices(), V());
+    return balsa::eigen::hstack(StaggeredGrid::vertices(), V());
 }
 template <int D>
 auto CutCellEdgeGenerator<D>::all_GV() const -> ColVecs {
@@ -655,7 +655,7 @@ void show_crossings(const PACI &paci) {
     }
 }
 template <int D, typename PACI, typename GridType>
-mtao::ColVectors<double, D> paci_verts(const PACI &paci, const GridType &g) {
+balsa::eigen::ColVectors<double, D> paci_verts(const PACI &paci, const GridType &g) {
     int count = 0;
     size_t grid_size = g.size();
     for (auto &&cs : paci) {
@@ -668,7 +668,7 @@ mtao::ColVectors<double, D> paci_verts(const PACI &paci, const GridType &g) {
             count += crossings.size();
         }
     }
-    mtao::ColVectors<double, D> V(D, count);
+    balsa::eigen::ColVectors<double, D> V(D, count);
     int i = 0;
     for (auto &&cs : paci) {
         for (auto &&[coord, crossings] : cs) {
@@ -895,13 +895,13 @@ CutCellMesh<D> CutCellEdgeGenerator<D>::generate_edges() const {
     ret.m_cut_edges.reserve(m_cut_edges.size() + m_grid_edges.size());
 
     if constexpr (D == 2) {
-        mtao::ColVectors<double, D> N(D, data().nE());
+        balsa::eigen::ColVectors<double, D> N(D, data().nE());
         for (int i = 0; i < N.cols(); ++i) {
             auto n = N.col(i);
             auto e = data().E(i);
             auto v0 = origV(e(0));
             auto v1 = origV(e(1));
-            mtao::Vec2d r = v1 - v0;
+            balsa::eigen::Vec2d r = v1 - v0;
             n.x() = -r.y();
             n.y() = r.x();
         }
@@ -959,7 +959,7 @@ CutCellMesh<D> CutCellEdgeGenerator<D>::generate_edges() const {
 
     for (auto &&[eidx, ce] : mtao::iterator::enumerate(m_cut_edges)) {
         if (ce.parent_eid >= 0) {
-            mtao::Vec2d ts;
+            balsa::eigen::Vec2d ts;
             for (auto &&[i, vi, t] : mtao::iterator::enumerate(
                      ce.indices,
                      mtao::iterator::shell(ts.data(), ts.data() + ts.size()))) {

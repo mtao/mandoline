@@ -108,7 +108,7 @@ std::map<int, std::array<int, 2>> surface_adjacency(const CutCellMesh<2> &ccm) {
     }
     return adj;
 }
-mtao::VecXd surface_dual_lengths(const CutCellMesh<2> &ccm) {
+balsa::eigen::VecXd surface_dual_lengths(const CutCellMesh<2> &ccm) {
     return surface_dual_lengths(ccm, surface_adjacency(ccm));
 }
 Eigen::SparseMatrix<double> surface_boundary(const CutCellMesh<2> &ccm) {
@@ -121,11 +121,11 @@ Eigen::SparseMatrix<double> surface_laplacian(const CutCellMesh<2> &ccm) {
     return surface_laplacian(ccm, surface_adjacency(ccm));
 }
 
-mtao::VecXd surface_dual_lengths(const CutCellMesh<2> &ccm, const std::map<int, std::array<int, 2>> &adj_struct) {
+balsa::eigen::VecXd surface_dual_lengths(const CutCellMesh<2> &ccm, const std::map<int, std::array<int, 2>> &adj_struct) {
 
     auto vols = edge_lengths(ccm);
-    //mtao::VecXd el(ccm.cut_edges().size());
-    mtao::VecXd el(ccm.num_vertices());
+    //balsa::eigen::VecXd el(ccm.cut_edges().size());
+    balsa::eigen::VecXd el(ccm.num_vertices());
     el.setZero();
     for (auto &&[dual_edge_index, pr] : adj_struct) {
         for (auto &&idx : pr) {
@@ -154,13 +154,13 @@ Eigen::SparseMatrix<double> surface_boundary(const CutCellMesh<2> &ccm, const st
     return R;
 }
 Eigen::SparseMatrix<double> surface_divergence(const CutCellMesh<2> &ccm, const std::map<int, std::array<int, 2>> &adj_struct) {
-    mtao::VecXd h = surface_dual_lengths(ccm, adj_struct);
+    balsa::eigen::VecXd h = surface_dual_lengths(ccm, adj_struct);
     auto B = surface_boundary(ccm, adj_struct);
     return B * h.asDiagonal();
 }
 Eigen::SparseMatrix<double> surface_laplacian(const CutCellMesh<2> &ccm, const std::map<int, std::array<int, 2>> &adj_struct) {
 
-    mtao::VecXd h = surface_dual_lengths(ccm, adj_struct);
+    balsa::eigen::VecXd h = surface_dual_lengths(ccm, adj_struct);
     auto B = surface_boundary(ccm, adj_struct);
     return B * h.asDiagonal() * B.transpose();
 }

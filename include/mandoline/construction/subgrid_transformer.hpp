@@ -1,5 +1,5 @@
 #include <mtao/geometry/grid/staggered_grid.hpp>
-#include <mtao/types.hpp>
+#include <balsa/eigen/types.hpp>
 #include "mandoline/construction/vertex_types.hpp"
 
 namespace mandoline::construction {
@@ -7,8 +7,8 @@ struct SubGridTransformer {
   public:
     using SGrid2 = mtao::geometry::grid::StaggeredGrid<double, 2>;
     using SGrid3 = mtao::geometry::grid::StaggeredGrid<double, 3>;
-    using Vec2 = mtao::Vector<double, 2>;
-    using Vec3 = mtao::Vector<double, 3>;
+    using Vec2 = balsa::eigen::Vector<double, 2>;
+    using Vec3 = balsa::eigen::Vector<double, 3>;
     using Coord2 = std::array<int, 2>;
     using Coord3 = std::array<int, 3>;
     SubGridTransformer(const SGrid2 &g2, const SGrid3 &g3, int axis, int c);

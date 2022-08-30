@@ -3,7 +3,7 @@
 #include <tbb/parallel_for.h>
 #include <tbb/parallel_for_each.h>
 
-#include <mtao/eigen/stl2eigen.hpp>
+#include <balsa/eigen/stl2eigen.hpp>
 #include <mtao/geometry/grid/grid_data.hpp>
 #include <mtao/geometry/mesh/dual_edges.hpp>
 #include <mtao/geometry/mesh/face_normals.hpp>
@@ -31,7 +31,7 @@ bool CutCellGenerator<3>::AxisHEMData::is_boundary_cell(
 
 void CutCellGenerator<3>::bake_faces() {
     {
-        mtao::ColVecs3d V(3, data().V().size());
+        balsa::eigen::ColVecs3d V(3, data().V().size());
         for (int i = 0; i < V.cols(); ++i) {
             V.col(i) = data().V()[i].p();
         }
@@ -83,8 +83,8 @@ void CutCellGenerator<3>::bake_faces() {
         int n1 = (d + 2) % 3;
         auto s = vertex_shape();
         std::array<int, 2> shape{{s[n0], s[n1]}};
-        mtao::Vec2d dx(g.dx()(n0), g.dx()(n1));
-        mtao::Vec2d origin(g.origin()(n0), g.origin()(n1));
+        balsa::eigen::Vec2d dx(g.dx()(n0), g.dx()(n1));
+        balsa::eigen::Vec2d origin(g.origin()(n0), g.origin()(n1));
         CutCellEdgeGenerator<2> ccg(shape);
         ccg.toss_external_facets = this->toss_external_facets;
         return ccg;
@@ -131,7 +131,7 @@ void CutCellGenerator<3>::bake_faces() {
 
     auto V = all_GV();
 
-    mtao::ColVectors<double, 2> subV(2, V.cols());
+    balsa::eigen::ColVectors<double, 2> subV(2, V.cols());
     std::vector<Vertex<3>> VV(num_vertices());
     for (int i = 0; i < num_vertices(); ++i) {
         VV[i] = grid_vertex(i);
@@ -202,7 +202,7 @@ void CutCellGenerator<3>::bake_faces() {
                     //    std::endl;
                     //}
                     std::tie(ahd.hem, bedges) = g.compute_planar_hem(
-                        subVV, mtao::eigen::stl2eigen(ahd.edges),
+                        subVV, balsa::eigen::stl2eigen(ahd.edges),
                         ahd.active_grid_cell_mask);
                     // if(dim == 2 && cidx == 1) {
                     //    std::cout <<
@@ -264,7 +264,7 @@ auto ring_to_edges(const std::vector<int> &F) {
             }
         }
     }
-    return mtao::eigen::stl2eigen(Eset);
+    return balsa::eigen::stl2eigen(Eset);
 }
 
 void CutCellGenerator<3>::compute_faces() {
@@ -412,12 +412,12 @@ mtao::map<int, CutFace<3>> CutCellGenerator<3>::compute_faces_axis(
 
     auto V = all_GV();
 
-    mtao::ColVectors<double, 2> VV(2, V.cols());
+    balsa::eigen::ColVectors<double, 2> VV(2, V.cols());
     VV.row(0) = V.row((idx + 1) % 3);
     VV.row(1) = V.row((idx + 2) % 3);
 
-    mtao::Vec3d N = mtao::Vec3d::Unit((idx + 1) % 3)
-                        .cross(mtao::Vec3d::Unit((idx + 2) % 3));
+    balsa::eigen::Vec3d N = balsa::eigen::Vec3d::Unit((idx + 1) % 3)
+                        .cross(balsa::eigen::Vec3d::Unit((idx + 2) % 3));
 
     auto mesh_faces = ahd.hem.cells_multi_component_map();
     // spdlog::info("AHD {},{} got {} faces", idx, cidx, mesh_faces.size());
@@ -520,7 +520,7 @@ mtao::map<int, CutFace<3>> CutCellGenerator<3>::compute_faces_axis(
                     std::cout << "A bunch of edges weren't used due to some
        failure. " << std::endl; std::cout << " we only got " << faces.size() <<
        "things" << std::endl; std::cout << "Edges on " << idx << "," << cidx <<
-       std::endl; std::cout << mtao::eigen::stl2eigen(ahd.edges) << std::endl;
+       std::endl; std::cout << balsa::eigen::stl2eigen(ahd.edges) << std::endl;
                     for(auto&& [a,b]: ahd.edges)
                     {
                         std::cout << grid_info(a) << " => " << grid_info(b) <<
@@ -532,13 +532,13 @@ mtao::map<int, CutFace<3>> CutCellGenerator<3>::compute_faces_axis(
     return faces;
 }
 
-mtao::ColVecs3i CutCellGenerator<3>::faceMap_to_faces(
-    mtao::map<int, mtao::ColVecs3i> &fm) {
+balsa::eigen::ColVecs3i CutCellGenerator<3>::faceMap_to_faces(
+    mtao::map<int, balsa::eigen::ColVecs3i> &fm) {
     int cols = 0;
     for (auto &&[i, f] : fm) {
         cols += f.cols();
     }
-    mtao::ColVecs3i F(3, cols);
+    balsa::eigen::ColVecs3i F(3, cols);
 
     int col = 0;
     for (auto &&[i, f] : fm) {

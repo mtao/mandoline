@@ -1,6 +1,6 @@
 #pragma once
 
-#include <mtao/types.hpp>
+#include <balsa/eigen/types.hpp>
 #include <Eigen/Sparse>
 
 // TODO: implement this instead of interpolated
@@ -14,7 +14,7 @@ struct SimplexChildPolygon {
     // reads off the vertex info in the format {cut-vertex index, triangle-vertex} = barycentric
     // this format is creates 
     template <typename PolygonContainer>
-    std::vector<Eigen::Triplet<double>> sparse_matrix_entries(const PolygonIndexContainer &indices, const mtao::ColVectors<double,SimplexDim> &S) const;
+    std::vector<Eigen::Triplet<double>> sparse_matrix_entries(const PolygonIndexContainer &indices, const balsa::eigen::ColVectors<double,SimplexDim> &S) const;
 
     template <typename PolygonContainer>
     std::map<std::array<int, 2>, double> sparse_matrix_entries(const CoordMaskedGeometry<D,PolygonContainer> &pg, const Eigen::MatrixBase<Derived> &S) const {

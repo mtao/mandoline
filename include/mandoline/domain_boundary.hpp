@@ -1,5 +1,5 @@
 #pragma once
-#include <mtao/types.hpp>
+#include <balsa/eigen/types.hpp>
 #include <Eigen/Sparse>
 #include <set>
 #include <vector>
@@ -16,9 +16,9 @@ class DomainBoundary {
     // ignores masked off boundaries and optionally domain boundaries
     std::vector<Eigen::Triplet<double>> boundary_triplets(bool use_domain_boundaries = false) const;
     // computes the boundary of the adaptive grid, including the interior boundaries
-    mtao::VecXd boundary_face_mask() const;
+    balsa::eigen::VecXd boundary_face_mask() const;
     // computes facets on the interior
-    mtao::VecXd interior_face_mask() const;
+    balsa::eigen::VecXd interior_face_mask() const;
     // includes the boundary of hte adaptive grid, ignoring hte interior boundaries
     std::set<int> boundary_facets() const;// grid boundary facets using grid indices
     std::set<int> interior_facets() const;// grid boundary facets using grid indices

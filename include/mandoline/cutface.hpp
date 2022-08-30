@@ -25,7 +25,7 @@ struct CutMeshFace : public CoordMaskedSimplePolygon<D> {
     CutMeshFace &operator=(const CutMeshFace &) = default;
     CutMeshFace &operator=(CutMeshFace &&) = default;
     size_t size() const { return indices.size(); }
-    mtao::ColVecs3i triangulate() const;
+    balsa::eigen::ColVecs3i triangulate() const;
 
     int parent_fid = -1;
 
@@ -38,7 +38,7 @@ struct CutFaceBase : public CoordMaskedPolygon<D> {
     using Base::Base;
     using Base::indices;
     using Base::mask;
-    using Vec = mtao::Vector<double, D>;
+    using Vec = balsa::eigen::Vector<double, D>;
 
     using IDType = std::variant<int, std::array<int, 2>>;
 
@@ -113,59 +113,59 @@ struct CutFace<3> : public CutFaceBase<3> {
     void serialize(protobuf::CutFace &face) const;
     static CutFace<3> from_proto(const protobuf::CutFace &face);
 
-    std::optional<mtao::ColVecs3d> triangulated_vertices;
-    std::optional<mtao::ColVecs3i> triangulation;
+    std::optional<balsa::eigen::ColVecs3d> triangulated_vertices;
+    std::optional<balsa::eigen::ColVecs3i> triangulation;
 
     bool has_cached_triangulation() const { return bool(triangulation); }
 
     template <typename Derived>
-    mtao::Vec3d brep_centroid(const Eigen::MatrixBase<Derived> &V,
+    balsa::eigen::Vec3d brep_centroid(const Eigen::MatrixBase<Derived> &V,
                               bool use_triangulation = false) const;
 
     template <typename Derived>
     double brep_volume(const Eigen::MatrixBase<Derived> &V,
                        bool use_triangulation = false) const;
 
-    mtao::ColVecs3i triangulate_fan() const;
-    mtao::ColVecs3i triangulate_earclipping(const mtao::ColVecs2d &V) const;
-    std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> triangulate_triangle(
-        const mtao::ColVecs2d &V, bool add_vertices = false) const;
-    mtao::ColVecs3i triangulate(const std::array<mtao::ColVecs2d, 3> &V) const;
-    std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> triangulate(
-        const std::array<mtao::ColVecs2d, 3> &V, bool add_vertices) const;
-    std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> triangulate(
-        const mtao::ColVecs2d &V, bool add_vertices) const;
-    void cache_triangulation(const std::array<mtao::ColVecs2d, 3> &V,
+    balsa::eigen::ColVecs3i triangulate_fan() const;
+    balsa::eigen::ColVecs3i triangulate_earclipping(const balsa::eigen::ColVecs2d &V) const;
+    std::tuple<balsa::eigen::ColVecs3d, balsa::eigen::ColVecs3i> triangulate_triangle(
+        const balsa::eigen::ColVecs2d &V, bool add_vertices = false) const;
+    balsa::eigen::ColVecs3i triangulate(const std::array<balsa::eigen::ColVecs2d, 3> &V) const;
+    std::tuple<balsa::eigen::ColVecs3d, balsa::eigen::ColVecs3i> triangulate(
+        const std::array<balsa::eigen::ColVecs2d, 3> &V, bool add_vertices) const;
+    std::tuple<balsa::eigen::ColVecs3d, balsa::eigen::ColVecs3i> triangulate(
+        const balsa::eigen::ColVecs2d &V, bool add_vertices) const;
+    void cache_triangulation(const std::array<balsa::eigen::ColVecs2d, 3> &V,
                              bool add_verts = true);
-    void cache_triangulation(const mtao::ColVecs3i &F);
-    void cache_triangulation(const mtao::ColVecs3d &V,
-                             const mtao::ColVecs3i &F);
+    void cache_triangulation(const balsa::eigen::ColVecs3i &F);
+    void cache_triangulation(const balsa::eigen::ColVecs3d &V,
+                             const balsa::eigen::ColVecs3i &F);
 };
 
 /*
     template <>
-        mtao::ColVecs3i CutFace<3>::triangulate_fan() const;
+        balsa::eigen::ColVecs3i CutFace<3>::triangulate_fan() const;
     template <>
-        mtao::ColVecs3i CutFace<3>::triangulate_earclipping(const
-   mtao::ColVecs2d& V) const; template <>
-        std::tuple<mtao::ColVecs3d,mtao::ColVecs3i>
-   CutFace<3>::triangulate_triangle(const mtao::ColVecs2d& V, bool add_vertices)
-   const; template <> mtao::ColVecs3i CutFace<3>::triangulate(const
-   std::array<mtao::ColVecs2d,3>& V) const; template <>
-        std::tuple<mtao::ColVecs3d,mtao::ColVecs3i>
-   CutFace<3>::triangulate(const std::array<mtao::ColVecs2d,3>& V, bool) const;
+        balsa::eigen::ColVecs3i CutFace<3>::triangulate_earclipping(const
+   balsa::eigen::ColVecs2d& V) const; template <>
+        std::tuple<balsa::eigen::ColVecs3d,balsa::eigen::ColVecs3i>
+   CutFace<3>::triangulate_triangle(const balsa::eigen::ColVecs2d& V, bool add_vertices)
+   const; template <> balsa::eigen::ColVecs3i CutFace<3>::triangulate(const
+   std::array<balsa::eigen::ColVecs2d,3>& V) const; template <>
+        std::tuple<balsa::eigen::ColVecs3d,balsa::eigen::ColVecs3i>
+   CutFace<3>::triangulate(const std::array<balsa::eigen::ColVecs2d,3>& V, bool) const;
     template <>
-        std::tuple<mtao::ColVecs3d,mtao::ColVecs3i>
-   CutFace<3>::triangulate(const mtao::ColVecs2d& V, bool) const; template <>
+        std::tuple<balsa::eigen::ColVecs3d,balsa::eigen::ColVecs3i>
+   CutFace<3>::triangulate(const balsa::eigen::ColVecs2d& V, bool) const; template <>
         void CutFace<3>::cache_triangulation(const
-   std::array<mtao::ColVecs2d,3>& V, bool add_verts) ; template <> void
-   CutFace<3>::cache_triangulation(const mtao::ColVecs3i& F) ; template <> void
-   CutFace<3>::cache_triangulation(const mtao::ColVecs3d& V, const
-   mtao::ColVecs3i& F) ;
+   std::array<balsa::eigen::ColVecs2d,3>& V, bool add_verts) ; template <> void
+   CutFace<3>::cache_triangulation(const balsa::eigen::ColVecs3i& F) ; template <> void
+   CutFace<3>::cache_triangulation(const balsa::eigen::ColVecs3d& V, const
+   balsa::eigen::ColVecs3i& F) ;
     */
 
 template <>
-mtao::ColVecs3i CutMeshFace<3>::triangulate() const;
+balsa::eigen::ColVecs3i CutMeshFace<3>::triangulate() const;
 
 template <>
 struct CutFace<2> : public CutFaceBase<2> {
@@ -176,8 +176,8 @@ struct CutFace<2> : public CutFaceBase<2> {
 
     int region = -1;
 
-    std::optional<mtao::ColVecs2d> triangulated_vertices;
-    std::optional<mtao::ColVecs3i> triangulation;
+    std::optional<balsa::eigen::ColVecs2d> triangulated_vertices;
+    std::optional<balsa::eigen::ColVecs3i> triangulation;
 
     template <typename Derived, typename PType>
     double winding_number(const Eigen::MatrixBase<Derived> &V,
@@ -186,22 +186,22 @@ struct CutFace<2> : public CutFaceBase<2> {
     bool is_inside(const Eigen::MatrixBase<Derived> &V,
                    const Eigen::MatrixBase<PType> &p) const;
     template <typename Derived>
-    mtao::Vec2d brep_centroid(const Eigen::MatrixBase<Derived> &V) const;
+    balsa::eigen::Vec2d brep_centroid(const Eigen::MatrixBase<Derived> &V) const;
 
     template <typename Derived>
     double brep_volume(const Eigen::MatrixBase<Derived> &V,
                        bool use_triangulation = false) const;
 
-    mtao::ColVecs3i triangulate_fan() const;
-    mtao::ColVecs3i triangulate_earclipping(const mtao::ColVecs2d &V) const;
-    std::tuple<mtao::ColVecs2d, mtao::ColVecs3i> triangulate_triangle(
-        const mtao::ColVecs2d &V, bool add_vertices = false) const;
-    std::tuple<mtao::ColVecs2d, mtao::ColVecs3i> triangulate(
-        const mtao::ColVecs2d &V, bool add_vertices) const;
-    void cache_triangulation(const mtao::ColVecs3i &F);
-    void cache_triangulation(const mtao::ColVecs2d &V,
-                             const mtao::ColVecs3i &F);
-    void cache_triangulation(const std::array<mtao::ColVecs2d, 3> &V,
+    balsa::eigen::ColVecs3i triangulate_fan() const;
+    balsa::eigen::ColVecs3i triangulate_earclipping(const balsa::eigen::ColVecs2d &V) const;
+    std::tuple<balsa::eigen::ColVecs2d, balsa::eigen::ColVecs3i> triangulate_triangle(
+        const balsa::eigen::ColVecs2d &V, bool add_vertices = false) const;
+    std::tuple<balsa::eigen::ColVecs2d, balsa::eigen::ColVecs3i> triangulate(
+        const balsa::eigen::ColVecs2d &V, bool add_vertices) const;
+    void cache_triangulation(const balsa::eigen::ColVecs3i &F);
+    void cache_triangulation(const balsa::eigen::ColVecs2d &V,
+                             const balsa::eigen::ColVecs3i &F);
+    void cache_triangulation(const std::array<balsa::eigen::ColVecs2d, 3> &V,
                              bool add_verts);
 };
 

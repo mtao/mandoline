@@ -13,7 +13,7 @@
 #include <set>
 #include <mtao/geometry/grid/grid_data.hpp>
 #include <mtao/geometry/grid/staggered_grid.hpp>
-#include <mtao/eigen/stack.h>
+#include <balsa/eigen/stack.hpp>
 #include "mandoline/vertex.hpp"
 #include "mandoline/cutedge.hpp"
 #include "mandoline/interpolated_edge.hpp"
@@ -39,16 +39,16 @@ struct CutCellMeshBase : public mtao::geometry::grid::StaggeredGrid<double, D> {
     using GridType = typename StaggeredGrid::GridType;
     using GridData = mtao::geometry::grid::GridDataD<double, D>;
     using GridDatab = mtao::geometry::grid::GridDataD<bool, D>;
-    using ColVecs = mtao::ColVectors<double, D>;
-    using VecX = mtao::VectorX<double>;
-    using Edges = mtao::ColVectors<int, 2>;
+    using ColVecs = balsa::eigen::ColVectors<double, D>;
+    using VecX = balsa::eigen::VectorX<double>;
+    using Edges = balsa::eigen::ColVectors<int, 2>;
     using Edge = std::array<int, 2>;
-    using Vec = mtao::Vector<double, D>;
+    using Vec = balsa::eigen::Vector<double, D>;
     using VecRef = Eigen::Ref<Vec>;
     using VecCRef = Eigen::Ref<const Vec>;
     using VecMap = Eigen::Map<Vec>;
     using VecCMap = Eigen::Map<const Vec>;
-    using IVec = mtao::Vector<int, D>;
+    using IVec = balsa::eigen::Vector<int, D>;
     using IVecRef = Eigen::Ref<IVec>;
     using IVecCRef = Eigen::Ref<const IVec>;
     using IVecMap = Eigen::Map<IVec>;
@@ -116,14 +116,14 @@ struct CutCellMeshBase : public mtao::geometry::grid::StaggeredGrid<double, D> {
     const std::vector<CutEdge<D>> &cut_edges() const { return m_cut_edges; }
     Edges cut_edges_eigen() const;
     const ColVecs &origV() const { return m_origV; }
-    const mtao::ColVecs2i &origE() const { return m_origE; }
+    const balsa::eigen::ColVecs2i &origE() const { return m_origE; }
     const mtao::map<int, InterpolatedEdge> &mesh_cut_edges() const { return m_mesh_cut_edges; }
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   protected:
     //Original mesh
     ColVecs m_origV;
-    mtao::ColVecs2i m_origE;
+    balsa::eigen::ColVecs2i m_origE;
     std::vector<Vertex> m_cut_vertices;
     std::map<int,std::set<int>> m_regions;
 

@@ -2,7 +2,7 @@
 #include <iostream>
 #include <mtao/geometry/volume.h>
 namespace mandoline {
-std::map<std::array<int, 2>, double> InterpolatedEdge::sparse_matrix_entries(const std::array<int, 2> &indices, const mtao::ColVecs2i &E) const {
+std::map<std::array<int, 2>, double> InterpolatedEdge::sparse_matrix_entries(const std::array<int, 2> &indices, const balsa::eigen::ColVecs2i &E) const {
     auto e = E.col(parent_eid);
     std::map<std::array<int, 2>, double> ret;
 

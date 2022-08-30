@@ -26,12 +26,12 @@ std::set<int> region_boundaries(const CutCellMesh<3>& ccm) {
 std::map<int, bool> boundary_from_cells(const CutCellMesh<3>& ccm,
                                         const std::set<int>& cells) {
     auto B = boundary(ccm, true);
-    mtao::VecXd C(ccm.num_cells());
+    balsa::eigen::VecXd C(ccm.num_cells());
     C.setZero();
     for (auto&& c : cells) {
         C(c) = 1;
     }
-    mtao::VecXd I = B * C;
+    balsa::eigen::VecXd I = B * C;
     std::map<int, bool> boundary;
     for (auto&& [idx, v] : mtao::iterator::enumerate(I)) {
         if (v != 0) {

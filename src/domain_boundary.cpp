@@ -12,16 +12,16 @@ bool DomainBoundary::is_boundary_facet(int idx) const {
 std::vector<Eigen::Triplet<double>> DomainBoundary::boundary_triplets(bool use_domain_boundaries) const {
     return operators::boundary_triplets(*this,use_domain_boundaries);
 }
-mtao::VecXd DomainBoundary::boundary_face_mask() const {
-    mtao::VecXd R(boundary_facet_size());
+balsa::eigen::VecXd DomainBoundary::boundary_face_mask() const {
+    balsa::eigen::VecXd R(boundary_facet_size());
     R.setZero();
     for (auto &&ind : boundary_facets()) {
         R(ind) = 1;
     }
     return R;
 }
-mtao::VecXd DomainBoundary::interior_face_mask() const {
-    mtao::VecXd R(boundary_facet_size());
+balsa::eigen::VecXd DomainBoundary::interior_face_mask() const {
+    balsa::eigen::VecXd R(boundary_facet_size());
     R.setOnes();
     // we'll use boundary facets because there should be less of them
     for (auto &&ind : boundary_facets()) {

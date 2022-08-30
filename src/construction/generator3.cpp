@@ -5,7 +5,7 @@
 #include <mtao/geometry/mesh/boundary_facets.h>
 
 #include <mtao/colvector_loop.hpp>
-#include <mtao/eigen/stl2eigen.hpp>
+#include <balsa/eigen/stl2eigen.hpp>
 #include <mtao/geometry/grid/grid_data.hpp>
 #include <mtao/geometry/mesh/dual_edges.hpp>
 #include <mtao/iterator/enumerate.hpp>
@@ -73,7 +73,7 @@ CutCellMesh<3> CutCellGenerator<3>::generate() const {
     for (auto &&mfi : mesh_face_indices) {
         int idx = reindexer.at(mfi);
         auto &&cutface = m_cut_faces[mfi];
-        mtao::ColVecs3d B(3, cutface.size());
+        balsa::eigen::ColVecs3d B(3, cutface.size());
         for (auto &&[idx, i] : mtao::iterator::enumerate(cutface.indices)) {
             if (i < grid_vertex_size()) {
                 B.col(idx) =
@@ -548,9 +548,9 @@ void CutCellGenerator<3>::bake_cells() {
                   exterior_grid->num_boundary_facets());
 #endif
 }
-mtao::Vec3d CutCellGenerator<3>::area_normal(const std::vector<int> &F) const {
+balsa::eigen::Vec3d CutCellGenerator<3>::area_normal(const std::vector<int> &F) const {
     auto V = all_GV();
-    mtao::Vec3d N = mtao::Vec3d::Zero();
+    balsa::eigen::Vec3d N = balsa::eigen::Vec3d::Zero();
     for (int i = 0; i < F.size(); ++i) {
         int j = (i + 1) % F.size();
         int k = (i + 2) % F.size();
@@ -562,9 +562,9 @@ mtao::Vec3d CutCellGenerator<3>::area_normal(const std::vector<int> &F) const {
     }
     return N / 2;
 }
-mtao::Vec3d CutCellGenerator<3>::area_normal(
+balsa::eigen::Vec3d CutCellGenerator<3>::area_normal(
     const std::set<std::vector<int>> &F) const {
-    mtao::Vec3d N = mtao::Vec3d::Zero();
+    balsa::eigen::Vec3d N = balsa::eigen::Vec3d::Zero();
     for (auto &&f : F) {
         N += area_normal(f);
     }

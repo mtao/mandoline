@@ -1,9 +1,9 @@
 #pragma once
 #include <vector>
 #include <tuple>
-#include <mtao/types.h>
+#include <balsa/eigen/types.h>
 #include <bitset>
-#include <mtao/eigen/stl2eigen.hpp>
+#include <balsa/eigen/stl2eigen.hpp>
 #include <mtao/functional.hpp>
 #include <mtao/geometry/grid/staggered_grid.hpp>
 #include <mtao/geometry/grid/grid_data.hpp>
@@ -36,12 +36,12 @@ template<int D>
 class CutCellEdgeGenerator : public mtao::geometry::grid::StaggeredGrid<double, D> {
   public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-    using Vec = mtao::Vector<double, D>;
-    using Veci = mtao::Vector<int, D>;
-    using ColVecs = mtao::ColVectors<double, D>;
+    using Vec = balsa::eigen::Vector<double, D>;
+    using Veci = balsa::eigen::Vector<int, D>;
+    using ColVecs = balsa::eigen::ColVectors<double, D>;
     using Edge = std::array<int, 2>;
-    using Edges = mtao::ColVectors<int, 2>;
-    using BoundaryElements = mtao::ColVectors<int, D>;
+    using Edges = balsa::eigen::ColVectors<int, 2>;
+    using BoundaryElements = balsa::eigen::ColVectors<int, D>;
     using VecVector = mtao::vector<Vec>;
     using StaggeredGrid = mtao::geometry::grid::StaggeredGrid<double, D>;
     using GridType = mtao::geometry::grid::GridD<double, D>;

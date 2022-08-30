@@ -49,8 +49,8 @@ const std::array<AdaptiveGridFactory::coord_type, 3>
 
 void AdaptiveGridFactory::make_edges(const std::optional<int> &max_level) {
     auto es = compute_edges(max_level);
-    edges = mtao::eigen::stl2eigen(std::get<0>(es));
-    // boundary_edges = mtao::eigen::stl2eigen(es[1]);
+    edges = balsa::eigen::stl2eigen(std::get<0>(es));
+    // boundary_edges = balsa::eigen::stl2eigen(es[1]);
 }
 auto AdaptiveGridFactory::compute_axial_edges(
     const std::optional<int> &max_level) const
@@ -152,8 +152,8 @@ void AdaptiveGridFactory::set_edge_masks(const coord_type &shape,
                 coord_type abc{{a, b, c}};
 
                 if (accessor(abc)) {
-                    mtao::eigen::stl2eigen(abc) +=
-                        mtao::eigen::stl2eigen(corner);
+                    balsa::eigen::stl2eigen(abc) +=
+                        balsa::eigen::stl2eigen(corner);
                     for (int dim = 0; dim < 3; ++dim) {
                         int x = (dim + 1) % 3;
                         int y = (dim + 2) % 3;
@@ -184,7 +184,7 @@ auto AdaptiveGridFactory::get_edges(const std::array<GridData3, 3> &edge_masks,
                                     int level, const coord_type &offset) const
     -> std::tuple<std::array<std::set<Edge>, 3>, AxialBEdgeMap> {
     int jump = get_jump(level);
-    const auto offset_map = mtao::eigen::stl2eigen(offset);
+    const auto offset_map = balsa::eigen::stl2eigen(offset);
     std::array<std::set<Edge>, 3> edges;
     AxialBEdgeMap bedges;
     std::bitset<3> boundary;
@@ -203,8 +203,8 @@ auto AdaptiveGridFactory::get_edges(const std::array<GridData3, 3> &edge_masks,
                     coord_type abc{{a, b, c}};
                     if (g(abc)) {
                         coord_type abc2;
-                        mtao::eigen::stl2eigen(abc2) =
-                            jump * mtao::eigen::stl2eigen(abc) + offset_map;
+                        balsa::eigen::stl2eigen(abc2) =
+                            jump * balsa::eigen::stl2eigen(abc) + offset_map;
                         auto e = get_edge(abc2, jump, dim);
                         edges[dim].emplace(e);
                         bool is_boundary = boundary[bidx0] || boundary[bidx1];
@@ -262,7 +262,7 @@ auto AdaptiveGridFactory::make_edge_shapes(const coord_type &coord) const
 auto AdaptiveGridFactory::empty_edge_masks(int level, bool value) const
     -> std::array<GridData3, 3> {
     coord_type shape = levels[level].shape();
-    mtao::eigen::stl2eigen(shape) *= width;
+    balsa::eigen::stl2eigen(shape) *= width;
     return empty_edge_masks(shape, value);
 }
 auto AdaptiveGridFactory::empty_edge_masks(const coord_type &shape,
@@ -464,15 +464,15 @@ void AdaptiveGridFactory::make_cells(const ActiveMask &mask, int level,
                                      const coord_type &coord) {
     int jump = 1 << (level * logwidth);
     int pjump = 1 << ((level + 1) * logwidth);
-    mtao::Vec3i base = pjump * mtao::eigen::stl2eigen(coord);
+    balsa::eigen::Vec3i base = pjump * balsa::eigen::stl2eigen(coord);
 
     for (int a = 0; a < width; ++a) {
         for (int b = 0; b < width; ++b) {
             for (int c = 0; c < width; ++c) {
                 coord_type abc{{a, b, c}};
                 if (!mask[cmask_index(abc)]) {
-                    mtao::eigen::stl2eigen(abc) =
-                        jump * mtao::eigen::stl2eigen(abc) + base;
+                    balsa::eigen::stl2eigen(abc) =
+                        jump * balsa::eigen::stl2eigen(abc) + base;
                     add_cell(abc, jump);
                 }
             }
@@ -491,8 +491,8 @@ void AdaptiveGridFactory::make_cells(const GridData3 &mask, int level) {
             for (int c = 0; c < mask.shape()[2]; ++c) {
                 coord_type abc{{a, b, c}};
                 if (!mask(abc)) {
-                    mtao::eigen::stl2eigen(abc) =
-                        jump * mtao::eigen::stl2eigen(abc);
+                    balsa::eigen::stl2eigen(abc) =
+                        jump * balsa::eigen::stl2eigen(abc);
                     add_cell(abc, jump);
                 }
             }

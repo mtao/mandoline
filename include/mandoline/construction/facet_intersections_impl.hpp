@@ -8,8 +8,8 @@ template <int D>
 void EdgeIntersections<D>::bake(const std::optional<SGType> &grid) {
     intersections.clear();
 
-    using namespace mtao::eigen;
-    using Veci = mtao::Vector<int, D>;
+    using namespace balsa::eigen;
+    using Veci = balsa::eigen::Vector<int, D>;
     auto &gvstart = *vptr_edge[0];
     auto &gvend = *vptr_edge[1];
 
@@ -17,7 +17,7 @@ void EdgeIntersections<D>::bake(const std::optional<SGType> &grid) {
     // std::cout << std::string(gvstart) << " => " << std::string(gvend) <<
     // std::endl;
 
-    mtao::eigen::stl2eigen(tangent) = gvend.p() - gvstart.p();
+    balsa::eigen::stl2eigen(tangent) = gvend.p() - gvstart.p();
 
     // normalize and move to the upper left quadrant
     Vec direction = gvend.p() - gvstart.p();
@@ -256,7 +256,7 @@ void TriangleIntersections<D>::bake(const std::optional<SGType> &grid) {
          mtao::iterator::zip(bary_indices, edge_isects)) {
         for (auto &&ei : eisptr->intersections) {
             std::array<double, 3> coord;
-            mtao::eigen::stl2eigen(coord) =
+            balsa::eigen::stl2eigen(coord) =
                 edge_bary(bary_index, ei.edge_coord);
             coords[&ei] = coord;
             bin_gv(ei, eisptr->edge_index);
@@ -268,7 +268,7 @@ void TriangleIntersections<D>::bake(const std::optional<SGType> &grid) {
         //    std::cout << std::string(*gv) << ",";
         bin_gv(*gv, -i - 1);  // negative to avoid clashing with edges
         std::array<double, 3> coord;
-        mtao::eigen::stl2eigen(coord) = mtao::Vec3d::Unit(i);
+        balsa::eigen::stl2eigen(coord) = balsa::eigen::Vec3d::Unit(i);
         coords[gv] = coord;
         vertex_ptrs.insert(gv);
     }
@@ -330,12 +330,12 @@ void TriangleIntersections<D>::bake(const std::optional<SGType> &grid) {
     }
 
     for (auto &&[ge, eis] : edge_intersections) {
-        auto a = mtao::eigen::stl2eigen(coords[ge[0]]);
-        auto b = mtao::eigen::stl2eigen(coords[ge[1]]);
+        auto a = balsa::eigen::stl2eigen(coords[ge[0]]);
+        auto b = balsa::eigen::stl2eigen(coords[ge[1]]);
         for (auto &&ei : eis.intersections) {
             double t = ei.edge_coord;
             std::array<double, 3> varr;
-            auto v = mtao::eigen::stl2eigen(varr);
+            auto v = balsa::eigen::stl2eigen(varr);
             v = (1 - t) * a + t * b;
             for (int i = 0; i < 3; ++i) {
                 auto &&a = v(i);
@@ -347,7 +347,7 @@ void TriangleIntersections<D>::bake(const std::optional<SGType> &grid) {
                     b = b / d;
                     c = c / d;
                 } else if (a > 1) {
-                    v = mtao::Vec3d::Unit(i);
+                    v = balsa::eigen::Vec3d::Unit(i);
                     break;
                 }
             }
@@ -360,13 +360,13 @@ void TriangleIntersections<D>::bake(const std::optional<SGType> &grid) {
 
     for (auto &&verts_per_mask : condensed_triangle_verts) {
         for (auto &&[m, vs] : verts_per_mask) {
-            mtao::Vec3d b = mtao::Vec3d::Zero();
+            balsa::eigen::Vec3d b = balsa::eigen::Vec3d::Zero();
             const VType *eiptr;
             for (auto &&ei : vs) {
                 edge_triangle_index_map[static_cast<const EdgeIsect *>(ei)] =
                     intersections.size();
                 eiptr = ei;
-                b += mtao::eigen::stl2eigen(barys[ei]);
+                b += balsa::eigen::stl2eigen(barys[ei]);
             }
             b /= vs.size();
 
@@ -492,10 +492,10 @@ auto TriangleIntersections<D>::vptr_faces(
     // are missing elements
     auto IVM = inverse_crossing_indexer<D>(V);
     auto BC = barycentric_coords();
-    mtao::ColVecs2d B(2, V.size());
+    balsa::eigen::ColVecs2d B(2, V.size());
     for (auto &&c : V) {
         B.col(c.index) =
-            mtao::eigen::stl2eigen(BC.at(c.vertex_ptr())).template topRows<2>();
+            balsa::eigen::stl2eigen(BC.at(c.vertex_ptr())).template topRows<2>();
     }
     // for(auto&& v: V) { std::cout << std::string(v) << " ";}
     // std::cout << std::endl;

@@ -1,7 +1,7 @@
-#include <mtao/types.hpp>
+#include <balsa/eigen/types.hpp>
 #include "mandoline/tools/edges_to_plcurves.hpp"
 #include "mandoline/construction/face_collapser.hpp"
-#include <mtao/eigen/stl2eigen.hpp>
+#include <balsa/eigen/stl2eigen.hpp>
 #include <mtao/geometry/mesh/edges_to_plcurves.hpp>
 #include <mtao/geometry/volume.hpp>
 #include <mtao/geometry/mesh/unique_simplices.hpp>
@@ -10,8 +10,8 @@
 
 namespace mandoline::tools {
 std::vector<std::tuple<std::vector<int>, bool>> edge_to_plcurves(
-  const mtao::ColVecs2d &V,
-  const mtao::ColVecs2i &E,
+  const balsa::eigen::ColVecs2d &V,
+  const balsa::eigen::ColVecs2i &E,
   bool closed_only) {
     construction::FaceCollapser fc(E);
     fc.bake(V, false);// ignore finding faces in faces
@@ -20,7 +20,7 @@ std::vector<std::tuple<std::vector<int>, bool>> edge_to_plcurves(
 
         // if the edge is open then i need to do this to remove pairs of edges
         // this preserves input orientation when possible :)
-        mtao::ColVecs2i E = mtao::geometry::mesh::unique_simplices(mtao::eigen::stl2eigen(edges));
+        balsa::eigen::ColVecs2i E = mtao::geometry::mesh::unique_simplices(balsa::eigen::stl2eigen(edges));
         auto r = mtao::geometry::mesh::edge_to_plcurves(E, closed_only);
 
         //std::cout << "Fidx: " << fidx << std::endl;

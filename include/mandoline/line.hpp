@@ -1,11 +1,11 @@
 #pragma once
-#include <mtao/types.h>
+#include <balsa/eigen/types.hpp>
 
 namespace mandoline {
 template<int D>
 class Line {
   public:
-    using Vec = mtao::Vector<double, D>;
+    using Vec = balsa::eigen::Vector<double, D>;
     using Vec2 = mtao::Matrix<double, D, 2>;
     Line(const Vec &a, const Vec &b);
     Line(const Vec2 &se) : m_start_end(se) {}

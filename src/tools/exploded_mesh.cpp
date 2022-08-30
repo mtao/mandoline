@@ -39,9 +39,9 @@ void MeshExploder::setCenters(double region_scale) {
         c = (1 - region_scale) * gc + region_scale * rc;
     }
 }
-mtao::ColVecs4d MeshExploder::colors(const mtao::ColVecs4d &cell_colors, const std::set<int> &used_regions) const {
+balsa::eigen::ColVecs4d MeshExploder::colors(const balsa::eigen::ColVecs4d &cell_colors, const std::set<int> &used_regions) const {
     auto offs = offsets(used_regions);
-    mtao::ColVecs4d C(4, offs.back());
+    balsa::eigen::ColVecs4d C(4, offs.back());
     for (int i = 0; i < size(); ++i) {
         int off = offs[i];
         int size = offs[i + 1] - off;
@@ -67,15 +67,15 @@ std::vector<int> MeshExploder::offsets(const std::set<int> &used_regions) const 
     return ret;
 }
 
-std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> MeshExploder::mesh(double scale, const std::set<int> &used_regions) const {
+std::tuple<balsa::eigen::ColVecs3d, balsa::eigen::ColVecs3i> MeshExploder::mesh(double scale, const std::set<int> &used_regions) const {
     return { V(scale, used_regions), F(used_regions) };
 }
-std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> MeshExploder::mesh(size_t index, double scale) const {
+std::tuple<balsa::eigen::ColVecs3d, balsa::eigen::ColVecs3i> MeshExploder::mesh(size_t index, double scale) const {
     return { V(index, scale), F(index) };
 }
-mtao::ColVecs3d MeshExploder::V(double scale, const std::set<int> &used_regions) const {
+balsa::eigen::ColVecs3d MeshExploder::V(double scale, const std::set<int> &used_regions) const {
 
-    std::vector<mtao::ColVecs3d> V2;
+    std::vector<balsa::eigen::ColVecs3d> V2;
     for (auto &&[i, r] : mtao::iterator::enumerate(regions)) {
         if (valid_region(r, used_regions)) {
             V2.emplace_back(V(i, scale));
@@ -83,12 +83,12 @@ mtao::ColVecs3d MeshExploder::V(double scale, const std::set<int> &used_regions)
             V2.emplace_back();
         }
     }
-    auto R = mtao::eigen::hstack_iter(V2.begin(), V2.end());
+    auto R = balsa::eigen::hstack_iter(V2.begin(), V2.end());
     return R;
 }
-mtao::ColVecs3i MeshExploder::F(const std::set<int> &used_regions) const {
+balsa::eigen::ColVecs3i MeshExploder::F(const std::set<int> &used_regions) const {
 
-    std::vector<mtao::ColVecs3i> F2;
+    std::vector<balsa::eigen::ColVecs3i> F2;
     for (auto &&[F, o, r] : mtao::iterator::zip(Fs, offsets(used_regions), regions)) {
         if (valid_region(r, used_regions)) {
             F2.emplace_back(F.array() + o);
@@ -96,9 +96,9 @@ mtao::ColVecs3i MeshExploder::F(const std::set<int> &used_regions) const {
             F2.emplace_back();
         }
     }
-    return mtao::eigen::hstack_iter(F2.begin(), F2.end());
+    return balsa::eigen::hstack_iter(F2.begin(), F2.end());
 }
-mtao::ColVecs3d MeshExploder::V(size_t index, double scale) const {
+balsa::eigen::ColVecs3d MeshExploder::V(size_t index, double scale) const {
     auto R = Vs[index];
     R.colwise() -= O;
     R.colwise() += (scale - 1) * Cs[index];
@@ -107,7 +107,7 @@ mtao::ColVecs3d MeshExploder::V(size_t index, double scale) const {
 
     return R;
 }
-mtao::ColVecs3i MeshExploder::F(size_t index) const {
+balsa::eigen::ColVecs3i MeshExploder::F(size_t index) const {
     return Fs[index];
 }
 }// namespace mandoline::tools

@@ -36,7 +36,7 @@ struct CutEdgeBase : public CoordMaskedEdge<D> {
     using Base::mask;
     using Base::indices;
     using Base::Base;
-    using Vec = mtao::Vector<double, D>;
+    using Vec = balsa::eigen::Vector<double, D>;
 
     using IDType = std::variant<int, std::array<int, 2>>;
 

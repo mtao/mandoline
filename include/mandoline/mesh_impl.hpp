@@ -69,11 +69,11 @@ void CutCellMeshBase<D, Derived>::cache_vertices() {
 
 template<int D, typename Derived>
 auto CutCellMeshBase<D, Derived>::vertices() const -> ColVecs {
-    return mtao::eigen::hstack(StaggeredGrid::vertices(), cut_vertices_colvecs());
+    return balsa::eigen::hstack(StaggeredGrid::vertices(), cut_vertices_colvecs());
 }
 template<int D, typename Derived>
 auto CutCellMeshBase<D, Derived>::grid_space_vertices() const -> ColVecs {
-    return mtao::eigen::hstack(StaggeredGrid::local_vertices(), cut_vertices_colvecs());
+    return balsa::eigen::hstack(StaggeredGrid::local_vertices(), cut_vertices_colvecs());
 }
 template<int D, typename Derived>
 auto CutCellMeshBase<D, Derived>::grid_space_cut_vertices_colvecs() const -> ColVecs {
@@ -113,7 +113,7 @@ template<int D, typename Derived>
 auto CutCellMeshBase<D, Derived>::cut_edges_eigen() const -> Edges {
     Edges E(2, m_cut_edges.size());
     for (auto &&[i, e] : mtao::iterator::enumerate(m_cut_edges)) {
-        E.col(i) = Eigen::Map<const mtao::Vec2i>(e.indices.data());
+        E.col(i) = Eigen::Map<const balsa::eigen::Vec2i>(e.indices.data());
     }
     return E;
 }

@@ -2,11 +2,11 @@
 #ifdef MTAO_OPENMP
 #include <omp.h>
 #endif
-#include <mtao/types.hpp>
+#include <balsa/eigen/types.hpp>
 #include <mtao/geometry/mesh/boundary_elements.h>
 #include <mtao/geometry/mesh/boundary_facets.h>
 #include "mandoline/construction/facet_intersections.hpp"
-#include <mtao/eigen/stack.h>
+#include <balsa/eigen/stack.hpp>
 #include <mtao/logging/timer.hpp>
 #include <mtao/logging/profiler.hpp>
 
@@ -18,11 +18,11 @@ template<int D, typename Indexer_ = typename EdgeIntersections<D>::SGType::GridT
 struct CutData : public Indexer_ {
     friend class CutCellEdgeGenerator<D>;
     using Edge = std::array<int, 2>;
-    using Edges = mtao::ColVectors<int, 2>;
-    using Vec = mtao::Vec3d;
-    using Faces = mtao::ColVectors<int, 3>;
-    using Triangles = mtao::ColVectors<int, 3>;
-    using ColVecs = mtao::ColVectors<double, D>;
+    using Edges = balsa::eigen::ColVectors<int, 2>;
+    using Vec = balsa::eigen::Vec3d;
+    using Faces = balsa::eigen::ColVectors<int, 3>;
+    using Triangles = balsa::eigen::ColVectors<int, 3>;
+    using ColVecs = balsa::eigen::ColVectors<double, D>;
     using EdgeIsect = EdgeIntersection<D>;
     using TriIsect = TriangleIntersection<D>;
     using EdgeIsects = EdgeIntersections<D>;
@@ -54,7 +54,7 @@ struct CutData : public Indexer_ {
 
     const std::vector<Crossing<D>> &crossings() const;
     std::set<Edge> stl_edges() const;
-    mtao::ColVectors<int, 2> edges() const;
+    balsa::eigen::ColVectors<int, 2> edges() const;
     std::vector<std::vector<int>> faces() const;
     const std::vector<CutMeshFace<D>> &cut_faces() const { return m_cut_faces; }
     const std::vector<CutMeshEdge<D>> &cut_edges() const { return m_cut_edges; }
@@ -94,7 +94,7 @@ struct CutData : public Indexer_ {
     std::map<std::vector<int>, int> triangle_index_ownership() const;
     std::map<Edge, int> edge_index_ownership() const;
     // get the barycentric coordinates of a crossing along an edge
-    mtao::Vec3d get_face_bary(int face_index, const Crossing<D> &crossing) const;
+    balsa::eigen::Vec3d get_face_bary(int face_index, const Crossing<D> &crossing) const;
     // get the coordinate over an edge
     double get_edge_coord(int edge_index, const Crossing<D> &crossing) const;
 
@@ -129,10 +129,10 @@ struct CutData : public Indexer_ {
     std::map<const VType *, int> gv_index_map(const std::vector<Crossing<D>> &crossings) const;
 
     template<int U>
-    mtao::ColVectors<int, U> facets(const std::map<const VType *, int> &gv_idx_map, const std::vector<std::array<const VType *, U>> &facets) const;
+    balsa::eigen::ColVectors<int, U> facets(const std::map<const VType *, int> &gv_idx_map, const std::vector<std::array<const VType *, U>> &facets) const;
 
     std::vector<Edge> gvedge2edges(const std::vector<VPtrEdge> &gvedges, std::map<const VType *, int> &indexer) const;
-    mtao::ColVectors<int, 2> edge_edges() const;
+    balsa::eigen::ColVectors<int, 2> edge_edges() const;
     std::map<VPtrEdge, int> edge_indices() const;
     std::set<Edge> edge_edges(const std::map<const VType *, int> &gv_idx_map) const;
 
@@ -141,7 +141,7 @@ struct CutData : public Indexer_ {
     std::set<Edge> face_edges() const;
     std::set<Edge> face_edges(const std::map<const VType *, int> &gv_idx_map) const;
 
-    mtao::ColVectors<int, 2> edges(const std::map<const VType *, int> &gv_idx_map) const;
+    balsa::eigen::ColVectors<int, 2> edges(const std::map<const VType *, int> &gv_idx_map) const;
     std::set<Edge> stl_edges(const std::map<const VType *, int> &gv_idx_map) const;
 
   private:

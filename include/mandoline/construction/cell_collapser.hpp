@@ -108,7 +108,7 @@ void CellCollapser::merge_around_edge(const Eigen::MatrixBase<Derived> &V, const
     const bool flip_axes = vba(maxcoeff) < 0;
 
     std::vector<int> faces(halffaces.size());
-    mtao::ColVecs2d A(2,halffaces.size());
+    balsa::eigen::ColVecs2d A(2,halffaces.size());
 
     for (auto && [idx,fidx,hfp] : mtao::iterator::enumerate(faces,halffaces)) {
         auto [fidx_, e] = *hfp;
@@ -118,7 +118,7 @@ void CellCollapser::merge_around_edge(const Eigen::MatrixBase<Derived> &V, const
 
         auto &&F = m_faces.at(fidx);
         const bool sign = std::get<1>(m_halfface_to_cell.at(*hfp));
-        mtao::Vec3d N = (sign ? 1 : -1) * F.N.normalized();
+        balsa::eigen::Vec3d N = (sign ? 1 : -1) * F.N.normalized();
 
         auto a = A.col(idx);
         if(flip_axes) {

@@ -24,8 +24,8 @@ struct CutCellMesh<3> : public CutCellMeshBase<3, CutCellMesh<3>> {
     using coord_type = typename Base::coord_type;
     using ColVecs = typename Base::ColVecs;
     using VecX = typename Base::VecX;
-    using Faces = mtao::ColVectors<int, 3>;
-    using Face = mtao::Vector<int, 3>;
+    using Faces = balsa::eigen::ColVectors<int, 3>;
+    using Face = balsa::eigen::Vector<int, 3>;
     using Vertex = typename Base::Vertex;
 #if defined(MANDOLINE_USE_ADAPTIVE_GRID)
     using ExteriorGridType = AdaptiveGrid;
@@ -50,8 +50,8 @@ struct CutCellMesh<3> : public CutCellMeshBase<3, CutCellMesh<3>> {
     const CutFace<3> &cut_face(size_t index) const { return m_faces.at(index); }
     const auto &cells() const { return m_cells; }
     const ExteriorGridType &exterior_grid() const { return m_exterior_grid; }
-    const mtao::ColVecs2i &origE() const { return m_origE; }
-    const mtao::ColVecs3i &origF() const { return m_origF; }
+    const balsa::eigen::ColVecs2i &origE() const { return m_origE; }
+    const balsa::eigen::ColVecs3i &origF() const { return m_origF; }
     const mtao::map<int, BarycentricTriangleFace> &mesh_cut_faces() const {
         return m_mesh_cut_faces;
     }
@@ -70,7 +70,7 @@ struct CutCellMesh<3> : public CutCellMeshBase<3, CutCellMesh<3>> {
     std::vector<int> regions(bool boundary_sign_regions = false) const;
     std::vector<std::array<std::set<int>, 2>> face_regions() const;
     std::vector<std::array<std::set<int>, 2>> orig_face_regions() const;
-    mtao::ColVecs3d region_centroids() const;
+    balsa::eigen::ColVecs3d region_centroids() const;
     std::map<coord_type, std::set<int>> cells_by_grid_cell() const;
     std::set<int> cut_cells_in_grid_cell(const coord_type &c) const;
     mtao::geometry::grid::GridDataD<std::set<int>, 3> cells_per_grid_cell()
@@ -79,11 +79,11 @@ struct CutCellMesh<3> : public CutCellMeshBase<3, CutCellMesh<3>> {
     int get_cell_index(const VecCRef &p, bool quiet_failures = false) const;
     // this should be much faster than getting a single cell index for large
     // sets of points
-    mtao::VecXi get_cell_indices(Eigen::Ref<const ColVecs> p,
+    balsa::eigen::VecXi get_cell_indices(Eigen::Ref<const ColVecs> p,
                                  bool quiet_failures = false) const;
 
     int get_nearest_cell_index(const VecCRef &p) const;
-    mtao::VecXi get_nearest_cell_indices(Eigen::Ref<const ColVecs> p) const;
+    balsa::eigen::VecXi get_nearest_cell_indices(Eigen::Ref<const ColVecs> p) const;
 
     bool is_in_cell(const VecCRef &p, size_t index) const;
 
@@ -109,21 +109,21 @@ struct CutCellMesh<3> : public CutCellMeshBase<3, CutCellMesh<3>> {
     // cell -> face boundary operator
     Eigen::SparseMatrix<double> boundary(
         bool include_domain_boundary_faces = false) const;
-    mtao::ColVecs3d face_centroids() const;
-    mtao::ColVecs3d cell_centroids() const;
+    balsa::eigen::ColVecs3d face_centroids() const;
+    balsa::eigen::ColVecs3d cell_centroids() const;
     ColVecs dual_vertices() const;  // alias for centroids
     VecX cell_volumes() const;
     VecX face_volumes(bool from_triangulation = false) const;
 
     // impl in operators/volume.hpp
-    mtao::VecXd dual_edge_lengths() const;
-    mtao::VecXd dual_hodge2() const;
-    mtao::VecXd primal_hodge2() const;
-    mtao::VecXd dual_hodge3() const;
-    mtao::VecXd primal_hodge3() const;
+    balsa::eigen::VecXd dual_edge_lengths() const;
+    balsa::eigen::VecXd dual_hodge2() const;
+    balsa::eigen::VecXd primal_hodge2() const;
+    balsa::eigen::VecXd dual_hodge3() const;
+    balsa::eigen::VecXd primal_hodge3() const;
     // impl in operators/masks.hpp
-    mtao::VecXd mesh_face_mask() const;      // for removing mesh faces
-    mtao::VecXd grid_boundary_mask() const;  // for removing mesh faces
+    balsa::eigen::VecXd mesh_face_mask() const;      // for removing mesh faces
+    balsa::eigen::VecXd grid_boundary_mask() const;  // for removing mesh faces
 
     std::set<int> grid_boundary_faces() const;  // for removing mesh faces
 
@@ -156,18 +156,18 @@ struct CutCellMesh<3> : public CutCellMeshBase<3, CutCellMesh<3>> {
 
     // If the input ColVecs3d has nonzero size then the mesh is with reference
     // to those vertices Triangulation of different mesh elements
-    std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> triangulate_face(
+    std::tuple<balsa::eigen::ColVecs3d, balsa::eigen::ColVecs3i> triangulate_face(
         int face_index) const;
-    std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> triangulated_cell(
+    std::tuple<balsa::eigen::ColVecs3d, balsa::eigen::ColVecs3i> triangulated_cell(
         int cell_index, bool use_base = true, bool use_flap = true) const;
 
-    std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> compact_triangulated_cell(
+    std::tuple<balsa::eigen::ColVecs3d, balsa::eigen::ColVecs3i> compact_triangulated_cell(
         int cell_index) const;
-    std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> compact_triangulated_face(
+    std::tuple<balsa::eigen::ColVecs3d, balsa::eigen::ColVecs3i> compact_triangulated_face(
         int face_index, bool invert = false) const;
 
     // Vertices as projected into different 2d planes
-    std::array<mtao::ColVecs2d, 3> compute_subVs() const;
+    std::array<balsa::eigen::ColVecs2d, 3> compute_subVs() const;
 
 #if defined(MANDOLINE_USE_ADAPTIVE_GRID)
     const std::map<int, int> &adaptive_grid_regions() const {
@@ -194,8 +194,8 @@ struct CutCellMesh<3> : public CutCellMeshBase<3, CutCellMesh<3>> {
     mtao::map<int, BarycentricTriangleFace> m_mesh_cut_faces;
 
     // Original mesh
-    mtao::ColVecs2i m_origE;
-    mtao::ColVecs3i m_origF;
+    balsa::eigen::ColVecs2i m_origE;
+    balsa::eigen::ColVecs3i m_origF;
 
     // Face annotations
     std::array<std::set<int>, 3> m_axial_faces;
@@ -203,7 +203,7 @@ struct CutCellMesh<3> : public CutCellMeshBase<3, CutCellMesh<3>> {
 
    private:
     void recompute_active_cell_mask();
-    // mtao::ColVecs3i origF;
+    // balsa::eigen::ColVecs3i origF;
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 };
 

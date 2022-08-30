@@ -1,6 +1,6 @@
 #include <algorithm>
 #include <iterator>
-#include <mtao/types.hpp>
+#include <balsa/eigen/types.hpp>
 
 #include "mandoline/mesh2.hpp"
 #include <spdlog/spdlog.h>
@@ -13,7 +13,7 @@ namespace mandoline::tools {
 //
 // Edges
 // edge_idx, vertex_idx1, vertex_idx2, left_element_idx, right_element_idx
-std::tuple<mtao::ColVecs2d, mtao::ColVecs4i> read_plcurve(const std::string &filename) {
+std::tuple<balsa::eigen::ColVecs2d, balsa::eigen::ColVecs4i> read_plcurve(const std::string &filename) {
     std::ifstream ifs(filename);
     std::string line;
 
@@ -126,21 +126,21 @@ std::tuple<mtao::ColVecs2d, mtao::ColVecs4i> read_plcurve(const std::string &fil
 
     int max_vidx = std::max_element(vertices.begin(), vertices.end())->first;
     int max_eidx = std::max_element(edges.begin(), edges.end())->first;
-    mtao::ColVecs2d V(2, max_vidx + 1);
-    mtao::ColVecs4i E(4, max_vidx + 1);
+    balsa::eigen::ColVecs2d V(2, max_vidx + 1);
+    balsa::eigen::ColVecs4i E(4, max_vidx + 1);
     V.setZero();
     E.setConstant(-1);
     for (auto [k, v] : vertices) {
-        V.col(k) = mtao::eigen::stl2eigen(v);
+        V.col(k) = balsa::eigen::stl2eigen(v);
     }
     for (auto [k, v] : edges) {
-        E.col(k) = mtao::eigen::stl2eigen(v);
+        E.col(k) = balsa::eigen::stl2eigen(v);
     }
     return { V, E };
 }
 
 //pass in the inputE so we can extract this left/right element idx stuff
-void write_cutmesh2_plcurve(const mandoline::CutCellMesh<2> &ccm, const std::string &filename, const mtao::ColVecs4i &inputE) {
+void write_cutmesh2_plcurve(const mandoline::CutCellMesh<2> &ccm, const std::string &filename, const balsa::eigen::ColVecs4i &inputE) {
 
     std::ofstream ofs(filename);
     ofs << "Vertices" << std::endl;
@@ -234,7 +234,7 @@ void write_cutmesh2_plcurve(const mandoline::CutCellMesh<2> &ccm, const std::str
     }
 }
 template<typename EDerived>
-void _write_plcurve(const mtao::ColVecs2d &V, const Eigen::MatrixBase<EDerived> &E, const std::string &filename) {
+void _write_plcurve(const balsa::eigen::ColVecs2d &V, const Eigen::MatrixBase<EDerived> &E, const std::string &filename) {
 
     std::ofstream ofs(filename);
     ofs << "Vertices" << std::endl;
@@ -258,10 +258,10 @@ void _write_plcurve(const mtao::ColVecs2d &V, const Eigen::MatrixBase<EDerived> 
         ofs << "\n";
     }
 }
-void write_plcurve(const mtao::ColVecs2d &V, const mtao::ColVecs2i &E, const std::string &filename) {
+void write_plcurve(const balsa::eigen::ColVecs2d &V, const balsa::eigen::ColVecs2i &E, const std::string &filename) {
     return _write_plcurve(V, E, filename);
 }
-void write_plcurve(const mtao::ColVecs2d &V, const mtao::ColVecs4i &E, const std::string &filename) {
+void write_plcurve(const balsa::eigen::ColVecs2d &V, const balsa::eigen::ColVecs4i &E, const std::string &filename) {
     return _write_plcurve(V, E, filename);
 }
 }// namespace mandoline::tools

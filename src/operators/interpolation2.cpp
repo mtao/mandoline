@@ -22,7 +22,7 @@ Eigen::SparseMatrix<double> barycentric_matrix(const CutCellMesh<2> &ccm) {
         trips.emplace_back(a, b, v);
     }
     A.setFromTriplets(trips.begin(), trips.end());
-    mtao::VecXd sums = A * mtao::VecXd::Ones(A.cols());
+    balsa::eigen::VecXd sums = A * balsa::eigen::VecXd::Ones(A.cols());
     sums = (sums.array().abs() > 1e-10).select(1.0 / sums.array(), 0);
     A = sums.asDiagonal() * A;
     return A;
@@ -109,7 +109,7 @@ Eigen::SparseMatrix<double> edge_grid_volume_matrix(const CutCellMesh<2> &ccm) {
     //    std::cout << t.row() << "," << t.col() << "=" << t.value() << "/" << A.rows() << "," << A.cols() << std::endl;
     //}
     A.setFromTriplets(trips.begin(), trips.end());
-    //mtao::VecXd sums = A * mtao::VecXd::Zero(A.cols());
+    //balsa::eigen::VecXd sums = A * balsa::eigen::VecXd::Zero(A.cols());
     //sums = (sums.array().abs() > 1e-10).select(1.0 / sums.array(), 0);
     //A = sums.asDiagonal() * A;
     return A;
@@ -119,7 +119,7 @@ Eigen::SparseMatrix<double> edge_grid_volume_matrix(const CutCellMesh<2> &ccm) {
 Eigen::SparseMatrix<double> face_grid_volume_matrix(const CutCellMesh<2> &ccm) {
 
     double dv = ccm.dx().prod();
-    mtao::VecXd vols_fracs = face_volumes(ccm) / dv;
+    balsa::eigen::VecXd vols_fracs = face_volumes(ccm) / dv;
     Eigen::SparseMatrix<double> A(ccm.num_faces(), ccm.StaggeredGrid::cell_size());
     std::vector<Eigen::Triplet<double>> trips;
     for (auto &&[gcind, cfinds] : ccm.cell_grid_ownership) {

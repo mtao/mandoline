@@ -1,12 +1,12 @@
-#include <mtao/types.hpp>
+#include <balsa/eigen/types.hpp>
 #include <mtao/geometry/mesh/triangle_fan.hpp>
 #include <iostream>
-#include <mtao/eigen/stl2eigen.hpp>
-#include <mtao/eigen/stack.h>
+#include <balsa/eigen/stl2eigen.hpp>
+#include <balsa/eigen/stack.hpp>
 #include <memory>
 #include <algorithm>
 
-#include <mtao/eigen_utils.h>
+#include <balsa/eigen_utils.h>
 #include <mtao/logging/logger.hpp>
 #include <mtao/geometry/grid/triangulation.hpp>
 #include "mandoline/construction/generator.hpp"
@@ -159,7 +159,7 @@ construction::CutCellGenerator<3> make_generator(const mtao::ColVecs3d& VV, cons
         v = V.col(i);
     }
 
-    mtao::Vec3d dx = 1.0 / (mtao::eigen::stl2eigen(N).cast<double>().array()+1);
+    mtao::Vec3d dx = 1.0 / (balsa::eigen::stl2eigen(N).cast<double>().array()+1);
     mtao::Vec3d origin = mtao::Vec3d::Zero();
 
     construction::CutCellGenerator<3> ccg;

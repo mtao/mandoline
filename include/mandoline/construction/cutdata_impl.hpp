@@ -365,17 +365,17 @@ void CutData<D, Indexer>::bake(const std::optional<SGType> &grid, bool fuse,
 template <int D, typename Indexer>
 auto CutData<D, Indexer>::get_face_bary(int face_index,
                                         const Crossing<D> &crossing) const
-    -> mtao::Vec3d {
+    -> balsa::eigen::Vec3d {
     static_assert(D == 3);
     auto &FI = m_triangle_intersections[face_index];
     return std::visit(
-        [&](auto &&v) -> mtao::Vec3d {
+        [&](auto &&v) -> balsa::eigen::Vec3d {
             using T = typename std::decay_t<decltype(v)>;
             if constexpr (std::is_same_v<T, VType const *>) {
                 // try to find it on the vertices
                 for (auto &&[i, ptr] : mtao::iterator::enumerate(FI.vptr_tri)) {
                     if (ptr == v) {
-                        return mtao::Vec3d::Unit(i);
+                        return balsa::eigen::Vec3d::Unit(i);
                     }
                 }
             } else if constexpr (std::is_same_v<T, EdgeIsect const *>) {
@@ -676,8 +676,8 @@ template <int U>
 auto CutData<D, Indexer>::facets(
     const std::map<const VType *, int> &gv_idx_map,
     const std::vector<std::array<const VType *, U>> &facets) const
-    -> mtao::ColVectors<int, U> {
-    auto E = mtao::eigen::stl2eigen(facets);
+    -> balsa::eigen::ColVectors<int, U> {
+    auto E = balsa::eigen::stl2eigen(facets);
     return E.unaryExpr(
         [&](const VType *ptr) -> int { return gv_idx_map.at(ptr); });
 }
@@ -700,8 +700,8 @@ auto CutData<D, Indexer>::gvedge2edges(
     return E;
 }
 template <int D, typename Indexer>
-auto CutData<D, Indexer>::edge_edges() const -> mtao::ColVectors<int, 2> {
-    return mtao::eigen::stl2eigen(edge_edges(m_vertex_indexer));
+auto CutData<D, Indexer>::edge_edges() const -> balsa::eigen::ColVectors<int, 2> {
+    return balsa::eigen::stl2eigen(edge_edges(m_vertex_indexer));
 }
 template <int D, typename Indexer>
 auto CutData<D, Indexer>::edge_indices() const -> std::map<VPtrEdge, int> {
@@ -793,11 +793,11 @@ auto CutData<D, Indexer>::stl_edges(
 }
 template <int D, typename Indexer>
 auto CutData<D, Indexer>::edges(const std::map<const VType *, int> &gv_idx_map)
-    const -> mtao::ColVectors<int, 2> {
-    return mtao::eigen::stl2eigen(stl_edges(gv_idx_map));
+    const -> balsa::eigen::ColVectors<int, 2> {
+    return balsa::eigen::stl2eigen(stl_edges(gv_idx_map));
 }
 template <int D, typename Indexer>
-auto CutData<D, Indexer>::edges() const -> mtao::ColVectors<int, 2> {
+auto CutData<D, Indexer>::edges() const -> balsa::eigen::ColVectors<int, 2> {
     return edges(m_vertex_indexer);
 }
 template <int D, typename Indexer>

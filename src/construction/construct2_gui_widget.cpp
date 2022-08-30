@@ -8,7 +8,7 @@ CutmeshGenerator2Gui::CutmeshGenerator2Gui(Magnum::Shaders::Flat2D &shader, Magn
     mtao::opengl::MeshDrawable<Magnum::Shaders::Flat2D>::activate_edges();
     update_grid();
 }
-CutmeshGenerator2Gui::CutmeshGenerator2Gui(Magnum::Shaders::Flat2D &shader, Magnum::SceneGraph::DrawableGroup2D &group, const mtao::ColVecs2d &V, const mtao::ColVecs2i &F, const mtao::geometry::grid::StaggeredGrid2d &grid, std::optional<double> threshold)
+CutmeshGenerator2Gui::CutmeshGenerator2Gui(Magnum::Shaders::Flat2D &shader, Magnum::SceneGraph::DrawableGroup2D &group, const balsa::eigen::ColVecs2d &V, const balsa::eigen::ColVecs2i &F, const mtao::geometry::grid::StaggeredGrid2d &grid, std::optional<double> threshold)
   : DeformingGeometryConstructor2(V, F, grid, threshold), mtao::opengl::objects::Grid<2>{ grid.vertex_grid() }, mtao::opengl::MeshDrawable<Magnum::Shaders::Flat2D>{ *this, shader, group }, bbox(grid.bbox()), N(grid.vertex_shape()), use_cube(false), threshold(threshold) {
     mtao::opengl::MeshDrawable<Magnum::Shaders::Flat2D>::deactivate();
     mtao::opengl::MeshDrawable<Magnum::Shaders::Flat2D>::activate_edges();
@@ -24,7 +24,7 @@ void CutmeshGenerator2Gui::initialize_visualization() {
     data().color = 0xffffff_rgbf;
 }
 
-CutmeshGenerator2Gui CutmeshGenerator2Gui::create(Magnum::Shaders::Flat2D &shader, Magnum::SceneGraph::DrawableGroup2D &group, const mtao::ColVecs2d &V, const mtao::ColVecs2i &F, double bbox_scale, const std::array<int, 2> &N, std::optional<double> threshold) {
+CutmeshGenerator2Gui CutmeshGenerator2Gui::create(Magnum::Shaders::Flat2D &shader, Magnum::SceneGraph::DrawableGroup2D &group, const balsa::eigen::ColVecs2d &V, const balsa::eigen::ColVecs2i &F, double bbox_scale, const std::array<int, 2> &N, std::optional<double> threshold) {
     auto bbox = mtao::geometry::bounding_box(V);
     bbox = mtao::geometry::expand_bbox(bbox, bbox_scale);
     auto s = bbox.sizes().eval();
@@ -109,7 +109,7 @@ mandoline::CutCellMesh<2> CutmeshGenerator2Gui::generate() {
         return {};
     }
 }
-void CutmeshGenerator2Gui::update_vertices_and_bbox(const mtao::ColVecs2d &V, double bbox_scale, const std::optional<double> &threshold) {
+void CutmeshGenerator2Gui::update_vertices_and_bbox(const balsa::eigen::ColVecs2d &V, double bbox_scale, const std::optional<double> &threshold) {
     update_vertices(V, threshold);
 
     bbox = mtao::geometry::bounding_box(V).cast<float>();
@@ -125,7 +125,7 @@ void CutmeshGenerator2Gui::update_vertices_and_bbox(const mtao::ColVecs2d &V, do
     auto g = mtao::geometry::grid::StaggeredGrid2d::from_bbox(bbox.cast<double>(), N);
     update_grid();
 }
-void CutmeshGenerator2Gui::update_mesh_and_bbox(const mtao::ColVecs2d &V, const mtao::ColVecs2i &F, double scale, const std::optional<double> &threshold) {
+void CutmeshGenerator2Gui::update_mesh_and_bbox(const balsa::eigen::ColVecs2d &V, const balsa::eigen::ColVecs2i &F, double scale, const std::optional<double> &threshold) {
 
     update_vertices_and_bbox(V, scale, threshold);
     update_topology(F);

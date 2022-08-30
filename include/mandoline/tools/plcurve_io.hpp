@@ -10,12 +10,12 @@ namespace mandoline::tools {
 // Edges
 // edge_idx, vertex_idx1, vertex_idx2, left_element_idx, right_element_idx
 // edge_idx, vertex_idx1, vertex_idx2, left_element_idx, right_element_idx
-std::tuple<mtao::ColVecs2d, mtao::ColVecs4i> read_plcurve(const std::string &filename);
+std::tuple<balsa::eigen::ColVecs2d, balsa::eigen::ColVecs4i> read_plcurve(const std::string &filename);
 
 
-void write_plcurve(const mtao::ColVecs2d &V, const mtao::ColVecs2i &E, const std::string &filename);
-void write_plcurve(const mtao::ColVecs2d &V, const mtao::ColVecs4i &E, const std::string &filename);
+void write_plcurve(const balsa::eigen::ColVecs2d &V, const balsa::eigen::ColVecs2i &E, const std::string &filename);
+void write_plcurve(const balsa::eigen::ColVecs2d &V, const balsa::eigen::ColVecs4i &E, const std::string &filename);
 
 
-void write_cutmesh2_plcurve(const mandoline::CutCellMesh<2> &ccm, const std::string &filename, const mtao::ColVecs4i &inputE = {});
+void write_cutmesh2_plcurve(const mandoline::CutCellMesh<2> &ccm, const std::string &filename, const balsa::eigen::ColVecs4i &inputE = {});
 }// namespace mandoline::tools

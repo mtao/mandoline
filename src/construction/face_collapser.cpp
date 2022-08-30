@@ -19,11 +19,11 @@ FaceCollapser::FaceCollapser(const std::set<Edge> &edges) {
         }
     }
 }
-FaceCollapser::FaceCollapser(const mtao::ColVecs2i &E) {
+FaceCollapser::FaceCollapser(const balsa::eigen::ColVecs2i &E) {
     for (int cid = 0; cid < E.cols(); ++cid) {
 
         Edge e;
-        mtao::eigen::stl2eigen(e) = E.col(cid);
+        balsa::eigen::stl2eigen(e) = E.col(cid);
 
 
         face_ds.add_node(2 * cid);

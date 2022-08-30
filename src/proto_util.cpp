@@ -1,15 +1,15 @@
 #include "mandoline/proto_util.hpp"
 namespace mandoline::protobuf {
-void serialize(const mtao::Vec2i &a, Vec2i &b) {
+void serialize(const balsa::eigen::Vec2i &a, Vec2i &b) {
     b.set_x(a.x());
     b.set_y(a.y());
 }
-void serialize(const mtao::Vec3d &a, Vec3d &b) {
+void serialize(const balsa::eigen::Vec3d &a, Vec3d &b) {
     b.set_x(a.x());
     b.set_y(a.y());
     b.set_z(a.z());
 }
-void serialize(const mtao::Vec3i &a, Vec3i &b) {
+void serialize(const balsa::eigen::Vec3i &a, Vec3i &b) {
     b.set_x(a.x());
     b.set_y(a.y());
     b.set_z(a.z());
@@ -42,22 +42,22 @@ void deserialize(const Vec3d &a, std::array<double, 3> &b) {
     b[1] = a.y();
     b[2] = a.z();
 }
-mtao::Vec3d deserialize(const Vec3d &a) {
-    mtao::Vec3d b;
+balsa::eigen::Vec3d deserialize(const Vec3d &a) {
+    balsa::eigen::Vec3d b;
     b.x() = a.x();
     b.y() = a.y();
     b.z() = a.z();
     return b;
 }
-mtao::Vec3i deserialize(const Vec3i &a) {
-    mtao::Vec3i b;
+balsa::eigen::Vec3i deserialize(const Vec3i &a) {
+    balsa::eigen::Vec3i b;
     b.x() = a.x();
     b.y() = a.y();
     b.z() = a.z();
     return b;
 }
-mtao::Vec2i deserialize(const Vec2i &a) {
-    mtao::Vec2i b;
+balsa::eigen::Vec2i deserialize(const Vec2i &a) {
+    balsa::eigen::Vec2i b;
     b.x() = a.x();
     b.y() = a.y();
     return b;

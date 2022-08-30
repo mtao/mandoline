@@ -1,6 +1,5 @@
 #pragma once
-#include <mtao/eigen/stl2eigen.hpp>
-#include <mtao/eigen/iterable.hpp>
+#include <balsa/eigen/stl2eigen.hpp>
 #include <mtao/iterator/zip.hpp>
 #include <mtao/iterator/interval.hpp>
 #include "mandoline/construction/vertex_types.hpp"
@@ -108,7 +107,7 @@ bool Vertex<D>::approx(const Vertex &o) const {
 
 template<int D>
 auto Vertex<D>::p() const -> Vec {
-    return Eigen::Map<const mtao::Vector<int, D>>(&*coord.begin()).template cast<double>() + quot;
+    return Eigen::Map<const balsa::eigen::Vector<int, D>>(&*coord.begin()).template cast<double>() + quot;
 }
 
 template<int D>
@@ -136,7 +135,7 @@ auto Vertex<D>::mask() const -> MaskType {
 template<int D>
 Vertex<D>::operator std::string() const {
     std::stringstream ss;
-    ss << "(" << mtao::eigen::stl2eigen(coord).transpose() << "{" << quot.transpose() << "}"
+    ss << "(" << balsa::eigen::stl2eigen(coord).transpose() << "{" << quot.transpose() << "}"
        << "[";
     for (int i = 0; i < clamped_indices.size(); ++i) {
         ss << clamped_indices[i];
@@ -207,7 +206,7 @@ auto Vertex<D>::possible_cells() const -> std::set<coord_type> {
 
 template<int D>
 void Vertex<D>::repair() {
-    auto rcoord = mtao::eigen::stl2eigen(coord);
+    auto rcoord = balsa::eigen::stl2eigen(coord);
     Vec qfloor = quot.array().floor();
     rcoord += qfloor.template cast<int>();
     quot = quot - qfloor;
@@ -241,7 +240,7 @@ void Vertex<D>::apply_thresholding(double thresh) {
 
 template<int D>
 auto Vertex<D>::operator+(const Vertex &o) const -> Vertex<D> {
-    using namespace mtao::eigen;
+    using namespace balsa::eigen;
     Vertex ret;
     auto mcm = stl2eigen(coord);
     auto ocm = stl2eigen(o.coord);
@@ -256,7 +255,7 @@ auto Vertex<D>::operator+(const Vertex &o) const -> Vertex<D> {
 
 template<int D>
 auto Vertex<D>::operator-(const Vertex &o) const -> Vertex<D> {
-    using namespace mtao::eigen;
+    using namespace balsa::eigen;
     Vertex ret;
     auto mcm = stl2eigen(coord);
     auto ocm = stl2eigen(o.coord);
@@ -271,7 +270,7 @@ auto Vertex<D>::operator-(const Vertex &o) const -> Vertex<D> {
 
 template<int D>
 auto Vertex<D>::operator*(double val) const -> Vertex<D> {
-    using namespace mtao::eigen;
+    using namespace balsa::eigen;
     auto mcm = stl2eigen(coord);
     Vertex ret = from_vertex(val * mcm.template cast<double>());
     ret.quot += val * quot;

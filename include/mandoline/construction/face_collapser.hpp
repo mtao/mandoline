@@ -23,7 +23,7 @@ struct FaceCollapser {
     using coord_type = std::array<int, 3>;
     //FaceCollapser(const std::map<int,std::set<std::vector<int>>>& faces);
     FaceCollapser(const std::set<Edge> &edges);
-    FaceCollapser(const mtao::ColVecs2i &edges);
+    FaceCollapser(const balsa::eigen::ColVecs2i &edges);
 
 
     // reinterpret undirected edge graph as a sparse adjacency map
@@ -36,11 +36,11 @@ struct FaceCollapser {
 
     // merge edge face ids. optionally one can pass in a set of tangent vectors and a map from edge indices into the list of tangent vectors
     template<typename Derived>
-    void unify_boundary_loops(const Eigen::MatrixBase<Derived> &V, const std::map<Edge, std::tuple<int, bool>> &cut_parent_map = {}, const mtao::ColVecs2d &T = {});
+    void unify_boundary_loops(const Eigen::MatrixBase<Derived> &V, const std::map<Edge, std::tuple<int, bool>> &cut_parent_map = {}, const balsa::eigen::ColVecs2d &T = {});
     // bake the face structure. for now it is only merge, but could be more?
     // merge edge face ids. optionally one can pass in a set of tangent vectors and a map from edge indices into the list of tangent vectors
     template<typename Derived>
-    void bake(const Eigen::MatrixBase<Derived> &V, bool nonsimple_faces = true, const std::map<Edge, std::tuple<int, bool>> &cut_parent_map = {}, const mtao::ColVecs2d &T = {});
+    void bake(const Eigen::MatrixBase<Derived> &V, bool nonsimple_faces = true, const std::map<Edge, std::tuple<int, bool>> &cut_parent_map = {}, const balsa::eigen::ColVecs2d &T = {});
 
 
     // NOTE: is_inside
@@ -86,7 +86,7 @@ struct FaceCollapser {
 };
 
 template<typename Derived>
-void FaceCollapser::bake(const Eigen::MatrixBase<Derived> &V, bool nonsimple_faces, const std::map<Edge, std::tuple<int, bool>> &cut_parent_map, const mtao::ColVecs2d &T) {
+void FaceCollapser::bake(const Eigen::MatrixBase<Derived> &V, bool nonsimple_faces, const std::map<Edge, std::tuple<int, bool>> &cut_parent_map, const balsa::eigen::ColVecs2d &T) {
     unify_boundary_loops(V, cut_parent_map, T);
     finalize();
 
@@ -95,7 +95,7 @@ void FaceCollapser::bake(const Eigen::MatrixBase<Derived> &V, bool nonsimple_fac
     }
 }
 template<typename Derived>
-void FaceCollapser::unify_boundary_loops(const Eigen::MatrixBase<Derived> &V, const std::map<Edge, std::tuple<int, bool>> &cut_parent_map, const mtao::ColVecs2d &T) {
+void FaceCollapser::unify_boundary_loops(const Eigen::MatrixBase<Derived> &V, const std::map<Edge, std::tuple<int, bool>> &cut_parent_map, const balsa::eigen::ColVecs2d &T) {
     const bool use_parent_tangents = cut_parent_map.size() > 0 && T.size() > 0;
     // for each neighorhood
 
@@ -103,7 +103,7 @@ void FaceCollapser::unify_boundary_loops(const Eigen::MatrixBase<Derived> &V, co
 
         // sort indices by quadrant and cross product
         std::vector<int> indices(bs.begin(), bs.end());
-        mtao::ColVecs2d D(2, bs.size());
+        balsa::eigen::ColVecs2d D(2, bs.size());
         if (use_parent_tangents) {
             auto va = V.col(a);
             for (auto [i, j] : mtao::iterator::enumerate(indices)) {

@@ -1,7 +1,7 @@
 #include "mandoline/operators/masks.hpp"
 namespace mandoline::operators {
-mtao::VecXd mesh_face_mask(const CutCellMesh<3> &ccm) {
-    mtao::VecXd M = mtao::VecXd::Ones(ccm.face_size());
+balsa::eigen::VecXd mesh_face_mask(const CutCellMesh<3> &ccm) {
+    balsa::eigen::VecXd M = balsa::eigen::VecXd::Ones(ccm.face_size());
     for (auto &&[i, f] : mtao::iterator::enumerate(ccm.faces())) {
         if (f.is_mesh_face()) {
             M(i) = 0;
@@ -9,8 +9,8 @@ mtao::VecXd mesh_face_mask(const CutCellMesh<3> &ccm) {
     }
     return M;
 }
-mtao::VecXd grid_boundary_mask(const CutCellMesh<3> &ccm) {
-    mtao::VecXd M = mtao::VecXd::Ones(ccm.face_size());
+balsa::eigen::VecXd grid_boundary_mask(const CutCellMesh<3> &ccm) {
+    balsa::eigen::VecXd M = balsa::eigen::VecXd::Ones(ccm.face_size());
     for (auto &&[i, f] : mtao::iterator::enumerate(ccm.faces())) {
         if (f.is_axial_face()) {
             int cidx = f.as_axial_coord();

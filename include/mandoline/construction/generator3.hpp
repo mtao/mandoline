@@ -43,7 +43,7 @@ class CutCellGenerator<3> : public CutCellEdgeGenerator<3> {
     void clear() override;
 
 
-    static mtao::ColVecs3i faceMap_to_faces(mtao::map<int, mtao::ColVecs3i> &fm);
+    static balsa::eigen::ColVecs3i faceMap_to_faces(mtao::map<int, balsa::eigen::ColVecs3i> &fm);
 
     void update_vertices_from_intersections();
     CutCellMesh<3> generate() const;
@@ -72,11 +72,11 @@ class CutCellGenerator<3> : public CutCellEdgeGenerator<3> {
     bool check_cell_containment() const;
     bool check_face_utilization() const;
 
-    mtao::Vec3d area_normal(const std::vector<int> &F) const;
-    mtao::Vec3d area_normal(const std::set<std::vector<int>> &F) const;
+    balsa::eigen::Vec3d area_normal(const std::vector<int> &F) const;
+    balsa::eigen::Vec3d area_normal(const std::set<std::vector<int>> &F) const;
     std::set<Edge> edge_slice(int dim, int slice) const;
     mtao::map<int, int> cut_cell_to_primal_map;// store the cut-face -> input face map
-    mtao::ColVecs3d origN;// the normals from the input mesh
+    balsa::eigen::ColVecs3d origN;// the normals from the input mesh
     std::array<mtao::map<int, AxisHEMData>, 3> axis_hem_data;// per-cut-plane information
     std::array<std::set<Edge>, 3> axial_primal_faces;// a hash for the faces of the input mesh that lie on axial planes
     BoundaryElements m_newF;// ??? what is this
