@@ -111,7 +111,7 @@ mandoline_build_args = [
   '-DMANDOLINE_USE_ADAPTIVE_GRID'
   ]
 
-mandoline = static_library('mandoline', proto_genned_srcs,
+mandoline_lib = static_library('mandoline', proto_genned_srcs,
   common_srcs,
   cutmesh2_srcs,
   cutmesh3_srcs,
@@ -121,6 +121,7 @@ mandoline = static_library('mandoline', proto_genned_srcs,
   cpp_args: mandoline_build_args
   )
 
+mandoline_dep= declare_dependency(link_with: mandoline_lib, dependencies: mandoline_deps, include_directories: include_dir, compile_args: mandoline_build_args)
 
 #if get_option('protobuf')
 #  protobuf_dep = dependency('protobuf', required: false)
@@ -173,5 +174,5 @@ core_deps = [spdlog_dep, eigen_dep,range_v3_dep, fmt_dep]
 
 
 
-#subdir('tests')
+subdir('tests')
 #subdir('tools')
