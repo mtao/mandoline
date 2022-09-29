@@ -4,7 +4,7 @@
 #include "mandoline/adaptive_grid.hpp"
 #include <set>
 #include "cutmesh.pb.h"
-#include <mtao/eigen/stl2eigen.hpp>
+#include <balsa/eigen/stl2eigen.hpp>
 #include <optional>
 namespace mandoline::construction {
 
@@ -79,8 +79,8 @@ class AdaptiveGridFactory {
 
 
   public:
-    mtao::ColVecs2i edges;
-    mtao::ColVecs2i boundary_edges;
+    balsa::eigen::ColVecs2i edges;
+    balsa::eigen::ColVecs2i boundary_edges;
     std::vector<GridData3b> levels;
     std::vector<GridData3> levels_mask;
     GridData3 original;

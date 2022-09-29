@@ -1,17 +1,17 @@
 #include "mandoline/operators/cell_indices.hpp"
 namespace mandoline::operators {
 
-/// int nearest_vertex(const CutCellMesh<3>& ccm, Eigen::Ref<const mtao::Vec3d>
+/// int nearest_vertex(const CutCellMesh<3>& ccm, Eigen::Ref<const balsa::eigen::Vec3d>
 
-mtao::VecXi get_cell_indices(const CutCellMesh<3>& ccm,
-                             Eigen::Ref<const mtao::ColVecs3d> p) {
+balsa::eigen::VecXi get_cell_indices(const CutCellMesh<3>& ccm,
+                             Eigen::Ref<const balsa::eigen::ColVecs3d> p) {
     return get_cell_indices(ccm, ccm.exterior_grid().cell_ownership_grid(), p);
 }
-mtao::VecXi get_cell_indices(
+balsa::eigen::VecXi get_cell_indices(
     const CutCellMesh<3>& ccm,
     const mtao::geometry::grid::GridDataD<int, 3>& cell_ownership_grid,
-    Eigen::Ref<const mtao::ColVecs3d> P) {
-    mtao::VecXi I(P.cols());
+    Eigen::Ref<const balsa::eigen::ColVecs3d> P) {
+    balsa::eigen::VecXi I(P.cols());
 
 #if defined(MTAO_TBB_ENABLED)
     tbb::parallel_for<int>(0, I.size(), [&](const int j) {
@@ -27,18 +27,18 @@ mtao::VecXi get_cell_indices(
     return I;
 }
 
-mtao::VecXi get_cell_indices(
+balsa::eigen::VecXi get_cell_indices(
     const CutCellMesh<3>::ExteriorGridType& exterior_grid,
-    Eigen::Ref<const mtao::ColVecs3d> P) {
+    Eigen::Ref<const balsa::eigen::ColVecs3d> P) {
     return get_cell_indices(exterior_grid, exterior_grid.cell_ownership_grid(),
                             P);
 }
 
-mtao::VecXi get_cell_indices(
+balsa::eigen::VecXi get_cell_indices(
     const AdaptiveGrid& exterior_grid,
     const mtao::geometry::grid::GridDataD<int, 3>& cell_ownership_grid,
-    Eigen::Ref<const mtao::ColVecs3d> P) {
-    mtao::VecXi I(P.cols());
+    Eigen::Ref<const balsa::eigen::ColVecs3d> P) {
+    balsa::eigen::VecXi I(P.cols());
 
 #if defined(MTAO_TBB_ENABLED)
     tbb::parallel_for<int>(0, I.size(), [&](const int j) {
@@ -57,7 +57,7 @@ mtao::VecXi get_cell_indices(
 int get_cell_index(
     const CutCellMesh<3>& ccm,
     const mtao::geometry::grid::GridDataD<int, 3>& cell_ownership_grid,
-    Eigen::Ref<const mtao::Vec3d> p) {
+    Eigen::Ref<const balsa::eigen::Vec3d> p) {
     auto [c, q] = ccm.vertex_grid().coord(p);
     // check if its  in an adaptive grid cell, tehn we can just use that cell
     // if the grid returns -2 we pass that through
@@ -69,9 +69,9 @@ int get_cell_index(
         return ret;
     } else {
         auto cell_indices = ccm.cut_cells_in_grid_cell(c);
-        mtao::ColVecs3d V;
+        balsa::eigen::ColVecs3d V;
         const auto& CV = ccm.cached_vertices();
-        const mtao::ColVecs3d* VP = CV ? &*CV : &V;
+        const balsa::eigen::ColVecs3d* VP = CV ? &*CV : &V;
         if (!CV) {
             V = ccm.vertices();
         }
@@ -117,7 +117,7 @@ int get_cell_index(
 int get_cell_index(
     const AdaptiveGrid& exterior_grid,
     const mtao::geometry::grid::GridDataD<int, 3>& cell_ownership_grid,
-    Eigen::Ref<const mtao::Vec3d> p) {
+    Eigen::Ref<const balsa::eigen::Vec3d> p) {
     const auto& vg = exterior_grid.Base::vertex_grid();
     auto [coord, quot] = vg.coord(p);
     return get_cell_index(exterior_grid, cell_ownership_grid, coord);
@@ -127,9 +127,9 @@ int get_cell_index(
     const AdaptiveGrid& exterior_grid,
     const mtao::geometry::grid::GridDataD<int, 3>& cell_ownership_grid,
     const std::array<int, 3>& coord) {
-    auto ec = mtao::eigen::stl2eigen(coord);
+    auto ec = balsa::eigen::stl2eigen(coord);
     //if (exterior_grid.Base::cell_grid().valid_index(coord)) {
-    if (ec.minCoeff() < 0 || (ec.array() >= mtao::eigen::stl2eigen(exterior_grid.Base::cell_grid().shape()).array()).any()) {
+    if (ec.minCoeff() < 0 || (ec.array() >= balsa::eigen::stl2eigen(exterior_grid.Base::cell_grid().shape()).array()).any()) {
         return -2;
     } else {
         return cell_ownership_grid(coord);

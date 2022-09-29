@@ -7,9 +7,9 @@
 
 namespace mandoline::operators {
 
-mtao::VecXd face_volumes(const CutCellMesh<2> &ccm, bool from_triangulation) {
+balsa::eigen::VecXd face_volumes(const CutCellMesh<2> &ccm, bool from_triangulation) {
 
-    mtao::VecXd FV(ccm.cut_faces().size());
+    balsa::eigen::VecXd FV(ccm.cut_faces().size());
     auto V = ccm.vertices();
     if (from_triangulation) {
         for (auto &&[i, face] : mtao::iterator::enumerate(ccm.cut_faces())) {
@@ -35,7 +35,7 @@ mtao::VecXd face_volumes(const CutCellMesh<2> &ccm, bool from_triangulation) {
 
 
     }
-    FV = mtao::eigen::vstack(FV, cell_volumes(ccm.exterior_grid));
+    FV = balsa::eigen::vstack(FV, cell_volumes(ccm.exterior_grid));
 
     if (FV.minCoeff() < 0) {
         mtao::logging::warn() << "Negative face area! warn mtao because this shouldn't happen";
@@ -45,9 +45,9 @@ mtao::VecXd face_volumes(const CutCellMesh<2> &ccm, bool from_triangulation) {
 }
 
 
-mtao::VecXd edge_lengths(const CutCellMesh<2> &ccm) {
+balsa::eigen::VecXd edge_lengths(const CutCellMesh<2> &ccm) {
 
-    mtao::VecXd EV;
+    balsa::eigen::VecXd EV;
     //Use barycentric for tri-mesh cut-faces, planar areas for axial cut-faces, and let the adaptive grid do it's thing
     auto mesh_edge_vols = mtao::geometry::volumes(ccm.origV(), ccm.origE());
 
@@ -76,9 +76,9 @@ mtao::VecXd edge_lengths(const CutCellMesh<2> &ccm) {
     return EV;
 }
 
-mtao::VecXd dual_edge_lengths(const CutCellMesh<2> &ccm) {
+balsa::eigen::VecXd dual_edge_lengths(const CutCellMesh<2> &ccm) {
 
-    mtao::VecXd DL(ccm.cut_edges().size());
+    balsa::eigen::VecXd DL(ccm.cut_edges().size());
     DL.setZero();
     if (ccm.cut_edges().size() > 0) {
         for (auto &&[i, edge] : mtao::iterator::enumerate(ccm.cut_edges())) {
@@ -87,15 +87,15 @@ mtao::VecXd dual_edge_lengths(const CutCellMesh<2> &ccm) {
                 DL(i) = ccm.dx()(axis);
             }
         }
-        return mtao::eigen::vstack(DL, boundary_facet_volumes(ccm.exterior_grid));
+        return balsa::eigen::vstack(DL, boundary_facet_volumes(ccm.exterior_grid));
     } else {
         return face_volumes(ccm.exterior_grid);
     }
 }
-mtao::VecXd dual_hodge1(const CutCellMesh<2> &ccm) {
+balsa::eigen::VecXd dual_hodge1(const CutCellMesh<2> &ccm) {
     auto PV = edge_lengths(ccm);
     auto DV = dual_edge_lengths(ccm);
-    mtao::VecXd CV = (DV.array() > 1e-5).select(PV.cwiseQuotient(DV), 0);
+    balsa::eigen::VecXd CV = (DV.array() > 1e-5).select(PV.cwiseQuotient(DV), 0);
     for (int i = 0; i < CV.size(); ++i) {
         if (!std::isfinite(CV(i))) {
             CV(i) = 0;
@@ -103,10 +103,10 @@ mtao::VecXd dual_hodge1(const CutCellMesh<2> &ccm) {
     }
     return CV;
 }
-mtao::VecXd primal_hodge1(const CutCellMesh<2> &ccm) {
+balsa::eigen::VecXd primal_hodge1(const CutCellMesh<2> &ccm) {
     auto PV = edge_lengths(ccm);
     auto DV = dual_edge_lengths(ccm);
-    mtao::VecXd CV = (PV.array() > 1e-5).select(DV.cwiseQuotient(PV), 0);
+    balsa::eigen::VecXd CV = (PV.array() > 1e-5).select(DV.cwiseQuotient(PV), 0);
     for (int i = 0; i < CV.size(); ++i) {
         if (!std::isfinite(CV(i))) {
             CV(i) = 0;
@@ -114,7 +114,7 @@ mtao::VecXd primal_hodge1(const CutCellMesh<2> &ccm) {
     }
     return CV;
 }
-mtao::VecXd dual_hodge2(const CutCellMesh<2> &ccm) {
+balsa::eigen::VecXd dual_hodge2(const CutCellMesh<2> &ccm) {
     auto CV = face_volumes(ccm);
     for (int i = 0; i < CV.size(); ++i) {
         if (!std::isfinite(CV(i))) {
@@ -123,7 +123,7 @@ mtao::VecXd dual_hodge2(const CutCellMesh<2> &ccm) {
     }
     return CV;
 }
-mtao::VecXd primal_hodge2(const CutCellMesh<2> &ccm) {
+balsa::eigen::VecXd primal_hodge2(const CutCellMesh<2> &ccm) {
     auto CV = face_volumes(ccm);
     for (int i = 0; i < CV.size(); ++i) {
         CV(i) = (std::abs(CV(i)) < 1e-5) ? 0 : (1. / CV(i));

@@ -1,6 +1,5 @@
 #pragma once
-#include <mtao/eigen/stl2eigen.hpp>
-#include <mtao/eigen/iterable.hpp>
+#include <balsa/eigen/stl2eigen.hpp>
 #include <mtao/iterator/zip.hpp>
 #include <mtao/iterator/interval.hpp>
 #include "mandoline/construction/vertex_types.hpp"
@@ -74,7 +73,7 @@ bool EdgeIntersection<D>::operator<(const EdgeIntersection &o) const {
 }
 
 template<int D>
-TriangleIntersection<D>::TriangleIntersection(const VType &is, const mtao::Vec3d &v, int triangle_index) : VType(is), bary_coord(v), triangle_index(triangle_index) {
+TriangleIntersection<D>::TriangleIntersection(const VType &is, const balsa::eigen::Vec3d &v, int triangle_index) : VType(is), bary_coord(v), triangle_index(triangle_index) {
     assert(bary_coord.minCoeff() > 0);
 }
 

@@ -1,14 +1,14 @@
 #pragma once
 #include <bitset>
 #include <map>
-#include <mtao/eigen/iterable.hpp>
-#include <mtao/eigen/stl2eigen.hpp>
+#include <balsa/eigen/iterable.hpp>
+#include <balsa/eigen/stl2eigen.hpp>
 #include <mtao/geometry/barycentric.hpp>
 #include <mtao/geometry/grid/staggered_grid.hpp>
 #include <mtao/geometry/mesh/halfedge.hpp>
 #include <mtao/iterator/interval.hpp>
 #include <mtao/iterator/zip.hpp>
-#include <mtao/types.hpp>
+#include <balsa/eigen/types.hpp>
 #include <optional>
 #include <variant>
 
@@ -80,7 +80,7 @@ struct IntersectionsBase : public coord_mask<D> {
 
 template <int D>
 struct EdgeIntersections : public IntersectionsBase<D, EdgeIntersections<D>> {
-    using Edges = mtao::ColVectors<int, 2>;
+    using Edges = balsa::eigen::ColVectors<int, 2>;
     using EdgeIsect = EdgeIntersection<D>;
     using VType = Vertex<D>;
     using VPtrEdge = std::array<const VType *, 2>;
@@ -185,8 +185,8 @@ struct TriangleIntersections
     using VPtrEdge = std::array<const VType *, 2>;
     using VPtrTri = std::array<const VType *, 3>;
     // using VPtrTri = std::vector<const VType*>;
-    using Edges = mtao::ColVectors<int, 2>;
-    using Faces = mtao::ColVectors<int, 3>;
+    using Edges = balsa::eigen::ColVectors<int, 2>;
+    using Faces = balsa::eigen::ColVectors<int, 3>;
     using Edge = std::array<int, 2>;
     using Face = std::array<int, 3>;
     using Vec = typename VType::Vec;
@@ -257,13 +257,13 @@ struct TriangleIntersections
     std::map<const VType *, std::array<double, 3>> barycentric_coords() const {
         std::map<const VType *, std::array<double, 3>> barys;
         std::array<double, 3> bary;
-        auto bary_map = mtao::eigen::stl2eigen(bary);
+        auto bary_map = balsa::eigen::stl2eigen(bary);
 
         // vertex indices
 
         // write the barycentric stuff
         for (auto &&[i, v] : mtao::iterator::enumerate(vptr_tri)) {
-            bary_map = mtao::Vec3d::Unit(i);
+            bary_map = balsa::eigen::Vec3d::Unit(i);
             barys[v] = bary;
         }
 
@@ -386,19 +386,19 @@ struct TriangleIntersections
         return ret;
     }
 
-    mtao::Vec3d N() const {
+    balsa::eigen::Vec3d N() const {
         if constexpr (D == 3) {
-            mtao::Vec3d a = vptr_tri[1]->p() - vptr_tri[0]->p();
-            mtao::Vec3d b = vptr_tri[2]->p() - vptr_tri[0]->p();
+            balsa::eigen::Vec3d a = vptr_tri[1]->p() - vptr_tri[0]->p();
+            balsa::eigen::Vec3d b = vptr_tri[2]->p() - vptr_tri[0]->p();
             return a.cross(b).normalized();
         } else {
-            mtao::Vec2d a = vptr_tri[1]->p() - vptr_tri[0]->p();
-            mtao::Vec2d b = vptr_tri[2]->p() - vptr_tri[0]->p();
-            return mtao::Vec3d::Unit(2);
-            // return (a.x() * b.y() - a.y() * b.x()) * mtao::Vec3d::Unit(2);
+            balsa::eigen::Vec2d a = vptr_tri[1]->p() - vptr_tri[0]->p();
+            balsa::eigen::Vec2d b = vptr_tri[2]->p() - vptr_tri[0]->p();
+            return balsa::eigen::Vec3d::Unit(2);
+            // return (a.x() * b.y() - a.y() * b.x()) * balsa::eigen::Vec3d::Unit(2);
         }
     }
-    mtao::Vec3d get_bary(const VType &v) const {
+    balsa::eigen::Vec3d get_bary(const VType &v) const {
         // try to build barycentric
         Eigen::Matrix<double, 3, 3> V;
         for (auto &&[i, ptr] : mtao::iterator::enumerate(vptr_tri)) {
@@ -408,13 +408,13 @@ struct TriangleIntersections
     }
 
     // line lerp coord is inverted from barycentric coordinates
-    static mtao::Vec3d edge_bary(const std::array<int, 2> &indices, double t) {
-        mtao::Vec3d v = mtao::Vec3d::Zero();
+    static balsa::eigen::Vec3d edge_bary(const std::array<int, 2> &indices, double t) {
+        balsa::eigen::Vec3d v = balsa::eigen::Vec3d::Zero();
         v(indices[0]) = 1 - t;
         v(indices[1]) = t;
         return v;
     }
-    mtao::Vec3d edge_bary(const VPtrEdge &indices, double t) const {
+    balsa::eigen::Vec3d edge_bary(const VPtrEdge &indices, double t) const {
         Edge e;
         for (auto &&[i, gvptr] : mtao::iterator::enumerate(vptr_tri)) {
             for (auto &&[v, ind] : mtao::iterator::zip(e, indices)) {
@@ -425,7 +425,7 @@ struct TriangleIntersections
         }
         return edge_bary(e, t);
     }
-    mtao::Vec3d edge_bary(const EdgeIsects &ei, double t) const {
+    balsa::eigen::Vec3d edge_bary(const EdgeIsects &ei, double t) const {
         Edge e;
         for (auto &&[eptr, bi] :
              mtao::iterator::zip(edge_isects, bary_indices)) {
@@ -438,7 +438,7 @@ struct TriangleIntersections
         return p;
     }
     /*
-               mtao::Vec3d edge_bary(const EdgeIsect& ei, double t) const {
+               balsa::eigen::Vec3d edge_bary(const EdgeIsect& ei, double t) const {
                Edge e;
                for(auto&& [eptr,bi]:
        mtao::iterator::zip(edge_isects,bary_indices)) { if(&ei == eptr) { return
@@ -451,7 +451,7 @@ struct TriangleIntersections
                */
     void bake(const std::optional<SGType> &grid = {});
 
-    mtao::Vec3d get_bary(const VPtrEdge &indices, double t) const {
+    balsa::eigen::Vec3d get_bary(const VPtrEdge &indices, double t) const {
         auto B = edge_barys(indices);
         return (1 - t) * B.col(0) + t * B.col(1);
     }

@@ -1,6 +1,6 @@
 #pragma once
 #include <set>
-#include <mtao/types.hpp>
+#include <balsa/eigen/types.hpp>
 #include <variant>
 #include "mandoline/coord_mask.hpp"
 #include "mandoline/vertex.hpp"
@@ -69,11 +69,11 @@ struct TriangleIntersection : public Vertex<D> {
     using VType::Vertex;
 
     //Members
-    mtao::Vec3d bary_coord = Vec::Zero();
+    balsa::eigen::Vec3d bary_coord = Vec::Zero();
     int triangle_index = -1;
 
     //Member functions
-    TriangleIntersection(const VType &is, const mtao::Vec3d &v, int triangle_index);
+    TriangleIntersection(const VType &is, const balsa::eigen::Vec3d &v, int triangle_index);
 
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
 };

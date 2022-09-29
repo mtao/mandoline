@@ -34,7 +34,7 @@ BoundaryFacetProjector3::BoundaryFacetProjector3(const CutCellMesh<3>& ccm)
 BoundaryFacetProjector3::~BoundaryFacetProjector3() {}
 
 std::tuple<int, double> BoundaryFacetProjector3::nearest_triangle(
-    const Eigen::Ref<const mtao::Vec3d> p) const {
+    const Eigen::Ref<const balsa::eigen::Vec3d> p) const {
     std::tuple<int, double> ret;
     auto& [idx, dist] = ret;
     mtao::RowVector<double, 3> c;
@@ -42,7 +42,7 @@ std::tuple<int, double> BoundaryFacetProjector3::nearest_triangle(
     return ret;
 }
 std::tuple<int, double> BoundaryFacetProjector3::nearest_grid_face(
-    const Eigen::Ref<const mtao::Vec3d> p) const {
+    const Eigen::Ref<const balsa::eigen::Vec3d> p) const {
     std::tuple<int, double> ret = {-1, std::numeric_limits<double>::max()};
     auto& [idx, dist] = ret;
     int axis = 0;
@@ -65,7 +65,7 @@ std::tuple<int, double> BoundaryFacetProjector3::nearest_grid_face(
         } else {
         auto dM = (p - bb.max());
         auto dm = (bb.min() - p);
-        mtao::Vec3d diff = (dM.array() > 0).select(dM, 0);
+        balsa::eigen::Vec3d diff = (dM.array() > 0).select(dM, 0);
         diff = (dm.array() > 0).select(dm, diff);
         dist = diff.norm();
         }
@@ -103,7 +103,7 @@ std::tuple<int, double> BoundaryFacetProjector3::nearest_grid_face(
         // spdlog::info("Edge axis: {} with pc {}", edge_axis,
         //             fmt::join(projected_grid_cell, ","));
         bool above;
-        mtao::Vec2d local_dists;
+        balsa::eigen::Vec2d local_dists;
         for (int j = 0; j < 2; ++j) {
             int my_axis = (j + edge_axis + 1) % 3;
             double& my_dist = local_dists(j) = quotient[my_axis] +
@@ -142,7 +142,7 @@ std::tuple<int, double> BoundaryFacetProjector3::nearest_grid_face(
         auto bb = bbox();
         auto dM = (p - bb.max());
         auto dm = (bb.min() - p);
-        mtao::Vec3d diff = (dM.array() > 0).select(dM, 0);
+        balsa::eigen::Vec3d diff = (dM.array() > 0).select(dM, 0);
         diff = (dm.array() > 0).select(dm, diff);
         dist = diff.norm();
     }
@@ -153,7 +153,7 @@ std::tuple<int, double> BoundaryFacetProjector3::nearest_grid_face(
 }
 
 std::vector<std::tuple<int, double>> BoundaryFacetProjector3::nearest_triangles(
-    const Eigen::Ref<const mtao::ColVecs3d> P) const {
+    const Eigen::Ref<const balsa::eigen::ColVecs3d> P) const {
     std::vector<std::tuple<int, double>> I(P.cols());
     tbb::parallel_for<int>(0, I.size(), [&](int idx) {
         auto& pr = I[idx];
@@ -164,7 +164,7 @@ std::vector<std::tuple<int, double>> BoundaryFacetProjector3::nearest_triangles(
 }
 std::vector<std::tuple<int, double>>
 BoundaryFacetProjector3::nearest_grid_faces(
-    const Eigen::Ref<const mtao::ColVecs3d> P) const {
+    const Eigen::Ref<const balsa::eigen::ColVecs3d> P) const {
     std::vector<std::tuple<int, double>> I(P.cols());
     tbb::parallel_for<int>(0, I.size(), [&](int idx) {
         auto& pr = I[idx];
@@ -316,9 +316,9 @@ CellParentMaps3::CellParentMaps3(const CutCellMesh<3>& ccm) : _projector(ccm) {
 namespace {
 
 int nearest_cut_vertex(const CutCellMesh<3> &ccm,
-                   Eigen::Ref<const mtao::Vec3d> p,
+                   Eigen::Ref<const balsa::eigen::Vec3d> p,
                    const coord_mask<3> &grid_case) {}
-int nearest_cut_edge(const CutCellMesh<3> &ccm, Eigen::Ref<const mtao::Vec3d> p,
+int nearest_cut_edge(const CutCellMesh<3> &ccm, Eigen::Ref<const balsa::eigen::Vec3d> p,
                  const coord_mask<3> &grid_case) {
 int edge_index = -1;
 std::array<int, 2> edge_endpoints;
@@ -345,7 +345,7 @@ if (edge_index < 0) {
 }
 
 int nearest_cut_face(const CutCellMesh<3> &ccm,
-                 Eigen::Ref<const mtao::Vec3d> &p,
+                 Eigen::Ref<const balsa::eigen::Vec3d> &p,
                  const coord_mask<3> &grid_case) {
 for (auto &&cell_index : cell_indices) {
     for (auto &&[fidx, i] : cells().at(cell_index)) {
@@ -372,7 +372,7 @@ for (auto &&cell_index : cell_indices) {
 }
 }
 
-int nearest_cut_cell(const CutCellMesh<3> &ccm, Eigen::Ref<const mtao::Vec3d> p,
+int nearest_cut_cell(const CutCellMesh<3> &ccm, Eigen::Ref<const balsa::eigen::Vec3d> p,
                  const coord_mask<3> &grid_case) {
 int count = grid_case.count();
 coord_type projected_grid_cell = grid_cell;
@@ -429,25 +429,25 @@ return index;
 return -1;
 }  // namespace
 
-mtao::VecXi nearest_vertices(const CutCellMesh<3> &ccm,
-                         Eigen::Ref<const mtao::ColVecs3d> p);
-mtao::VecXi nearest_edges(const CutCellMesh<3> &ccm,
-                      Eigen::Ref<const mtao::ColVecs3d> p);
-mtao::VecXi nearest_faces(const CutCellMesh<3> &ccm,
-                      Eigen::Ref<const mtao::ColVecs3d> p);
+balsa::eigen::VecXi nearest_vertices(const CutCellMesh<3> &ccm,
+                         Eigen::Ref<const balsa::eigen::ColVecs3d> p);
+balsa::eigen::VecXi nearest_edges(const CutCellMesh<3> &ccm,
+                      Eigen::Ref<const balsa::eigen::ColVecs3d> p);
+balsa::eigen::VecXi nearest_faces(const CutCellMesh<3> &ccm,
+                      Eigen::Ref<const balsa::eigen::ColVecs3d> p);
 */
-mtao::VecXi nearest_faces(const CutCellMesh<3>& ccm,
-                          Eigen::Ref<const mtao::ColVecs3d> P) {
+balsa::eigen::VecXi nearest_faces(const CutCellMesh<3>& ccm,
+                          Eigen::Ref<const balsa::eigen::ColVecs3d> P) {
     CellParentMaps3 parent_maps(ccm);
     return nearest_faces(ccm, parent_maps, P);
 }
 
-mtao::VecXi nearest_faces(const CutCellMesh<3>& ccm,
+balsa::eigen::VecXi nearest_faces(const CutCellMesh<3>& ccm,
                           const CellParentMaps3& parent_maps,
-                          Eigen::Ref<const mtao::ColVecs3d> P) {
+                          Eigen::Ref<const balsa::eigen::ColVecs3d> P) {
     auto nearest_triangles = parent_maps._projector.nearest_triangles(P);
     auto nearest_grid_faces = parent_maps._projector.nearest_grid_faces(P);
-    mtao::VecXi I(P.cols());
+    balsa::eigen::VecXi I(P.cols());
     I.setConstant(-1);
 
     const auto& subVs = parent_maps.subVs;
@@ -476,7 +476,7 @@ mtao::VecXi nearest_faces(const CutCellMesh<3>& ccm,
             // A x = P
             // x = (B^T B)^{-1} B^T P
 
-            mtao::Vec2d p2 =
+            balsa::eigen::Vec2d p2 =
                 (B.transpose() * B).inverse() * (B.transpose() * p);
             bool move_x = p2.x() <= 0;
             bool move_y = p2.y() <= 0;
@@ -585,7 +585,7 @@ mtao::VecXi nearest_faces(const CutCellMesh<3>& ccm,
                 continue;  // return;
             } else {
                 int axis = ccm.form_type<2>(parent_grid_face);
-                mtao::Vec2d pp;
+                balsa::eigen::Vec2d pp;
                 pp(0) = p((axis + 1) % 3);
                 pp(1) = p((axis + 2) % 3);
                 const auto& V2 = subVs[axis];
@@ -619,16 +619,16 @@ mtao::VecXi nearest_faces(const CutCellMesh<3>& ccm,
     return I;
 }
 
-mtao::VecXi nearest_mesh_cut_faces(const CutCellMesh<3>& ccm,
-                                   Eigen::Ref<const mtao::ColVecs3d> P) {
+balsa::eigen::VecXi nearest_mesh_cut_faces(const CutCellMesh<3>& ccm,
+                                   Eigen::Ref<const balsa::eigen::ColVecs3d> P) {
     CellParentMaps3 parent_maps(ccm);
     return nearest_mesh_cut_faces(ccm, parent_maps, P);
 }
-mtao::VecXi nearest_mesh_cut_faces(const CutCellMesh<3>& ccm,
+balsa::eigen::VecXi nearest_mesh_cut_faces(const CutCellMesh<3>& ccm,
                                    const CellParentMaps3& parent_maps,
-                                   Eigen::Ref<const mtao::ColVecs3d> P) {
+                                   Eigen::Ref<const balsa::eigen::ColVecs3d> P) {
     auto nearest_triangles = parent_maps._projector.nearest_triangles(P);
-    mtao::VecXi I(P.cols());
+    balsa::eigen::VecXi I(P.cols());
     I.setConstant(-1);
     tbb::parallel_for<int>(0, I.size(), [&](int j) {
         const auto& [parent_triangle, distance] = nearest_triangles[j];
@@ -650,7 +650,7 @@ mtao::VecXi nearest_mesh_cut_faces(const CutCellMesh<3>& ccm,
         // A x = P
         // x = (B^T B)^{-1} B^T P
 
-        mtao::Vec2d p2 = (B.transpose() * B).inverse() * (B.transpose() * p);
+        balsa::eigen::Vec2d p2 = (B.transpose() * B).inverse() * (B.transpose() * p);
         bool move_x = p2.x() <= 0;
         bool move_y = p2.y() <= 0;
         bool move_z = p2.sum() >= 1;
@@ -754,15 +754,15 @@ mtao::VecXi nearest_mesh_cut_faces(const CutCellMesh<3>& ccm,
     return I;
 }
 
-mtao::VecXi nearest_cells(const CutCellMesh<3>& ccm,
-                          Eigen::Ref<const mtao::ColVecs3d> P) {
+balsa::eigen::VecXi nearest_cells(const CutCellMesh<3>& ccm,
+                          Eigen::Ref<const balsa::eigen::ColVecs3d> P) {
     CellParentMaps3 parent_maps(ccm);
     return nearest_cells(ccm, parent_maps, P);
 }
-mtao::VecXi nearest_cells(const CutCellMesh<3>& ccm,
+balsa::eigen::VecXi nearest_cells(const CutCellMesh<3>& ccm,
                           const CellParentMaps3& parent_maps,
-                          Eigen::Ref<const mtao::ColVecs3d> P) {
-    mtao::VecXi I(P.cols());
+                          Eigen::Ref<const balsa::eigen::ColVecs3d> P) {
+    balsa::eigen::VecXi I(P.cols());
     // I.setConstant(0);
     // return I;
 
@@ -781,9 +781,9 @@ mtao::VecXi nearest_cells(const CutCellMesh<3>& ccm,
     const auto& subVs = parent_maps.subVs;
 
     // vertices rewritten as projected to each cell
-    mtao::ColVecs3d _V;
+    balsa::eigen::ColVecs3d _V;
     const auto& CV = ccm.cached_vertices();
-    const mtao::ColVecs3d* V = CV ? &*CV : &_V;
+    const balsa::eigen::ColVecs3d* V = CV ? &*CV : &_V;
     if (!CV) {
         _V = ccm.vertices();
     }
@@ -907,7 +907,7 @@ mtao::VecXi nearest_cells(const CutCellMesh<3>& ccm,
             // try processing faces
             if (facet_case == 1) {
                 int axis = mask.bound_axis();
-                mtao::Vec2d pp;
+                balsa::eigen::Vec2d pp;
                 pp(0) = p((axis + 1) % 3);
                 pp(1) = p((axis + 2) % 3);
                 const auto& V2 = subVs[axis];

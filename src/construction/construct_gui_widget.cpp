@@ -16,7 +16,7 @@ CutmeshGeneratorGui::CutmeshGeneratorGui(
 
 CutmeshGeneratorGui::CutmeshGeneratorGui(
     Magnum::Shaders::Flat3D &shader, Magnum::SceneGraph::DrawableGroup3D &group,
-    const mtao::ColVecs3d &V, const mtao::ColVecs3i &F,
+    const balsa::eigen::ColVecs3d &V, const balsa::eigen::ColVecs3i &F,
     const mtao::geometry::grid::StaggeredGrid3d &grid, int adaptive_level,
     std::optional<double> threshold)
     : DeformingGeometryConstructor(V, F, grid, adaptive_level, threshold),
@@ -32,7 +32,7 @@ CutmeshGeneratorGui::CutmeshGeneratorGui(
 }
 CutmeshGeneratorGui CutmeshGeneratorGui::create(
     Magnum::Shaders::Flat3D &shader, Magnum::SceneGraph::DrawableGroup3D &group,
-    const mtao::ColVecs3d &V, const mtao::ColVecs3i &F, double bbox_scale,
+    const balsa::eigen::ColVecs3d &V, const balsa::eigen::ColVecs3i &F, double bbox_scale,
     const std::array<int, 3> &N, int adaptive_level,
     std::optional<double> threshold) {
     auto bbox = mtao::geometry::bounding_box(V);
@@ -127,7 +127,7 @@ mandoline::CutCellMesh<3> CutmeshGeneratorGui::generate() {
     }
 }
 void CutmeshGeneratorGui::update_vertices_and_bbox(
-    const mtao::ColVecs3d &V, double bbox_scale,
+    const balsa::eigen::ColVecs3d &V, double bbox_scale,
     const std::optional<double> &threshold) {
     update_vertices(V, threshold);
 
@@ -146,7 +146,7 @@ void CutmeshGeneratorGui::update_vertices_and_bbox(
     update_grid();
 }
 void CutmeshGeneratorGui::update_mesh_and_bbox(
-    const mtao::ColVecs3d &V, const mtao::ColVecs3i &F, double scale,
+    const balsa::eigen::ColVecs3d &V, const balsa::eigen::ColVecs3i &F, double scale,
     const std::optional<double> &threshold) {
     update_vertices_and_bbox(V, scale, threshold);
     update_topology(F);

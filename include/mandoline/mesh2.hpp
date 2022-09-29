@@ -22,11 +22,11 @@ struct CutCellMesh<2> : public CutCellMeshBase<2, CutCellMesh<2>> {
     int grid_cell_index(const VecCRef &p) const { return cell_grid().index(grid_cell_coord(p)); }
     int grid_cell_index(const coord_type &c) const { return cell_grid().index(c); }
 
-    mtao::ColVecs2i dual_edges() const;
+    balsa::eigen::ColVecs2i dual_edges() const;
     Edges edges() const;
 
     //ColVecs dual_vertices() const;
-    mtao::ColVectors<int, 3> faces() const;
+    balsa::eigen::ColVectors<int, 3> faces() const;
     ColVecs centroids() const;
     std::set<std::vector<int>> cell(int index) const;
 
@@ -36,7 +36,7 @@ struct CutCellMesh<2> : public CutCellMeshBase<2, CutCellMesh<2>> {
     bool in_cell(const ColVecs &V, const VecCRef &, int idx) const;
     VecX volumes() const;
     VecX dual_edge_volumes() const;
-    mtao::VecXi regions() const;
+    balsa::eigen::VecXi regions() const;
     const std::map<int, std::map<int, bool>> &face_boundary_map() const { return m_face_boundary_map; }
     Eigen::SparseMatrix<double> boundary(bool include_domain_boundary_faces) const;
     const std::vector<CutFace<2>> &cut_faces() const { return m_faces; }

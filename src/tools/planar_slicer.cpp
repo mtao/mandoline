@@ -3,14 +3,14 @@
 #include "mandoline/cutface.hpp"
 #include <mtao/geometry/normal_basis.h>
 #include <mtao/geometry/bounding_box.hpp>
-#include <mtao/eigen/stack.h>
+#include <balsa/eigen/stack.hpp>
 #include <mtao/geometry/mesh/compactify.hpp>
 #include <spdlog/spdlog.h>
 
 using namespace mandoline::construction;
 using namespace mandoline;
 namespace mandoline::tools {
-Eigen::Affine3d SliceGenerator::get_transform(const mtao::Vec3d &origin, const mtao::Vec3d &direction) {
+Eigen::Affine3d SliceGenerator::get_transform(const balsa::eigen::Vec3d &origin, const balsa::eigen::Vec3d &direction) {
     Eigen::Affine3d transform;
     transform.linear().setIdentity();
     transform.linear() = mtao::geometry::normal_basis(direction);
@@ -18,19 +18,19 @@ Eigen::Affine3d SliceGenerator::get_transform(const mtao::Vec3d &origin, const m
     return transform;
 }
 
-SliceGenerator::SliceGenerator(const mtao::ColVecs3d &V, const mtao::ColVecs3i &F) : Base(std::array<int, 3>{ { 2, 2, 3 } }), V(V) {
+SliceGenerator::SliceGenerator(const balsa::eigen::ColVecs3d &V, const balsa::eigen::ColVecs3i &F) : Base(std::array<int, 3>{ { 2, 2, 3 } }), V(V) {
     std::vector<Vertex<3>> vertices(V.cols());
     for (int i = 0; i < V.cols(); ++i) {
-        mtao::Vec3d v = V.col(i);
+        balsa::eigen::Vec3d v = V.col(i);
         vertices[i] = Vertex<3>::from_vertex(vertex_grid().local_coord(v));
     }
     data.set_vertices(vertices);
     data.set_topology(F);
 }
-void SliceGenerator::set_vertices(const mtao::ColVecs3d &V) {
+void SliceGenerator::set_vertices(const balsa::eigen::ColVecs3d &V) {
     this->V = V;
 }
-void SliceGenerator::update_embedding(const mtao::ColVecs3d &V) {
+void SliceGenerator::update_embedding(const balsa::eigen::ColVecs3d &V) {
 
     auto bbox = mtao::geometry::bounding_box(V);
     double zmax = std::max(bbox.max()(2), -bbox.min()(2));
@@ -40,7 +40,7 @@ void SliceGenerator::update_embedding(const mtao::ColVecs3d &V) {
     bbox.max() *= 1.1;
 
 
-    mtao::Vec3d shape = bbox.sizes();
+    balsa::eigen::Vec3d shape = bbox.sizes();
     shape = (shape.array() > 1e-10).select(shape, 1);
 
     Base::operator=(mtao::geometry::grid::StaggeredGrid<double, 3>::from_bbox(bbox, std::array<int, 3>{ { 2, 2, 3 } }));
@@ -49,7 +49,7 @@ void SliceGenerator::update_embedding(const mtao::ColVecs3d &V) {
 
     std::vector<Vertex<3>> vertices(V.cols());
     for (int i = 0; i < V.cols(); ++i) {
-        mtao::Vec3d v = V.col(i);
+        balsa::eigen::Vec3d v = V.col(i);
         vertices[i] = Vertex<3>::from_vertex(vertex_grid().local_coord(v));
     }
     data.update_vertices(vertices);
@@ -57,13 +57,13 @@ void SliceGenerator::update_embedding(const mtao::ColVecs3d &V) {
     //data.set_topology(F);
 }
 
-std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> SliceGenerator::slice(const mtao::Vec3d &origin, const mtao::Vec3d &direction) {
+std::tuple<balsa::eigen::ColVecs3d, balsa::eigen::ColVecs3i> SliceGenerator::slice(const balsa::eigen::Vec3d &origin, const balsa::eigen::Vec3d &direction) {
     auto transform = get_transform(origin, direction);
     return slice(transform);
 }
-std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> SliceGenerator::slice(const Eigen::Affine3d &transform) {
+std::tuple<balsa::eigen::ColVecs3d, balsa::eigen::ColVecs3i> SliceGenerator::slice(const Eigen::Affine3d &transform) {
 
-    mtao::ColVecs3d VT = transform * V;
+    balsa::eigen::ColVecs3d VT = transform * V;
 
     update_embedding(VT);
     data.clear();
@@ -75,7 +75,7 @@ std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> SliceGenerator::slice(const Eigen::
     for (int i = 0; i < CV.cols(); ++i) {
         CV.col(i) = vertex_grid().world_coord(CV.col(i));
     }
-    auto newV = mtao::eigen::hstack(vertices(), CV);
+    auto newV = balsa::eigen::hstack(vertices(), CV);
 
 
     std::set<int> plane_verts;
@@ -93,8 +93,8 @@ std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> SliceGenerator::slice(const Eigen::
             return plane_verts.find(idx) != plane_verts.end();
         }
     };
-    std::vector<mtao::ColVecs3d> VV;
-    std::vector<mtao::ColVecs3i> FF;
+    std::vector<balsa::eigen::ColVecs3d> VV;
+    std::vector<balsa::eigen::ColVecs3i> FF;
     auto VV2 = newV.topRows<2>();
     {
         std::set<std::array<int, 2>> E;
@@ -106,7 +106,7 @@ std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> SliceGenerator::slice(const Eigen::
         }
 
 
-        auto ehem = mtao::geometry::mesh::EmbeddedHalfEdgeMesh<double, 2>::from_edges(VV2, mtao::eigen::stl2eigen(E));
+        auto ehem = mtao::geometry::mesh::EmbeddedHalfEdgeMesh<double, 2>::from_edges(VV2, balsa::eigen::stl2eigen(E));
         ehem.make_topology();
         ehem.tie_nonsimple_cells();
         auto A = ehem.signed_areas();
@@ -164,10 +164,10 @@ std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> SliceGenerator::slice(const Eigen::
     }
 
     auto T = transform.inverse();
-    auto newVT = mtao::eigen::hstack_iter(VV.begin(), VV.end());
-    auto newVV = mtao::eigen::hstack(newV, newVT);
+    auto newVT = balsa::eigen::hstack_iter(VV.begin(), VV.end());
+    auto newVV = balsa::eigen::hstack(newV, newVT);
     newVV = T * newVV;
-    auto newF = mtao::eigen::hstack_iter(FF.begin(), FF.end());
+    auto newF = balsa::eigen::hstack_iter(FF.begin(), FF.end());
 
     return mtao::geometry::mesh::compactify(newVV, newF);
 }

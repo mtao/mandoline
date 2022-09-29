@@ -1,3 +1,9 @@
 [submodule "subprojects/balsa"]
 	path = subprojects/balsa
 	url = https://github.com/mtao/balsa.git
+[submodule "subprojects/core"]
+	path = subprojects/mtao_core
+	url = https://github.com/mtao/core.git
+[submodule "subprojects/libigl"]
+	path = subprojects/libigl
+	url = https://github.com/mtao/libigl.git

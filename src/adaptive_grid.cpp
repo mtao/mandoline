@@ -3,7 +3,7 @@
 #include <spdlog/spdlog.h>
 
 #include <iterator>
-#include <mtao/eigen/stl2eigen.hpp>
+#include <balsa/eigen/stl2eigen.hpp>
 #include <mtao/logging/logger.hpp>
 #include <set>
 
@@ -57,7 +57,7 @@ AdaptiveGrid::Cell AdaptiveGrid::Cell::from_proto(const protobuf::Cube &c) {
     return ret;
 }
 bool AdaptiveGrid::Cell::is_inside(const Vec &p) const {
-    Eigen::Map<const mtao::Vec3i> c(corner().data());
+    Eigen::Map<const balsa::eigen::Vec3i> c(corner().data());
     return (c.array().cast<double>() <= p.array()).all() &&
            (p.array() < (c.array() + width()).cast<double>()).all();
 }
@@ -151,10 +151,10 @@ auto AdaptiveGrid::Square::vertex(int a, int b) const -> coord_type {
 
     return c;
 }
-mtao::ColVecs3i AdaptiveGrid::triangulated(int idx) const {
+balsa::eigen::ColVecs3i AdaptiveGrid::triangulated(int idx) const {
     return triangulated(cell(idx));
 }
-mtao::ColVecs3i AdaptiveGrid::triangulated(const Cell &c) const {
+balsa::eigen::ColVecs3i AdaptiveGrid::triangulated(const Cell &c) const {
     auto f = []() {
         Eigen::MatrixXi F(12, 3);
         F << 0, 2, 1,          // face front
@@ -176,22 +176,22 @@ mtao::ColVecs3i AdaptiveGrid::triangulated(const Cell &c) const {
          static_cast<int>(vertex_index(c.vertex(1, 1, 1))),
          static_cast<int>(vertex_index(c.vertex(1, 0, 1))),
          static_cast<int>(vertex_index(c.vertex(0, 0, 1)))}};
-    const static mtao::ColVecs3i F = f();
+    const static balsa::eigen::ColVecs3i F = f();
     return F.unaryExpr([&](int idx) -> int { return v[idx]; });
 }
 
-mtao::ColVecs3i AdaptiveGrid::triangulated_face(size_t index, size_t offset,
+balsa::eigen::ColVecs3i AdaptiveGrid::triangulated_face(size_t index, size_t offset,
                                                 bool invert) const {
     return triangulated_face(face(index - offset), invert);
 }
-mtao::ColVecs3i AdaptiveGrid::triangulated_face(const Face &f,
+balsa::eigen::ColVecs3i AdaptiveGrid::triangulated_face(const Face &f,
                                                 bool invert) const {
     int a = vertex_index(f.vertex(0, 0));
     int b = vertex_index(f.vertex(1, 0));
     int c = vertex_index(f.vertex(1, 1));
     int d = vertex_index(f.vertex(0, 1));
 
-    mtao::ColVecs3i F(3, 2);
+    balsa::eigen::ColVecs3i F(3, 2);
     if (invert) {
         F.col(0) << a, c, d;
         F.col(1) << a, b, c;
@@ -202,8 +202,8 @@ mtao::ColVecs3i AdaptiveGrid::triangulated_face(const Face &f,
     return F;
 }
 
-auto AdaptiveGrid::boundary_face_mask() const -> mtao::VecXd {
-    mtao::VecXd M = mtao::VecXd::Ones(num_faces());
+auto AdaptiveGrid::boundary_face_mask() const -> balsa::eigen::VecXd {
+    balsa::eigen::VecXd M = balsa::eigen::VecXd::Ones(num_faces());
     for (auto &&[i, f] : mtao::iterator::enumerate(m_faces)) {
         auto &&e = f.dual_edge;
         if (!is_valid_edge(e)) {
@@ -213,8 +213,8 @@ auto AdaptiveGrid::boundary_face_mask() const -> mtao::VecXd {
     return M;
 }
 
-auto AdaptiveGrid::grid_boundary_face_mask() const -> mtao::VecXd {
-    mtao::VecXd M = mtao::VecXd::Ones(num_faces());
+auto AdaptiveGrid::grid_boundary_face_mask() const -> balsa::eigen::VecXd {
+    balsa::eigen::VecXd M = balsa::eigen::VecXd::Ones(num_faces());
     for (auto &&[fidx_, f] : mtao::iterator::enumerate(faces())) {
         int fidx = fidx_;
         int dim = f.dimension();
@@ -349,10 +349,10 @@ auto AdaptiveGrid::faces(const GridData3i &grid) const -> std::vector<Face> {
 }
 void AdaptiveGrid::make_faces() { m_faces = faces(cell_ownership_grid()); }
 
-mtao::VecXd AdaptiveGrid::dual_edge_lengths() const {
+balsa::eigen::VecXd AdaptiveGrid::dual_edge_lengths() const {
     if (num_faces() == 0) return {};
     auto &dx = Base::dx();
-    mtao::VecXd ret(num_faces());
+    balsa::eigen::VecXd ret(num_faces());
     for (auto &&[i, f] : mtao::iterator::enumerate(m_faces)) {
         auto &&e = f.dual_edge;
         if (!is_valid_edge(e)) continue;
@@ -362,20 +362,20 @@ mtao::VecXd AdaptiveGrid::dual_edge_lengths() const {
     }
     return ret;
 }
-void AdaptiveGrid::cell_centroids(mtao::ColVecs3d &R) const {
+void AdaptiveGrid::cell_centroids(balsa::eigen::ColVecs3d &R) const {
     for (auto &&[i, c] : cells()) {
         auto cent = R.col(i);
-        cent = mtao::eigen::stl2eigen(c.corner()).cast<double>();
+        cent = balsa::eigen::stl2eigen(c.corner()).cast<double>();
         double w = c.width();
         cent.array() += w / 2.0;
         cent = vertex_grid().world_coord(cent);
     }
 }
-mtao::VecXd AdaptiveGrid::cell_volumes() const {
+balsa::eigen::VecXd AdaptiveGrid::cell_volumes() const {
     if (num_cells() == 0) {
         return {};
     } else {
-        mtao::VecXd R(num_cells());
+        balsa::eigen::VecXd R(num_cells());
         int offset = m_cells.begin()->first;
         double vol = dx().prod();
         for (auto &&[i, c] : cells()) {
@@ -386,11 +386,11 @@ mtao::VecXd AdaptiveGrid::cell_volumes() const {
     }
 }
 
-mtao::VecXd AdaptiveGrid::face_volumes(bool mask_grid_boundary) const {
+balsa::eigen::VecXd AdaptiveGrid::face_volumes(bool mask_grid_boundary) const {
     if (num_faces() == 0) return {};
     auto &dx = Base::dx();
-    mtao::VecXd ret(num_faces());
-    mtao::Vec3d dws = mtao::Vec3d::Ones();
+    balsa::eigen::VecXd ret(num_faces());
+    balsa::eigen::Vec3d dws = balsa::eigen::Vec3d::Ones();
     for (int i = 0; i < 3; ++i) {
         for (int j = 0; j < 2; ++j) {
             dws(i) *= dx((j + i) % 3);
@@ -415,8 +415,8 @@ mtao::VecXd AdaptiveGrid::face_volumes(bool mask_grid_boundary) const {
 int AdaptiveGrid::num_faces() const { return m_faces.size(); }
 int AdaptiveGrid::num_cells() const { return cells().size(); }
 
-mtao::ColVecs3d AdaptiveGrid::boundary_centroids() const {
-    mtao::ColVecs3d C(3, num_faces());
+balsa::eigen::ColVecs3d AdaptiveGrid::boundary_centroids() const {
+    balsa::eigen::ColVecs3d C(3, num_faces());
     auto g = cell_ownership_grid();
     for (auto &&[index, f] : mtao::iterator::enumerate(m_faces)) {
         // const auto &e = f.dual_edge;
@@ -426,7 +426,7 @@ mtao::ColVecs3d AdaptiveGrid::boundary_centroids() const {
         const int u = (k + 1) % 3;
         const int v = (k + 2) % 3;
         const double w = f.width();
-        cent = mtao::eigen::stl2eigen(f.corner()).cast<double>();
+        cent = balsa::eigen::stl2eigen(f.corner()).cast<double>();
         // std::cout << "Corner positions: " << cent.transpose() << std::endl;
         cent(u) += w / 2.0;
         cent(v) += w / 2.0;
@@ -441,7 +441,7 @@ mtao::ColVecs3d AdaptiveGrid::boundary_centroids() const {
 std::vector<Eigen::Triplet<double>> AdaptiveGrid::grid_face_projection(
     int offset) const {
     std::vector<Eigen::Triplet<double>> trips;
-    mtao::VecXd ret(num_faces());
+    balsa::eigen::VecXd ret(num_faces());
     trips.reserve(form_size<2>());
     for (auto &&[index, f] : mtao::iterator::enumerate(m_faces)) {
         auto &&e = f.dual_edge;
@@ -468,7 +468,7 @@ std::vector<Eigen::Triplet<double>> AdaptiveGrid::grid_face_projection(
 
             auto &ca = cell(a);
             auto &cb = cell(b);
-            mtao::Vec3d cd = ca.center() - cb.center();
+            balsa::eigen::Vec3d cd = ca.center() - cb.center();
             int minwidth = std::min(ca.width(), cb.width());
             cd.cwiseAbs().maxCoeff(&k);
             coord_type corner =
@@ -522,7 +522,7 @@ auto AdaptiveGrid::boundary_pairs() const -> std::vector<Edge> {
     return R;
 }
 int AdaptiveGrid::get_cell_index(const Vec &p) const {
-    Eigen::Map<const mtao::Vec3i> mshape(vertex_shape().data());
+    Eigen::Map<const balsa::eigen::Vec3i> mshape(vertex_shape().data());
     if (p.minCoeff() < 0 ||
         (p.array() > (mshape.cast<double>().array())).any()) {
         return -2;
@@ -535,7 +535,7 @@ int AdaptiveGrid::get_cell_index(const Vec &p) const {
     return -1;
 }
 //int AdaptiveGrid::num_edges() const { return m_edges.size(); }
-//mtao::ColVecs2i AdaptiveGrid::edges() const {
-//    return mtao::eigen::stl2eigen(m_edges);
+//balsa::eigen::ColVecs2i AdaptiveGrid::edges() const {
+//    return balsa::eigen::stl2eigen(m_edges);
 //}
 }  // namespace mandoline

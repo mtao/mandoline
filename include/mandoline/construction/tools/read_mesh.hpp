@@ -1,9 +1,9 @@
 #pragma once
 #include <filesystem>
-#include <mtao/types.hpp>
+#include <balsa/eigen/types.hpp>
 
 namespace mandoline::construction::tools {
 
-std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> read_mesh(
+std::tuple<balsa::eigen::ColVecs3d, balsa::eigen::ColVecs3i> read_mesh(
     const std::filesystem::path& path, bool preprocess = true);
 }

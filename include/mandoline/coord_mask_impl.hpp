@@ -213,7 +213,7 @@ void coord_mask<D, T>::clamp(coord_type &vec) const {
 template <int D, typename T>
 void coord_mask<D, T>::clamp(Vertex<D> &vec) const {
     for (auto &&[v, q, t] : mtao::iterator::zip(
-             vec.coord, mtao::eigen::iterable(vec.quot), *this)) {
+             vec.coord, vec.quot, *this)) {
         if (t) {
             v = *t;
             q = 0;

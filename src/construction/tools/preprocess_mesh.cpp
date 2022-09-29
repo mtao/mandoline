@@ -4,9 +4,9 @@
 
 namespace mandoline::construction::tools {
 
-std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> preprocess_mesh(const mtao::ColVecs3d &V_, const mtao::ColVecs3i &F_) {
-    mtao::ColVecs3d V;
-    mtao::ColVecs3i F;
+std::tuple<balsa::eigen::ColVecs3d, balsa::eigen::ColVecs3i> preprocess_mesh(const balsa::eigen::ColVecs3d &V_, const balsa::eigen::ColVecs3i &F_) {
+    balsa::eigen::ColVecs3d V;
+    balsa::eigen::ColVecs3i F;
     std::tie(V, F) = mtao::geometry::prune(V_, F_, 0);
     std::tie(V, F) = remesh_self_intersections(V, F);
 

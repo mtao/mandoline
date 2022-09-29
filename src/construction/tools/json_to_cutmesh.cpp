@@ -30,7 +30,7 @@ CutCellMesh<3> json_to_cutmesh(const nlohmann::json& js,
                                const std::filesystem::path& relative_path) {
     auto bbox = js["grid"]["bounding_box"].get<Eigen::AlignedBox<double, 3>>();
     std::array<int, 3> shape;
-    mtao::eigen::stl2eigen(shape) =
+    balsa::eigen::stl2eigen(shape) =
         mtao::json::json2vector<int, 3>(js["grid"]["shape"]);
 
     const std::string local_mesh_path = js["mesh"].get<std::string>();

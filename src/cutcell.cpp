@@ -1,6 +1,6 @@
 #include "mandoline/cutcell.hpp"
 
-#include <mtao/eigen/stack.h>
+#include <balsa/eigen/stack.hpp>
 
 #include <mtao/logging/logger.hpp>
 
@@ -85,8 +85,8 @@ CutCell CutCell::from_proto(const protobuf::CutCell &cell) {
     protobuf::deserialize(cell.grid_cell(), c.grid_cell);
     return c;
 }
-mtao::ColVecs3i CutCell::triangulated(const std::vector<CutFace<3>> &Fs) const {
-    std::vector<mtao::ColVecs3i> T;
+balsa::eigen::ColVecs3i CutCell::triangulated(const std::vector<CutFace<3>> &Fs) const {
+    std::vector<balsa::eigen::ColVecs3i> T;
     for (auto &&[s, b] : *this) {
         auto &&F = Fs[s];
         if (F.triangulation) {
@@ -104,13 +104,13 @@ mtao::ColVecs3i CutCell::triangulated(const std::vector<CutFace<3>> &Fs) const {
         }
     }
 
-    return mtao::eigen::hstack_iter(T.begin(), T.end());
+    return balsa::eigen::hstack_iter(T.begin(), T.end());
 }
-std::tuple<mtao::ColVecs3d, mtao::ColVecs3i>
+std::tuple<balsa::eigen::ColVecs3d, balsa::eigen::ColVecs3i>
 CutCell::triangulated_with_additional_vertices(
     const std::vector<CutFace<3>> &Fs, int vertex_offset) const {
-    std::vector<mtao::ColVecs3i> T;
-    std::vector<mtao::ColVecs3d> V;
+    std::vector<balsa::eigen::ColVecs3i> T;
+    std::vector<balsa::eigen::ColVecs3d> V;
     for (auto &&[s, b] : *this) {
         auto &&F = Fs[s];
         if (F.triangulation) {
@@ -137,11 +137,11 @@ CutCell::triangulated_with_additional_vertices(
         }
     }
 
-    return {mtao::eigen::hstack_iter(V.begin(), V.end()),
-            mtao::eigen::hstack_iter(T.begin(), T.end())};
+    return {balsa::eigen::hstack_iter(V.begin(), V.end()),
+            balsa::eigen::hstack_iter(T.begin(), T.end())};
 }
 
-double CutCell::volume(const mtao::VecXd &face_brep_vols) const {
+double CutCell::volume(const balsa::eigen::VecXd &face_brep_vols) const {
     double vol = 0;
 
     for (auto &&[f, b] : *this) {
@@ -150,7 +150,7 @@ double CutCell::volume(const mtao::VecXd &face_brep_vols) const {
     }
     return vol;
 }
-double CutCell::volume(const mtao::VecXd &face_brep_vols,
+double CutCell::volume(const balsa::eigen::VecXd &face_brep_vols,
                        const std::set<int> &duplicated_faces) const {
     double vol = 0;
 
@@ -163,8 +163,8 @@ double CutCell::volume(const mtao::VecXd &face_brep_vols,
     }
     return vol;
 }
-mtao::Vec3d CutCell::moment(const mtao::ColVecs3d &face_brep_cents) const {
-    mtao::Vec3d c = mtao::Vec3d::Zero();
+balsa::eigen::Vec3d CutCell::moment(const balsa::eigen::ColVecs3d &face_brep_cents) const {
+    balsa::eigen::Vec3d c = balsa::eigen::Vec3d::Zero();
 
     for (auto &&[f, b] : *this) {
         double sign = b ? 1 : -1;

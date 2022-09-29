@@ -184,7 +184,7 @@ auto CutCellEdgeGenerator<2>::compute_planar_hem(const ColVecs &V, const Edges &
             std::sort(e.begin(), e.end());
             E2.emplace(e);
         }
-        ehem = EmbeddedHalfEdgeMesh<double, 2>::from_edges(VV, mtao::eigen::stl2eigen(E2));
+        ehem = EmbeddedHalfEdgeMesh<double, 2>::from_edges(VV, balsa::eigen::stl2eigen(E2));
         //ehem = EmbeddedHalfEdgeMesh<double,2>::from_edges(VV,E);
     }
     //auto ehem = EmbeddedHalfEdgeMesh<double,2>::from_edges(ret.vertices(),ret.cut_edges);

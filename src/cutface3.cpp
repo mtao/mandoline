@@ -4,63 +4,63 @@
 #include <mtao/geometry/mesh/earclipping.hpp>
 
 namespace mandoline {
-void CutFace<3>::cache_triangulation(const std::array<mtao::ColVecs2d, 3> &V, bool add_verts) {
+void CutFace<3>::cache_triangulation(const std::array<balsa::eigen::ColVecs2d, 3> &V, bool add_verts) {
     auto [VV, F] = triangulate(V, add_verts);
     cache_triangulation(VV, F);
 }
-void CutFace<3>::cache_triangulation(const mtao::ColVecs3d &V, const mtao::ColVecs3i &F) {
+void CutFace<3>::cache_triangulation(const balsa::eigen::ColVecs3d &V, const balsa::eigen::ColVecs3i &F) {
     if (V.size() > 0) {
         triangulated_vertices = V;
     }
     cache_triangulation(F);
 }
-void CutFace<3>::cache_triangulation(const mtao::ColVecs3i &F) {
+void CutFace<3>::cache_triangulation(const balsa::eigen::ColVecs3i &F) {
     if (F.size() > 0) {
         triangulation = F;
     }
 }
-mtao::ColVecs3i CutFace<3>::triangulate(const std::array<mtao::ColVecs2d, 3> &V) const {
+balsa::eigen::ColVecs3i CutFace<3>::triangulate(const std::array<balsa::eigen::ColVecs2d, 3> &V) const {
     return std::get<1>(triangulate(V, false));
 }
-std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> CutFace<3>::triangulate(const std::array<mtao::ColVecs2d, 3> &V, bool add_vertices) const {
+std::tuple<balsa::eigen::ColVecs3d, balsa::eigen::ColVecs3i> CutFace<3>::triangulate(const std::array<balsa::eigen::ColVecs2d, 3> &V, bool add_vertices) const {
     if (is_mesh_face()) {
-        return { mtao::ColVecs3d{}, triangulate_fan() };
+        return { balsa::eigen::ColVecs3d{}, triangulate_fan() };
     } else {
         int id = as_axial_id()[0];
         if (indices.size() == 1) {
-            return { mtao::ColVecs3d{}, triangulate_earclipping(V[id]) };
+            return { balsa::eigen::ColVecs3d{}, triangulate_earclipping(V[id]) };
         } else {
             return triangulate_triangle(V[id], add_vertices);
         }
     }
 }
-std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> CutFace<3>::triangulate(const mtao::ColVecs2d &V, bool add_vertices) const {
+std::tuple<balsa::eigen::ColVecs3d, balsa::eigen::ColVecs3i> CutFace<3>::triangulate(const balsa::eigen::ColVecs2d &V, bool add_vertices) const {
 
     if (is_mesh_face()) {
-        return { mtao::ColVecs3d{}, triangulate_fan() };
+        return { balsa::eigen::ColVecs3d{}, triangulate_fan() };
     } else {
         if (indices.size() == 1) {
-            return { mtao::ColVecs3d{}, triangulate_earclipping(V) };
+            return { balsa::eigen::ColVecs3d{}, triangulate_earclipping(V) };
         } else {
             return triangulate_triangle(V, add_vertices);
         }
     }
 }
 template<>
-mtao::ColVecs3i CutMeshFace<3>::triangulate() const {
+balsa::eigen::ColVecs3i CutMeshFace<3>::triangulate() const {
     return mtao::geometry::mesh::triangle_fan(indices);
 }
 
-mtao::ColVecs3i CutFace<3>::triangulate_fan() const {
+balsa::eigen::ColVecs3i CutFace<3>::triangulate_fan() const {
     assert(indices.size() == 1);
     return mtao::geometry::mesh::triangle_fan(*indices.begin());
 }
-mtao::ColVecs3i CutFace<3>::triangulate_earclipping(const mtao::ColVecs2d &V) const {
+balsa::eigen::ColVecs3i CutFace<3>::triangulate_earclipping(const balsa::eigen::ColVecs2d &V) const {
     assert(indices.size() == 1);
     return mtao::geometry::mesh::earclipping(V, indices);
 }
 
-std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> CutFace<3>::triangulate_triangle(const mtao::ColVecs2d &V, bool do_add_vertices) const {
+std::tuple<balsa::eigen::ColVecs3d, balsa::eigen::ColVecs3i> CutFace<3>::triangulate_triangle(const balsa::eigen::ColVecs2d &V, bool do_add_vertices) const {
 
     //collect the number of edges
     int size = 0;
@@ -83,7 +83,7 @@ std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> CutFace<3>::triangulate_triangle(co
     //compactify the vertices
     mtao::map<int, int> reindexer;
     mtao::map<int, int> unreindexer;
-    mtao::ColVecs2d newV(2, used_vertices.size());
+    balsa::eigen::ColVecs2d newV(2, used_vertices.size());
     for (auto &&[i, v] : mtao::iterator::enumerate(used_vertices)) {
         reindexer[v] = i;
         newV.col(i) = V.col(v);
@@ -91,8 +91,8 @@ std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> CutFace<3>::triangulate_triangle(co
     }
 
     //compactify the edges
-    mtao::ColVecs2i E(2, size);
-    mtao::vector<mtao::Vec2d> holes;
+    balsa::eigen::ColVecs2i E(2, size);
+    mtao::vector<balsa::eigen::Vec2d> holes;
     size = 0;
     for (auto &&curve : indices) {
         for (int i = 0; i < curve.size(); ++i) {
@@ -108,8 +108,8 @@ std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> CutFace<3>::triangulate_triangle(co
     for (int i = 0; i < m.EA.cols(); ++i) { m.EA(i) = i; }
     for (int i = 0; i < m.VA.cols(); ++i) { m.VA(i) = i; }
     bool points_added = false;
-    mtao::ColVecs2d newV2;
-    mtao::ColVecs3i newF;
+    balsa::eigen::ColVecs2d newV2;
+    balsa::eigen::ColVecs3i newF;
 
     if (do_add_vertices) {
         //static const std::string str ="zPa.01qepcDQ";
@@ -145,7 +145,7 @@ std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> CutFace<3>::triangulate_triangle(co
 
     std::set<int> interior;
     for (int i = 0; i < newF.cols(); ++i) {
-        mtao::Vec2d B = mtao::Vec2d::Zero();
+        balsa::eigen::Vec2d B = balsa::eigen::Vec2d::Zero();
         auto f = newF.col(i);
         for (int j = 0; j < 3; ++j) {
             if (points_added) {
@@ -170,7 +170,7 @@ std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> CutFace<3>::triangulate_triangle(co
             interior.insert(i);
         }
     }
-    mtao::ColVecs3i FF(3, interior.size());
+    balsa::eigen::ColVecs3i FF(3, interior.size());
     for (auto &&[i, b] : mtao::iterator::enumerate(interior)) {
         FF.col(i) = newF.col(b);
     }
@@ -179,7 +179,7 @@ std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> CutFace<3>::triangulate_triangle(co
         std::cerr << "points were added when they shouldnt have!" << std::endl;
         return {};
     } else {
-        mtao::ColVecs3d newV3;
+        balsa::eigen::ColVecs3d newV3;
         newV3.resize(3, newV2.cols());
         int axis = as_axial_axis();
         int coord = as_axial_coord();
@@ -244,7 +244,7 @@ CutFace<3> CutFace<3>::from_proto(const protobuf::CutFace &face) {
     }
 
     if (face.triangulation().size() > 0) {
-        mtao::ColVecs3i T;
+        balsa::eigen::ColVecs3i T;
         T.resize(3, face.triangulation().size());
         for (int i = 0; i < T.cols(); ++i) {
             T.col(i) = protobuf::deserialize(face.triangulation(i));

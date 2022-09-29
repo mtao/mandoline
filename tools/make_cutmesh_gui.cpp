@@ -6,7 +6,7 @@
 #include <igl/read_triangle_mesh.h>
 #include <mtao/geometry/grid/grid.h>
 #include <mtao/opengl/objects/grid.h>
-#include <mtao/types.h>
+#include <balsa/eigen/types.h>
 #include <spdlog/spdlog.h>
 
 #include <Eigen/Geometry>
@@ -154,7 +154,7 @@ class MeshViewer : public mtao::opengl::Window3 {
                 it != mapped_edges.end()) {
                 auto &&edges = it->second;
                 if (edges.size() > 0) {
-                    auto E = mtao::eigen::stl2eigen(edges);
+                    auto E = balsa::eigen::stl2eigen(edges);
 
                     edge_mesh.setEdgeBuffer(E.cast<unsigned int>().eval());
                     std::set<int> Vidx;
@@ -172,7 +172,7 @@ class MeshViewer : public mtao::opengl::Window3 {
             }
         }
         if (edges.size() > 0) {
-            auto E = mtao::eigen::stl2eigen(edges);
+            auto E = balsa::eigen::stl2eigen(edges);
             vertex_mesh.setVertexBuffer(VV.cast<float>());
 
             edge_mesh.setEdgeBuffer(E.cast<unsigned int>().eval());
@@ -212,7 +212,7 @@ class MeshViewer : public mtao::opengl::Window3 {
                 std::stringstream name;
                 name << "region" << idx << ".obj";
                 mtao::geometry::mesh::write_objD(
-                    ccm->origV(), mtao::eigen::stl2eigen(fs), name.str());
+                    ccm->origV(), balsa::eigen::stl2eigen(fs), name.str());
             }
 #endif
         }
@@ -237,7 +237,7 @@ class MeshViewer : public mtao::opengl::Window3 {
             }
         }
         if (Fs.size() > 0) {
-            auto F = mtao::eigen::hstack_iter(Fs.begin(), Fs.end())
+            auto F = balsa::eigen::hstack_iter(Fs.begin(), Fs.end())
                          .cast<unsigned int>()
                          .eval();
             mesh.setTriangleBuffer(V, F);

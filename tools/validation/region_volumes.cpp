@@ -26,7 +26,7 @@ std::array<int, 2> region_counts(const mandoline::CutCellMesh<3> &ccm,
     // igl's C will give us regions, including the infinite region.
     //|regions - {infinite}| = maxCoeff because of an implicit "-1" for region 0
     std::set<int> IR;
-    for (auto &&c : mtao::eigen::iterable(C)) {
+    for (auto &&c : balsa::eigen::iterable(C)) {
         IR.emplace(c);
     }
     std::set<int> cr;
@@ -65,8 +65,8 @@ std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> orig_with_bbox(
     auto &&F = ccm.origF();
 
     auto [gV, gF] = mtao::geometry::bounding_box_mesh(ccm.bbox());
-    mtao::ColVecs3d RV = mtao::eigen::hstack(V, gV);
-    mtao::ColVecs3i RF = mtao::eigen::hstack(F, gF.array() + V.cols());
+    mtao::ColVecs3d RV = balsa::eigen::hstack(V, gV);
+    mtao::ColVecs3i RF = balsa::eigen::hstack(F, gF.array() + V.cols());
     return {RV, RF};
 }
 mtao::VecXd brep_region_volumes(const mandoline::CutCellMesh<3> &ccm) {

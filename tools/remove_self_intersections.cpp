@@ -3,7 +3,7 @@
 #include <iostream>
 #include <mandoline/construction/tools/read_mesh.hpp>
 #include <mandoline/construction/tools/remesh_self_intersections.hpp>
-#include <mtao/eigen/stl2eigen.hpp>
+#include <balsa/eigen/stl2eigen.hpp>
 #include <mtao/geometry/prune_vertices.hpp>
 #include <mtao/logging/profiler.hpp>
 #include <set>
@@ -53,7 +53,7 @@ int main(int argc, char* argv[]) {
         std::sort(v.begin(), v.end());
         Fs.emplace(v);
     }
-    F = mtao::eigen::stl2eigen(Fs);
+    F = balsa::eigen::stl2eigen(Fs);
 
     igl::writeOBJ(argv[2], V.transpose(), F.transpose());
 

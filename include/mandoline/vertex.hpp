@@ -1,6 +1,6 @@
 #pragma once
 #include <set>
-#include <mtao/types.hpp>
+#include <balsa/eigen/types.hpp>
 #include <variant>
 #include "mandoline/coord_mask.hpp"
 
@@ -21,7 +21,7 @@ struct Vertex {
 
 
     //Definitions
-    using Vec = mtao::Vector<double, D>;
+    using Vec = balsa::eigen::Vector<double, D>;
     using coord_type = std::array<int, D>;
     using MaskType = coord_mask<D>;
     using OptInd = std::array<std::optional<int>, D>;

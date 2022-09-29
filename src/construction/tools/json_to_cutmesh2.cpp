@@ -35,7 +35,7 @@ mandoline::CutCellMesh<2> json_to_cutmesh2(
     }
     std::array<int, 2> shape;
     try{
-    mtao::eigen::stl2eigen(shape) =
+    balsa::eigen::stl2eigen(shape) =
         mtao::json::json2vector<int, 2>(js["grid"]["shape"]);
     } catch ( const std::exception& e) {
         std::cout << "grid" << "shape" << " => " << e.what() << std::endl;

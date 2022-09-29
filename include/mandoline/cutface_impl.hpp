@@ -86,12 +86,12 @@ void CutFaceBase<D>::update_mask(
 }
 
 template <typename Derived>
-mtao::Vec2d CutFace<2>::brep_centroid(
+balsa::eigen::Vec2d CutFace<2>::brep_centroid(
     const Eigen::MatrixBase<Derived> &V) const {
-    mtao::Vec2d ret = mtao::Vec2d::Zero();
+    balsa::eigen::Vec2d ret = balsa::eigen::Vec2d::Zero();
     double tot_vol = 0;
     for (auto &&i : indices) {
-        mtao::Vec2d cent = mtao::geometry::curve_centroid(V, i);
+        balsa::eigen::Vec2d cent = mtao::geometry::curve_centroid(V, i);
         double vol = mtao::geometry::curve_volume(V, i);
         ret += cent * vol;
         tot_vol += vol;
@@ -102,9 +102,9 @@ mtao::Vec2d CutFace<2>::brep_centroid(
 }
 
 template <typename Derived>
-mtao::Vec3d CutFace<3>::brep_centroid(const Eigen::MatrixBase<Derived> &V,
+balsa::eigen::Vec3d CutFace<3>::brep_centroid(const Eigen::MatrixBase<Derived> &V,
                                       bool use_triangulation) const {
-    mtao::Vec3d ret = mtao::Vec3d::Zero();
+    balsa::eigen::Vec3d ret = balsa::eigen::Vec3d::Zero();
     double tot_vol = 0;
     int count = 0;
     for (auto &&i : indices) {
@@ -115,7 +115,7 @@ mtao::Vec3d CutFace<3>::brep_centroid(const Eigen::MatrixBase<Derived> &V,
         /*
                    auto vol = brep_volume(V,use_triangulation);
                    tot_vol += vol;
-                   mtao::Vec3d cent = mtao::geometry::curve_centroid(V,i);
+                   balsa::eigen::Vec3d cent = mtao::geometry::curve_centroid(V,i);
                    ret += vol * cent;
                    */
     }

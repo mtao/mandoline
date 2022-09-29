@@ -2,7 +2,6 @@
 #include <algorithm>
 #include <array>
 #include <bitset>
-#include <mtao/eigen/iterable.hpp>
 #include <mtao/iterator/enumerate.hpp>
 #include <mtao/iterator/zip.hpp>
 #include <optional>

@@ -3,7 +3,7 @@
 #include <tbb/parallel_for.h>
 
 #include <mtao/colvector_loop.hpp>
-#include <mtao/eigen/stl2eigen.hpp>
+#include <balsa/eigen/stl2eigen.hpp>
 #include <mtao/geometry/grid/grid_data.hpp>
 #include <mtao/geometry/mesh/edge_tangents.hpp>
 
@@ -37,9 +37,9 @@ void CutCellGenerator<2>::bake_faces() {
 
     spdlog::warn("Making tangents");
     int nE = data().nE();
-    mtao::ColVecs2d T(2, nE + 2);
+    balsa::eigen::ColVecs2d T(2, nE + 2);
     T.topLeftCorner(2, nE) = mtao::geometry::mesh::edge_tangents(
-        mtao::eigen::stl2eigen(origV()), data().E());
+        balsa::eigen::stl2eigen(origV()), data().E());
     // std::vector<bool> origESigns(nE);
     auto get_t = [&](size_t parent_idx, size_t idx) {
         if (idx < grid_vertex_size()) {
@@ -99,12 +99,12 @@ void CutCellGenerator<2>::bake_faces() {
 #if defined(USE_TANGENT_PLANAR_HEM_2)
     spdlog::warn("Tangent-based planar hem compute");
     std::tie(m_hem, std::ignore) = compute_planar_hem(
-        edge_map, T, mtao::eigen::stl2eigen(edges), m_active_grid_cell_mask);
+        edge_map, T, balsa::eigen::stl2eigen(edges), m_active_grid_cell_mask);
 #else
     // Eigen::MatrixXi hem_edges = m_hem.edges();
     // spdlog::warn("Done");
     std::tie(m_hem, std::ignore) = compute_planar_hem(
-        all_GV(), mtao::eigen::stl2eigen(edges), m_active_grid_cell_mask);
+        all_GV(), balsa::eigen::stl2eigen(edges), m_active_grid_cell_mask);
     // if(hem_edges != m_hem.edges()) {
     //    spdlog::warn("FAILED to make equal HEM!");
     //}
@@ -112,7 +112,7 @@ void CutCellGenerator<2>::bake_faces() {
     {
         auto VV = all_GV();
 
-        FaceCollapser fc(mtao::eigen::stl2eigen(edges));
+        FaceCollapser fc(balsa::eigen::stl2eigen(edges));
         fc.bake(VV, false, edge_map, T);
         auto f = fc.faces();
         std::cout << "facecollapser size: " << f.size() << std::endl;
@@ -141,7 +141,7 @@ CutCellMesh<2> CutCellEdgeGenerator<2>::generate_faces() const {
 
     /*
 
-        auto eE = mtao::eigen::stl2eigen(edges());
+        auto eE = balsa::eigen::stl2eigen(edges());
         if (eE.size() == 0) {
             return ret;
         }

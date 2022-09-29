@@ -4,14 +4,14 @@
 
 namespace mandoline::construction {
 
-CutCellMesh<2> from_bbox(const mtao::ColVecs2d &V, const mtao::ColVecs2i &F, const Eigen::AlignedBox<double, 2> &bbox, const std::array<int, 2> &cell_shape, std::optional<double> threshold) {
+CutCellMesh<2> from_bbox(const balsa::eigen::ColVecs2d &V, const balsa::eigen::ColVecs2i &F, const Eigen::AlignedBox<double, 2> &bbox, const std::array<int, 2> &cell_shape, std::optional<double> threshold) {
 
     auto sg = CutCellMesh<2>::StaggeredGrid::from_bbox(bbox, cell_shape, false);
     return from_grid(V, F, sg, threshold);
 }
-CutCellMesh<2> from_grid(const mtao::ColVecs2d &V, const mtao::ColVecs2i &F, const mtao::geometry::grid::StaggeredGrid2d &grid, std::optional<double> threshold) {
+CutCellMesh<2> from_grid(const balsa::eigen::ColVecs2d &V, const balsa::eigen::ColVecs2i &F, const mtao::geometry::grid::StaggeredGrid2d &grid, std::optional<double> threshold) {
 
-    mtao::vector<mtao::Vec2d> stlp(V.cols());
+    mtao::vector<balsa::eigen::Vec2d> stlp(V.cols());
     for (auto &&[i, v] : mtao::iterator::enumerate(stlp)) {
         v = V.col(i);
     }
@@ -24,15 +24,15 @@ CutCellMesh<2> from_grid(const mtao::ColVecs2d &V, const mtao::ColVecs2i &F, con
     }
     return ccg.generate();
 }
-CutCellMesh<2> from_grid_unnormalized(const mtao::ColVecs2d &V, const mtao::ColVecs2i &F, const std::array<int, 2> &cell_shape, std::optional<double> threshold) {
-    using Vec = mtao::Vec2d;
+CutCellMesh<2> from_grid_unnormalized(const balsa::eigen::ColVecs2d &V, const balsa::eigen::ColVecs2i &F, const std::array<int, 2> &cell_shape, std::optional<double> threshold) {
+    using Vec = balsa::eigen::Vec2d;
     auto sg = CutCellMesh<2>::GridType(cell_shape, Vec::Ones());
     return from_grid(V, F, sg, threshold);
 }
 
 DeformingGeometryConstructor2::DeformingGeometryConstructor2() : _ccg{ std::make_unique<CutCellGenerator<2>>(std::array<int, 2>{ { 2, 2 } }) } {}
 
-DeformingGeometryConstructor2::DeformingGeometryConstructor2(const mtao::ColVecs2d &V, const mtao::ColVecs2i &F, const mtao::geometry::grid::StaggeredGrid2d &grid, std::optional<double> threshold) : _ccg(std::make_unique<CutCellGenerator<2>>(V, grid, threshold)) {
+DeformingGeometryConstructor2::DeformingGeometryConstructor2(const balsa::eigen::ColVecs2d &V, const balsa::eigen::ColVecs2i &F, const mtao::geometry::grid::StaggeredGrid2d &grid, std::optional<double> threshold) : _ccg(std::make_unique<CutCellGenerator<2>>(V, grid, threshold)) {
 
     assert(F.size() > 0);
     assert(V.size() > 0);
@@ -45,14 +45,14 @@ DeformingGeometryConstructor2::DeformingGeometryConstructor2(const mtao::ColVecs
 }
 DeformingGeometryConstructor2::~DeformingGeometryConstructor2() {}
 
-void DeformingGeometryConstructor2::update_vertices(const mtao::ColVecs2d &V, const std::optional<double> &threshold) {
+void DeformingGeometryConstructor2::update_vertices(const balsa::eigen::ColVecs2d &V, const std::optional<double> &threshold) {
     _ccg->update_vertices(V, threshold);
     _dirty = true;
 }
-void DeformingGeometryConstructor2::update_topology(const mtao::ColVecs2i &F) {
+void DeformingGeometryConstructor2::update_topology(const balsa::eigen::ColVecs2i &F) {
     _ccg->set_boundary_elements(F);
 }
-void DeformingGeometryConstructor2::update_mesh(const mtao::ColVecs2d &V, const mtao::ColVecs2i &F, const std::optional<double> &threshold) {
+void DeformingGeometryConstructor2::update_mesh(const balsa::eigen::ColVecs2d &V, const balsa::eigen::ColVecs2i &F, const std::optional<double> &threshold) {
 
     update_vertices(V, threshold);
     update_topology(F);
@@ -62,11 +62,11 @@ void DeformingGeometryConstructor2::update_grid(const mtao::geometry::grid::Stag
     _ccg->update_grid(g);
     _dirty = true;
 }
-void DeformingGeometryConstructor2::set_vertices(const mtao::ColVecs2d &V, const std::optional<double> &threshold) {
+void DeformingGeometryConstructor2::set_vertices(const balsa::eigen::ColVecs2d &V, const std::optional<double> &threshold) {
     auto s = _ccg->vertex_shape();
     _ccg = std::make_unique<CutCellGenerator<2>>(V, *_ccg, threshold);
 }
-void DeformingGeometryConstructor2::set_mesh(const mtao::ColVecs2d &V, const mtao::ColVecs2i &E, const std::optional<double> &threshold) {
+void DeformingGeometryConstructor2::set_mesh(const balsa::eigen::ColVecs2d &V, const balsa::eigen::ColVecs2i &E, const std::optional<double> &threshold) {
     set_vertices(V, threshold);
     update_topology(E);
     _dirty = true;

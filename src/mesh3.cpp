@@ -61,10 +61,10 @@ bool CutCellMesh<3>::is_mesh_face(int idx) const {
 auto CutCellMesh<3>::cell_volumes() const -> VecX {
     return operators::cell_volumes(*this);
 }
-auto CutCellMesh<3>::face_centroids() const -> mtao::ColVecs3d {
+auto CutCellMesh<3>::face_centroids() const -> balsa::eigen::ColVecs3d {
     return operators::face_centroids(*this);
 }
-auto CutCellMesh<3>::cell_centroids() const -> mtao::ColVecs3d {
+auto CutCellMesh<3>::cell_centroids() const -> balsa::eigen::ColVecs3d {
     return operators::cell_centroids(*this);
 }
 auto CutCellMesh<3>::dual_vertices() const -> ColVecs {
@@ -181,11 +181,11 @@ std::vector<std::array<std::set<int>, 2>> CutCellMesh<3>::orig_face_regions()
     return ret;
 }
 
-mtao::ColVecs3d CutCellMesh<3>::region_centroids() const {
+balsa::eigen::ColVecs3d CutCellMesh<3>::region_centroids() const {
     // delay dividing by 3 until the very end...
     auto R = orig_face_regions();
-    mtao::ColVecs3d Cs(3, origF().cols());
-    mtao::VecXd vols(origF().cols());
+    balsa::eigen::ColVecs3d Cs(3, origF().cols());
+    balsa::eigen::VecXd vols(origF().cols());
     for (int i = 0; i < Cs.cols(); ++i) {
         auto f = origF().col(i);
         auto c = Cs.col(i);
@@ -197,8 +197,8 @@ mtao::ColVecs3d CutCellMesh<3>::region_centroids() const {
         c = vols(i) * A.rowwise().sum();
     }
 
-    mtao::ColVecs3d C(3, R.size());
-    mtao::VecXd V(R.size());
+    balsa::eigen::ColVecs3d C(3, R.size());
+    balsa::eigen::VecXd V(R.size());
     C.setZero();
     V.setZero();
     for (auto &&[rid, rp] : mtao::iterator::enumerate(R)) {
@@ -219,7 +219,7 @@ mtao::ColVecs3d CutCellMesh<3>::region_centroids() const {
     // TODO: handle outside boundaries of the grid using the adaptive grid!
     auto bb = bbox();
     double gv = bb.sizes().prod();
-    mtao::Vec3d gc = 1.5 * (bb.min() + bb.min()) * gv;
+    balsa::eigen::Vec3d gc = 1.5 * (bb.min() + bb.min()) * gv;
     C.col(0) += gc;
     V(0) += gv;
 
@@ -298,7 +298,7 @@ CutCellMesh<3> CutCellMesh<3>::from_proto(const std::string &filename) {
     return {};
 }
 CutCellMesh<3> CutCellMesh<3>::from_proto(const protobuf::CutMeshProto &cmp) {
-    mtao::Vec3d o, dx;
+    balsa::eigen::Vec3d o, dx;
     std::array<int, 3> s;
     o = protobuf::deserialize(cmp.origin());
     dx = protobuf::deserialize(cmp.dx());
@@ -342,7 +342,7 @@ CutCellMesh<3> CutCellMesh<3>::from_proto(const protobuf::CutMeshProto &cmp) {
     for (auto &&[idx, btf] : cmp.mesh_faces()) {
         int pid = btf.parent_id();
         size_t bssize = btf.barycentric_coordinates_size();
-        mtao::ColVecs3d B(3, bssize);
+        balsa::eigen::ColVecs3d B(3, bssize);
         for (int i = 0; i < bssize; ++i) {
             B.col(i) = protobuf::deserialize(btf.barycentric_coordinates(i));
         }
@@ -382,9 +382,9 @@ void CutCellMesh<3>::recompute_active_cell_mask() {
         mask(c) = true;
     }
 }
-std::array<mtao::ColVecs2d, 3> CutCellMesh<3>::compute_subVs() const {
+std::array<balsa::eigen::ColVecs2d, 3> CutCellMesh<3>::compute_subVs() const {
     auto V = vertices();
-    std::array<mtao::ColVecs2d, 3> subVs;
+    std::array<balsa::eigen::ColVecs2d, 3> subVs;
     for (int d = 0; d < 3; ++d) {
         int n0 = (d + 1) % 3;
         int n1 = (d + 2) % 3;
@@ -396,21 +396,21 @@ std::array<mtao::ColVecs2d, 3> CutCellMesh<3>::compute_subVs() const {
     }
     return subVs;
 }
-std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> CutCellMesh<3>::triangulate_face(
+std::tuple<balsa::eigen::ColVecs3d, balsa::eigen::ColVecs3i> CutCellMesh<3>::triangulate_face(
     int face_index) const {
     spdlog::warn(
         "Inefficient use of triangulation!  try caching your triangulations");
     if (is_cut_face(face_index)) {
-        std::array<mtao::ColVecs2d, 3> subVs = compute_subVs();
+        std::array<balsa::eigen::ColVecs2d, 3> subVs = compute_subVs();
         auto [V, F] = m_faces[face_index].triangulate(subVs, true);
         if (V.cols() > 0) {
             return {vertex_grid().world_coord(V), F};
         } else {
-            return {mtao::ColVecs3d{}, F};
+            return {balsa::eigen::ColVecs3d{}, F};
         }
     } else {
 #if defined(MANDOLINE_USE_ADAPTIVE_GRID)
-        return {mtao::ColVecs3d{},
+        return {balsa::eigen::ColVecs3d{},
                 exterior_grid().triangulated_face(face_index,
                                                   exterior_grid_face_offset())};
 
@@ -428,7 +428,7 @@ std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> CutCellMesh<3>::triangulate_face(
         face_coord[nax]--;
         int d = vertex_index(face_coord);
 
-        mtao::ColVecs3i F(3, 2);
+        balsa::eigen::ColVecs3i F(3, 2);
         if (flip) {
             F.col(0) << a, c, d;
             F.col(1) << a, b, c;
@@ -436,14 +436,14 @@ std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> CutCellMesh<3>::triangulate_face(
             F.col(0) << a, c, b;
             F.col(1) << a, d, c;
         }
-        return {mtao::ColVecs3d{}, F};
+        return {balsa::eigen::ColVecs3d{}, F};
 
 #endif
     }
 }
 
 void CutCellMesh<3>::triangulate_faces(bool add_verts) {
-    std::array<mtao::ColVecs2d, 3> subVs = compute_subVs();
+    std::array<balsa::eigen::ColVecs2d, 3> subVs = compute_subVs();
 
     tbb::parallel_for_each(
         m_faces.begin(), m_faces.end(),
@@ -460,7 +460,7 @@ bool CutCellMesh<3>::has_triangulated_faces_cached() const {
     return all_cached;
 }
 
-mtao::VecXd CutCellMesh<3>::dual_edge_lengths() const {
+balsa::eigen::VecXd CutCellMesh<3>::dual_edge_lengths() const {
     return operators::dual_edge_lengths(*this);
 }
 
@@ -468,24 +468,24 @@ auto CutCellMesh<3>::face_volumes(bool from_triangulation) const -> VecX {
     return operators::face_volumes(*this, from_triangulation);
 }
 
-mtao::VecXd CutCellMesh<3>::mesh_face_mask() const {
+balsa::eigen::VecXd CutCellMesh<3>::mesh_face_mask() const {
     return operators::mesh_face_mask(*this);
 }
 std::set<int> CutCellMesh<3>::grid_boundary_faces() const {
     return operators::grid_boundary_faces(*this);
 }
 
-mtao::VecXd CutCellMesh<3>::primal_hodge2() const {
+balsa::eigen::VecXd CutCellMesh<3>::primal_hodge2() const {
     return operators::primal_hodge2(*this);
 }
 
-mtao::VecXd CutCellMesh<3>::dual_hodge2() const {
+balsa::eigen::VecXd CutCellMesh<3>::dual_hodge2() const {
     return operators::dual_hodge2(*this);
 }
-mtao::VecXd CutCellMesh<3>::dual_hodge3() const {
+balsa::eigen::VecXd CutCellMesh<3>::dual_hodge3() const {
     return operators::dual_hodge3(*this);
 }
-mtao::VecXd CutCellMesh<3>::primal_hodge3() const {
+balsa::eigen::VecXd CutCellMesh<3>::primal_hodge3() const {
     return operators::primal_hodge3(*this);
 }
 
@@ -524,19 +524,19 @@ size_t CutCellMesh<3>::active_cell_count() const {
     return active_cells().size();
 }
 
-std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> CutCellMesh<3>::triangulated_cell(
+std::tuple<balsa::eigen::ColVecs3d, balsa::eigen::ColVecs3i> CutCellMesh<3>::triangulated_cell(
     int idx, bool use_base, bool use_flap) const {
     if (is_cut_cell(idx)) {
-        std::vector<mtao::ColVecs3d> mVs;
-        std::vector<mtao::ColVecs3i> mFs;
+        std::vector<balsa::eigen::ColVecs3d> mVs;
+        std::vector<balsa::eigen::ColVecs3i> mFs;
         int vertex_offset = 0;
         for (auto &&[fidx, b] : m_cells[idx]) {
             bool is_flap = m_folded_faces.find(fidx) != m_folded_faces.end();
             bool is_base = !is_flap;
             if ((use_flap && is_flap) || (use_base && !is_flap)) {
                 auto &tri = m_faces[fidx].triangulation;
-                mtao::ColVecs3d V;
-                mtao::ColVecs3i F;
+                balsa::eigen::ColVecs3d V;
+                balsa::eigen::ColVecs3i F;
                 if (tri) {
                     F = *tri;
                     auto &vert = m_faces[fidx].triangulated_vertices;
@@ -558,38 +558,38 @@ std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> CutCellMesh<3>::triangulated_cell(
             }
         }
         if (vertex_offset == 0) {
-            return {mtao::ColVecs3d{}, mtao::eigen::hstack_iter(mFs.begin(), mFs.end())};
+            return {balsa::eigen::ColVecs3d{}, balsa::eigen::hstack_iter(mFs.begin(), mFs.end())};
         } else {
-            return {mtao::eigen::hstack_iter(mVs.begin(), mVs.end()),
-                    mtao::eigen::hstack_iter(mFs.begin(), mFs.end())};
+            return {balsa::eigen::hstack_iter(mVs.begin(), mVs.end()),
+                    balsa::eigen::hstack_iter(mFs.begin(), mFs.end())};
         }
         /*
             if(mFs.size() > 0) {
                     return
-           {mtao::eigen::hstack_iter(mVs.begin(),mVs.end()),mtao::eigen::hstack_iter(mFs.begin(),mFs.end())};
+           {balsa::eigen::hstack_iter(mVs.begin(),mVs.end()),balsa::eigen::hstack_iter(mFs.begin(),mFs.end())};
                 if(mVs.size() > 0) {
                     return
-           {mtao::eigen::hstack_iter(mVs.begin(),mVs.end()),mtao::eigen::hstack_iter(mFs.begin(),mFs.end())};
+           {balsa::eigen::hstack_iter(mVs.begin(),mVs.end()),balsa::eigen::hstack_iter(mFs.begin(),mFs.end())};
                 } else {
-                    return {{},mtao::eigen::hstack_iter(mFs.begin(),mFs.end())};
+                    return {{},balsa::eigen::hstack_iter(mFs.begin(),mFs.end())};
                 }
             }
             */
     } else {
         if (use_base) {
-            return {mtao::ColVecs3d{}, m_exterior_grid.triangulated(idx)};
+            return {balsa::eigen::ColVecs3d{}, m_exterior_grid.triangulated(idx)};
         }
     }
     return {};
 }
 
-std::tuple<mtao::ColVecs3d, mtao::ColVecs3i>
+std::tuple<balsa::eigen::ColVecs3d, balsa::eigen::ColVecs3i>
 CutCellMesh<3>::compact_triangulated_cell(int cell_index) const {
     auto [V, F] = triangulated_cell(cell_index, true, true);
-    return mtao::geometry::mesh::compactify(mtao::eigen::hstack(vertices(), V),
+    return mtao::geometry::mesh::compactify(balsa::eigen::hstack(vertices(), V),
                                             F);
 }
-std::tuple<mtao::ColVecs3d, mtao::ColVecs3i>
+std::tuple<balsa::eigen::ColVecs3d, balsa::eigen::ColVecs3i>
 CutCellMesh<3>::compact_triangulated_face(int face_index, bool flip) const {
     if (is_cut_face(face_index)) {
         auto &f = m_faces[face_index];
@@ -597,11 +597,11 @@ CutCellMesh<3>::compact_triangulated_face(int face_index, bool flip) const {
             mtao::logging::warn() << "Triangulate mesh first!";
             return {};
         } else {
-            mtao::ColVecs3d V;
-            mtao::ColVecs3i F;
+            balsa::eigen::ColVecs3d V;
+            balsa::eigen::ColVecs3i F;
             if (f.triangulated_vertices) {
                 std::tie(V, F) = mtao::geometry::mesh::compactify(
-                    mtao::eigen::hstack(
+                    balsa::eigen::hstack(
                         vertices(),
                         vertex_grid().world_coord(*f.triangulated_vertices)),
                     *f.triangulation);
@@ -642,7 +642,7 @@ CutCellMesh<3>::compact_triangulated_face(int face_index, bool flip) const {
         face_coord[nax]--;
         int d = vertex_index(face_coord);
 
-        mtao::ColVecs3i F(3, 2);
+        balsa::eigen::ColVecs3i F(3, 2);
         if (flip) {
             F.col(0) << a, c, d;
             F.col(1) << a, b, c;
@@ -651,6 +651,7 @@ CutCellMesh<3>::compact_triangulated_face(int face_index, bool flip) const {
             F.col(1) << a, d, c;
         }
         auto [V, F] = mtao::geometry::mesh::compactify(vertices(), F);
+        return {V,F};
 #endif
     }
 }
@@ -762,9 +763,9 @@ int CutCellMesh<3>::get_cell_index(const VecCRef &p,
     return -1;
 }
 
-mtao::VecXi CutCellMesh<3>::get_cell_indices(Eigen::Ref<const ColVecs> P,
+balsa::eigen::VecXi CutCellMesh<3>::get_cell_indices(Eigen::Ref<const ColVecs> P,
                                              bool quiet_failures) const {
-    mtao::VecXi I = mtao::VecXi::Constant(P.cols(), -1);
+    balsa::eigen::VecXi I = balsa::eigen::VecXi::Constant(P.cols(), -1);
 
 #if defined(MANDOLINE_USE_ADAPTIVE_GRID)
     const auto g = exterior_grid().cell_ownership_grid();
@@ -875,7 +876,7 @@ int CutCellMesh<3>::get_nearest_cell_index(const VecCRef &p) const {
     return operators::nearest_cells(*this, p)(0);
 }
 
-mtao::VecXi CutCellMesh<3>::get_nearest_cell_indices(
+balsa::eigen::VecXi CutCellMesh<3>::get_nearest_cell_indices(
     Eigen::Ref<const ColVecs> P) const {
     return operators::nearest_cells(*this, P);
 }
@@ -918,7 +919,7 @@ auto CutCellMesh<3>::edges() const -> Edges {
     Edges VE =
         mtao::geometry::grid::GridTriangulator<GridType>(vertex_grid()).edges();
     Edges EE = cut_edges_eigen();
-    return mtao::eigen::hstack(VE, EE);
+    return balsa::eigen::hstack(VE, EE);
     // return Base::edges();
 }
 }  // namespace mandoline

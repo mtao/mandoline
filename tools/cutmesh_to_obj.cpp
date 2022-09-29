@@ -84,7 +84,7 @@ void write_obj(const CutCellMesh<3>& ccm, const std::string& prefix,
     std::ofstream ofs(prefix + name_suffix);
 
     std::tie(V, Fs) = mtao::geometry::mesh::compactify(V, Fs);
-    auto F = mtao::eigen::hstack_iter(Fs.begin(), Fs.end());
+    auto F = balsa::eigen::hstack_iter(Fs.begin(), Fs.end());
     for (int i = 0; i < V.cols(); ++i) {
         auto v = V.col(i);
         ofs << "v " << v.transpose() << std::endl;

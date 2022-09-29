@@ -1,5 +1,5 @@
 #pragma once
-#include <mtao/eigen/stl2eigen.hpp>
+#include <balsa/eigen/stl2eigen.hpp>
 #include <mtao/geometry/grid/grid_data.hpp>
 #include <mtao/geometry/grid/staggered_grid.hpp>
 #include <set>
@@ -28,8 +28,8 @@ class AdaptiveGrid : public mtao::geometry::grid::StaggeredGrid<double, 3> {
         coord_type vertex(int a, int b, int c) const;
         int width() const { return std::get<1>(*this); }
 
-        mtao::Vec3d center() const {
-            return mtao::eigen::stl2eigen(corner()).array().cast<double>() +
+        balsa::eigen::Vec3d center() const {
+            return balsa::eigen::stl2eigen(corner()).array().cast<double>() +
                    width() / 2.0;
         }
 
@@ -86,36 +86,36 @@ class AdaptiveGrid : public mtao::geometry::grid::StaggeredGrid<double, 3> {
     }
     std::array<int, 4> face(const Cell &c, int axis, bool sign) const;
     std::array<int, 4> face(int idx, int axis, bool sign) const;
-    mtao::ColVecs3i triangulated(int idx) const;
-    mtao::ColVecs3i triangulated(const Cell &c) const;
-    mtao::ColVecs3i triangulated_face(size_t idx, size_t offset,
+    balsa::eigen::ColVecs3i triangulated(int idx) const;
+    balsa::eigen::ColVecs3i triangulated(const Cell &c) const;
+    balsa::eigen::ColVecs3i triangulated_face(size_t idx, size_t offset,
                                       bool invert = false) const;
-    mtao::ColVecs3i triangulated_face(const Face &f, bool invert = false) const;
-    mtao::ColVecs3d boundary_centroids() const;
-    void cell_centroids(mtao::ColVecs3d &) const;
+    balsa::eigen::ColVecs3i triangulated_face(const Face &f, bool invert = false) const;
+    balsa::eigen::ColVecs3d boundary_centroids() const;
+    void cell_centroids(balsa::eigen::ColVecs3d &) const;
     GridData3i cell_ownership_grid() const;
     // const std::vector<Edge>& boundary() const { return m_boundary; }
     std::vector<Edge> boundary_pairs() const;
     const std::map<int, Cell> &cells() const { return m_cells; }
     const Cell &cell(int idx) const { return m_cells.at(idx); }
-    mtao::VecXd dual_edge_lengths() const;
-    mtao::VecXd face_volumes(bool mask_boundary = false) const;
-    mtao::VecXd cell_volumes() const;
+    balsa::eigen::VecXd dual_edge_lengths() const;
+    balsa::eigen::VecXd face_volumes(bool mask_boundary = false) const;
+    balsa::eigen::VecXd cell_volumes() const;
     std::vector<Eigen::Triplet<double>> boundary_triplets(
         int offset, bool grid_boundary = false) const;
     // computes the boundary of the adaptive grid, including the interior
     // boundaries
-    mtao::VecXd boundary_face_mask() const;
+    balsa::eigen::VecXd boundary_face_mask() const;
     // includes the boundary of hte adaptive grid, ignoring hte interior
     // boundaries
-    mtao::VecXd grid_boundary_face_mask()
+    balsa::eigen::VecXd grid_boundary_face_mask()
         const;  // grid boundary mask using grid indices
     std::set<int> grid_boundary_faces(
         int offset = 0) const;  // grid boundary faces using grid indices
     int num_edges() const;
     int num_faces() const;
     int num_cells() const;
-    mtao::ColVecs2i edges() const;
+    balsa::eigen::ColVecs2i edges() const;
     std::vector<Face> faces(const GridData3i &grid) const;
     const std::vector<Face> &faces() const { return m_faces; }
     const Face &face(size_t face_index) const { return m_faces.at(face_index); }

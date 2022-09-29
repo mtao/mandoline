@@ -1,5 +1,5 @@
 #pragma once
-#include <mtao/eigen/stl2eigen.hpp>
+#include <balsa/eigen/stl2eigen.hpp>
 #include <mtao/geometry/grid/grid_data.hpp>
 #include <mtao/geometry/grid/staggered_grid.hpp>
 #include <set>
@@ -63,7 +63,7 @@ class ExteriorGrid : public mtao::geometry::grid::StaggeredGrid<double, D>,
     int get_face_axis(int face_index) const;
     std::vector<Eigen::Triplet<double>> boundary_facet_to_staggered_grid(
         int offset = 0) const;
-    mtao::VecXd boundary_facet_volumes(bool make_boundary = true) const;
+    balsa::eigen::VecXd boundary_facet_volumes(bool make_boundary = true) const;
     // returns the staggered grid coordinate of the grid face
     std::tuple<coord_type, int> boundary_facet_grid_coord(size_t index) const;
     const std::vector<int> &regions() const { return m_regions; }

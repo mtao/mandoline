@@ -46,8 +46,8 @@ auto CutCellMesh<2>::centroids() const -> ColVecs {
     return C;
 }
 
-mtao::ColVectors<int, 2> CutCellMesh<2>::edges() const {
-    mtao::ColVectors<int, 2> eg_edges(2, exterior_grid.num_boundary_facets());
+balsa::eigen::ColVectors<int, 2> CutCellMesh<2>::edges() const {
+    balsa::eigen::ColVectors<int, 2> eg_edges(2, exterior_grid.num_boundary_facets());
 
     for (auto &&[edge_index, dual_edge, axis] : mtao::iterator::enumerate(exterior_grid.boundary_facet_pairs(), exterior_grid.boundary_facet_axes())) {
         auto [lower, higher] = dual_edge;
@@ -66,9 +66,9 @@ mtao::ColVectors<int, 2> CutCellMesh<2>::edges() const {
         e(1) = vertex_grid().index(upper_vcoord);
     }
 
-    return mtao::eigen::hstack(cut_edges_eigen(), eg_edges);
+    return balsa::eigen::hstack(cut_edges_eigen(), eg_edges);
 }
-mtao::ColVectors<int, 3> CutCellMesh<2>::faces() const {
+balsa::eigen::ColVectors<int, 3> CutCellMesh<2>::faces() const {
     std::vector<std::vector<int>> mycells;
     for (int i = 0; i < num_cells(); ++i) {
         for (auto &&c : cell(i)) {
@@ -79,13 +79,13 @@ mtao::ColVectors<int, 3> CutCellMesh<2>::faces() const {
 }
 
 
-mtao::VecXi CutCellMesh<2>::regions() const {
-    mtao::VecXi R(num_cells());
+balsa::eigen::VecXi CutCellMesh<2>::regions() const {
+    balsa::eigen::VecXi R(num_cells());
     for (auto &&[cid, c] : mtao::iterator::enumerate(cut_faces())) {
         R(cid) = c.region;
     }
 
-    R.tail(exterior_grid.num_cells()) = mtao::eigen::stl2eigen(exterior_grid.regions());
+    R.tail(exterior_grid.num_cells()) = balsa::eigen::stl2eigen(exterior_grid.regions());
     return R;
 }
 

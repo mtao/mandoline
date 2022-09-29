@@ -10,10 +10,10 @@
 #include "mandoline/construction/tools/preprocess_mesh.hpp"
 namespace mandoline::construction::tools {
 
-std::tuple<mtao::ColVecs3d, mtao::ColVecs3i> read_mesh(
+std::tuple<balsa::eigen::ColVecs3d, balsa::eigen::ColVecs3i> read_mesh(
     const std::filesystem::path& path, bool preprocess) {
-    mtao::ColVecs3d V;
-    mtao::ColVecs3i F;
+    balsa::eigen::ColVecs3d V;
+    balsa::eigen::ColVecs3i F;
     if (path.filename().string().ends_with("obj")) {
         std::tie(V, F) = mtao::geometry::mesh::read_objD(path);
     } else {

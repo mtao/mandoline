@@ -13,8 +13,8 @@ namespace mandoline::construction {
 //Imgui wrapper around DeformingGeometryConstructor
 struct CutmeshGenerator2Gui : public DeformingGeometryConstructor2, public mtao::opengl::objects::Grid<2>, public mtao::opengl::MeshDrawable<Magnum::Shaders::Flat2D> {
     CutmeshGenerator2Gui(Magnum::Shaders::Flat2D& shader, Magnum::SceneGraph::DrawableGroup2D& group);
-    CutmeshGenerator2Gui(Magnum::Shaders::Flat2D& shader, Magnum::SceneGraph::DrawableGroup2D& group,const mtao::ColVecs2d &V, const mtao::ColVecs2i &F, const mtao::geometry::grid::StaggeredGrid2d &grid, std::optional<double> threshold = {});
-    static CutmeshGenerator2Gui create(Magnum::Shaders::Flat2D& shader, Magnum::SceneGraph::DrawableGroup2D& group,const mtao::ColVecs2d &V, const mtao::ColVecs2i &F, double bbox_scale = 1.1, const std::array<int, 2> &N = std::array<int, 2>{ { 5, 5 } }, std::optional<double> threshold = {});
+    CutmeshGenerator2Gui(Magnum::Shaders::Flat2D& shader, Magnum::SceneGraph::DrawableGroup2D& group,const balsa::eigen::ColVecs2d &V, const balsa::eigen::ColVecs2i &F, const mtao::geometry::grid::StaggeredGrid2d &grid, std::optional<double> threshold = {});
+    static CutmeshGenerator2Gui create(Magnum::Shaders::Flat2D& shader, Magnum::SceneGraph::DrawableGroup2D& group,const balsa::eigen::ColVecs2d &V, const balsa::eigen::ColVecs2i &F, double bbox_scale = 1.1, const std::array<int, 2> &N = std::array<int, 2>{ { 5, 5 } }, std::optional<double> threshold = {});
     CutmeshGenerator2Gui(CutmeshGenerator2Gui &&) = default;
     CutmeshGenerator2Gui &operator=(CutmeshGenerator2Gui &&) = default;
     ~CutmeshGenerator2Gui();
@@ -23,8 +23,8 @@ struct CutmeshGenerator2Gui : public DeformingGeometryConstructor2, public mtao:
     using DeformingGeometryConstructor2::bake;
     using DeformingGeometryConstructor2::emit;
 
-    void update_vertices_and_bbox(const mtao::ColVecs2d &V, double scale = 1.1, const std::optional<double> &threshold = -1);
-    void update_mesh_and_bbox(const mtao::ColVecs2d &V, const mtao::ColVecs2i &F, double scale = 1.1, const std::optional<double> &threshold = -1);
+    void update_vertices_and_bbox(const balsa::eigen::ColVecs2d &V, double scale = 1.1, const std::optional<double> &threshold = -1);
+    void update_mesh_and_bbox(const balsa::eigen::ColVecs2d &V, const balsa::eigen::ColVecs2i &F, double scale = 1.1, const std::optional<double> &threshold = -1);
     //Cutcell mesh parameters. all floats but will be cast to double
     Eigen::AlignedBox<float, 2> bbox = Eigen::AlignedBox<float,2>(Eigen::Vector2f::Constant(-1.), Eigen::Vector2f::Constant(1.));;
     std::array<int, 2> N{ { 5, 5 } };

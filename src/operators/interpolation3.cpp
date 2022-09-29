@@ -20,7 +20,7 @@ Eigen::SparseMatrix<double> barycentric_matrix(const CutCellMesh<3> &ccm) {
         trips.emplace_back(a, b, v);
     }
     A.setFromTriplets(trips.begin(), trips.end());
-    mtao::VecXd sums = A * mtao::VecXd::Ones(A.cols());
+    balsa::eigen::VecXd sums = A * balsa::eigen::VecXd::Ones(A.cols());
     sums = (sums.array().abs() > 1e-10).select(1.0 / sums.array(), 0);
     A = sums.asDiagonal() * A;
     return A;
@@ -95,7 +95,7 @@ Eigen::SparseMatrix<double> face_grid_volume_matrix(
         ccm.exterior_grid().grid_face_projection(ccm.cut_faces().size());
     auto FV = ccm.face_volumes();
     auto &dx = ccm.dx();
-    mtao::Vec3d gfv;
+    balsa::eigen::Vec3d gfv;
     gfv(0) = dx(1) * dx(2);
     gfv(1) = dx(0) * dx(2);
     gfv(2) = dx(0) * dx(1);
@@ -133,7 +133,7 @@ Eigen::SparseMatrix<double> face_grid_volume_matrix(
         }
     }
     A.setFromTriplets(trips.begin(), trips.end());
-    // mtao::VecXd sums = A * mtao::VecXd::Zero(A.cols());
+    // balsa::eigen::VecXd sums = A * balsa::eigen::VecXd::Zero(A.cols());
     // sums = (sums.array().abs() > 1e-10).select(1.0 / sums.array(), 0);
     // A = sums.asDiagonal() * A;
     return A;

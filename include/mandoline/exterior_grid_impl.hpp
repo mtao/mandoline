@@ -134,9 +134,9 @@ auto ExteriorGrid<D>::boundary_facet_grid_coord(size_t index) const
     }
 }
 template <int D>
-mtao::VecXd ExteriorGrid<D>::boundary_facet_volumes(bool make_boundary) const {
+balsa::eigen::VecXd ExteriorGrid<D>::boundary_facet_volumes(bool make_boundary) const {
     auto &A = boundary_facet_axes();
-    mtao::VecXd ret(A.size());
+    balsa::eigen::VecXd ret(A.size());
     ret.setZero();
     auto vols = Base::template form_volumes<D - 1>();
 
