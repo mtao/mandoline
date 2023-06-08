@@ -292,6 +292,17 @@ void CutCellGenerator<3>::bake_cells() {
             }
             cc.remove_boundary_cells_by_volume(vol);
         }
+        if(m_filter_external_cells) {
+            std::set<int> bad_vertices;
+            for (auto &&[i, c] : mtao::iterator::enumerate(all_vertices())) {
+                if(!valid_index(c.coord)) {
+                    bad_vertices.emplace(i);
+                }
+            }
+            cc.remove_boundary_cells_from_vertices(bad_vertices);
+            // filter external cells by identifying which tri vertices lie outside and removing all cells that use those vertices
+
+        }
         auto cb = cc.cell_boundaries();
         cell_boundaries.clear();
 
