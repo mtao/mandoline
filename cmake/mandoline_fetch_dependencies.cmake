@@ -2,9 +2,10 @@ include(FetchContent REQUIRED)
 
 
 set(MTAO_COMMIT 
-    6c5503221dc50bfea8776487b92dc096b8df53cd
+    b5528d1b51a47dc0f85d6de2115290949c007beb
     )
 set(PROTOBUF_COMMIT v3.11.3)
+set(LIBIGL_COMMIT v2.4.0)
 set(CATCH_COMMIT v2.9.1)
 set(CGAL_COMMIT releases/CGAL-5.0.1)
 

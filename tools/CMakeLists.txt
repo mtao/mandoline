@@ -75,7 +75,7 @@ IF(HANDLE_SELF_INTERSECTIONS)
         nlohmann_json::nlohmann_json
         )
 ENDIF(HANDLE_SELF_INTERSECTIONS)
-if(${MANDOLINE_USE_OPENGL})
+if(MANDOLINE_USE_OPENGL)
     ADD_EXECUTABLE(make_cutmesh_gui make_cutmesh_gui.cpp)
     TARGET_LINK_LIBRARIES(make_cutmesh_gui mandoline OpenMP::OpenMP_CXX mtao::common mtao::visualization)
     if(HANDLE_SELF_INTERSECTIONS) 

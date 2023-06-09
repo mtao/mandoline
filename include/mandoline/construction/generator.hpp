@@ -101,6 +101,7 @@ class CutCellEdgeGenerator : public mtao::geometry::grid::StaggeredGrid<double, 
     CutCellEdgeGenerator &operator=(CutCellEdgeGenerator &&) = default;
     //CutCellGenerator(const VecVector& V, const Vec& dx = Vec::Ones());
 
+    void filter_external_cells(bool value = true) { m_filter_external_cells = value; }
 
     template<typename Derived>
     VType get_vertex(const Eigen::MatrixBase<Derived> &p) const {
@@ -290,6 +291,10 @@ class CutCellEdgeGenerator : public mtao::geometry::grid::StaggeredGrid<double, 
     CutData<D> m_data;
     mtao::map<Edge, int> m_origEMap;
     VecVector m_origV;
+
+    bool m_filter_external_cells = false;
+
+
     //baked by bake_vertices
     VecVector m_newV;
     std::array<crossing_store_type, D> m_per_axis_crossings;

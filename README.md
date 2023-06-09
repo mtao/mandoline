@@ -2,6 +2,8 @@
 [![CircleCI](https://circleci.com/gh/mtao/mandoline/tree/master.svg?style=svg)](https://circleci.com/gh/mtao/mandoline/tree/master)
 A robust cut-cell mesh generator for arbitrary triangle-mesh inputs
 
+## State of the code
+The `dev` branch has more features and has several bug fixes but requires C++20 and doesn't consistently pass circleci. As there is currently one developer working on this in their free time (while using it in their own work) the development efforts are fairly focused. But please let [mtao](https://github.com/mtao) know if you encounter any issues! There may already be a fix in `dev` that needs to be ported over to `master` or he might have the time / be able to fix it up for you!
 
 ## Serialization
 By default Mandoline uses [protobuf](https://developers.google.com/protocol-buffers/) for serialization, following the format of defined at [proto/cutmesh.proto](https://github.com/mtao/mandoline/blob/master/proto/cutmesh.proto). This is language agnostic and so in theory, so long as your language has protobuf support/bindings you can read the output of Mandoline. In fact a lot of initial validity testing on Mandoline were done in python.

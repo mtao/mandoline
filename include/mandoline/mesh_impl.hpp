@@ -55,7 +55,7 @@ auto CutCellMeshBase<D, Derived>::grid_boundary(bool dirichlet_boundary) const -
 
 template<int D, typename Derived>
 int CutCellMeshBase<D, Derived>::grid_edge_type(int idx) const {
-    return StaggeredGrid::form_type<1>(idx);
+    return StaggeredGrid::template form_type<1>(idx);
 }
 
 template<int D, typename Derived>

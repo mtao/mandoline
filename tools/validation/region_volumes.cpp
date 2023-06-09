@@ -132,7 +132,6 @@ bool volume_check(const mandoline::CutCellMesh<3> &ccm) {
     // but this isn't robust
     bool external_boundary_used = false;
     auto vols = region_volumes(ccm);
-
     for (auto &&[ridx, vol] : vols) {
         if (ridx < 0) {
             continue;
